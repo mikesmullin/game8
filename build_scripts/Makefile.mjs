@@ -41,6 +41,7 @@ const C_ENGINE_COMPILER_FLAGS = [
 ];
 const ENGINE_ONLY = [
   'src/app.c',
+  'src/lib/HotReload.c',
 ];
 const LINKER_LIBS = [];
 const LINKER_LIB_PATHS = [];
@@ -160,9 +161,9 @@ const compile = async (basename) => {
   const unit_files = [];
   for (const u of COMPILER_TRANSLATION_UNITS) {
     for (const file of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
-      if (ENGINE_ONLY.includes(nixPath(file))) {
-        unit_files.push(file);
-      }
+      // if (ENGINE_ONLY.includes(nixPath(file))) {
+      unit_files.push(file);
+      // }
     }
   }
 
@@ -175,7 +176,7 @@ const compile = async (basename) => {
     ...C_ENGINE_COMPILER_FLAGS,
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
-    unit_files.map(unit => rel(workspaceFolder, unit)).join(' '),
+    ...unit_files.map(unit => rel(workspaceFolder, unit)),
     '-o', rel(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''} `),
   ]);
 
@@ -193,7 +194,6 @@ function generateRandomString(length) {
 }
 
 const compile_reload = async (outname) => {
-  return;
   console.log(`recompiling...`);
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });

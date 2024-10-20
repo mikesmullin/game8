@@ -1,5 +1,7 @@
 #include "Logic.h"
 
+#include <math.h>
+
 #include "../lib/Arena.h"
 #include "../lib/Log.h"
 
@@ -9,8 +11,6 @@ Engine__State_t* g_engine;
 __declspec(dllexport) void logic_oninit_data(Engine__State_t* state) {
   state->local = Arena__Push(state->arena, sizeof(Logic__State_t));
   Logic__State_t* logic = state->local;
-
-  logic->test1 = 2;
 }
 
 __declspec(dllexport) void logic_oninit_compute(Engine__State_t* state) {
@@ -30,4 +30,6 @@ __declspec(dllexport) void logic_onfixedupdate(Engine__State_t* state) {
 // on draw
 __declspec(dllexport) void logic_onupdate(Engine__State_t* state) {
   Logic__State_t* logic = state->local;
+
+  logic->red = (sin(logic->now) + 1.0f) * 0.5f;
 }
