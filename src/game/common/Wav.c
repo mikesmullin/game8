@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "Log.h"
+#include "../../lib/Log.h"
 
 // Define structures for WAV header
 

@@ -2,27 +2,28 @@
 
 #include <stdlib.h>
 
-#include "Log.h"
+#include "../../lib/Log.h"
 
-void Arena__Alloc(Arena_t* a, u64 sz) {
+void Arena__Alloc(Arena** a, u64 sz) {
+  *a = malloc(sizeof(Arena));
   // LOG_DEBUGF("arena malloc %llu", sz);
   void* p = malloc(sz);
   // LOG_DEBUGF("arena p %p", p);
   ASSERT_CONTEXT(NULL != p, "Arena malloc request rejected by OS.");
-  a->buf = p;
-  a->pos = p;
-  a->end = p + sz;
+  (*a)->buf = p;
+  (*a)->pos = p;
+  (*a)->end = p + sz;
 }
 
-Arena_t* Arena__SubAlloc(Arena_t* a, u64 sz) {
-  Arena_t* sa = Arena__Push(a, sizeof(Arena_t));
+Arena* Arena__SubAlloc(Arena* a, u64 sz) {
+  Arena* sa = Arena__Push(a, sizeof(Arena));
   sa->buf = Arena__Push(a, sz);
   sa->pos = sa->buf;
   sa->end = sa->buf + sz;
   return sa;
 }
 
-void* Arena__Push(Arena_t* a, u64 sz) {
+void* Arena__Push(Arena* a, u64 sz) {
   ASSERT_CONTEXT(
       a->pos + sz < a->end,
       "Arena exhausted. pos: %p, sz: %d, end: %p, cap: %d, ask: %d, over: %d",
@@ -37,10 +38,10 @@ void* Arena__Push(Arena_t* a, u64 sz) {
   return a->pos - sz;
 }
 
-void Arena__Free(Arena_t* a) {
+void Arena__Free(Arena* a) {
   free(a->buf);
 }
 
-void Arena__Reset(Arena_t* a) {
+void Arena__Reset(Arena* a) {
   a->pos = a->buf;
 }

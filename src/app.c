@@ -6,139 +6,75 @@
 /* this is only needed for the debug-inspection headers */
 // #define SOKOL_TRACE_HOOKS
 /* sokol 3D-API defines are provided by build options */
-#include "sokol_app.h"
-#include "sokol_audio.h"
-#include "sokol_fetch.h"
-#include "sokol_gfx.h"
-#include "sokol_glue.h"
-#include "sokol_log.h"
-#include "sokol_time.h"
-#include "triangle-sapp.glsl.h"
-
-//
+#include "../vendor/sokol/sokol_app.h"
+#include "../vendor/sokol/sokol_audio.h"
+#include "../vendor/sokol/sokol_fetch.h"
+#include "../vendor/sokol/sokol_gfx.h"
+#include "../vendor/sokol/sokol_glue.h"
+#include "../vendor/sokol/sokol_log.h"
+#include "../vendor/sokol/sokol_time.h"
 #include "game/Logic.h"
-#include "lib/Arena.h"
-#include "lib/File.h"
 #include "lib/HotReload.h"
 #include "lib/Log.h"
-#include "lib/Wav.h"
 
-static FileMonitor_t fm = {.directory = "src/game", .fileName = "Logic.c.dll"};
-static Arena_t arena;
-static Engine__State_t engine;
-static WavReader wr;
+Engine__State engine;
 
-// application state
-static struct {
-  sg_pipeline pip;
-  sg_bindings bind;
-  sg_pass_action pass_action;
-} state;
+static FileMonitor fm = {.directory = "src/game", .fileName = "Logic.c.dll"};
+static void init(void);
+static void frame(void);
+static void cleanup(void);
+static void stream_cb(float* buffer, int num_frames, int num_channels);
 
-// the sample callback, running in audio thread
-static void stream_cb(float* buffer, int num_frames, int num_channels) {
-  assert(1 == num_channels);
-  static uint32_t count = 0;
-  float amp = 0.05f;
-  uint32_t freq = 0;
-  if (NULL != engine.local) {
-    uint32_t factor = (uint32_t)((1.0f - engine.local->red) * 4.0f) + 5.0f;
-    freq = (1 << factor);
-  }
-  uint8_t samples[wr.bytesPerSample * wr.numChannels];
-  float sampleFloat;
-  for (int i = 0; i < num_frames; i++) {
-    Wav__NextSample(&wr, samples);
-    sampleFloat = ((int)(samples[0]) - 128) / 128.0f;  // assume 1 channel, 1 byte per sample
-    buffer[i] = sampleFloat;
-    // buffer[i] = (count++ & freq) ? amp : -amp;
-    // buffer[i] = 0;
-    // printf(" %f", buffer[i]);
-  }
+sapp_desc sokol_main(int argc, char* argv[]) {
+  (void)argc;
+  (void)argv;
+
+  engine.stm_setup = stm_setup;
+  engine.sg_setup = sg_setup;
+  engine.sglue_environment = sglue_environment;
+  engine.sglue_swapchain = sglue_swapchain;
+  engine.slog_func = slog_func;
+  engine.sg_make_buffer = sg_make_buffer;
+  engine.sg_make_shader = sg_make_shader;
+  engine.sg_query_backend = sg_query_backend;
+  engine.sg_make_pipeline = sg_make_pipeline;
+  engine.saudio_setup = saudio_setup;
+  engine.saudio_sample_rate = saudio_sample_rate;
+  engine.saudio_channels = saudio_channels;
+  engine.stm_ms = stm_ms;
+  engine.stm_now = stm_now;
+  engine.sg_begin_pass = sg_begin_pass;
+  engine.sg_apply_pipeline = sg_apply_pipeline;
+  engine.sg_apply_bindings = sg_apply_bindings;
+  engine.sg_draw = sg_draw;
+  engine.sg_end_pass = sg_end_pass;
+  engine.sg_commit = sg_commit;
+  engine.sg_shutdown = sg_shutdown;
+  engine.stream_cb1 = stream_cb;
+
+  ASSERT_CONTEXT(load_logic(LOGIC_FILENAME), "Failed to load Logic.dll");
+  logic_oninit(&engine);
+
+  return (sapp_desc){
+      .init_cb = init,
+      .frame_cb = frame,
+      .cleanup_cb = cleanup,
+      .width = engine.window_width,
+      .height = engine.window_height,
+      .window_title = engine.window_title,
+      .icon.sokol_default = false,
+      .logger.func = slog_func,
+      .win32_console_utf8 = true,
+      .win32_console_attach = true,
+  };
 }
 
 static void init(void) {
-  stm_setup();
-
-  Arena__Alloc(&arena, 1024 * 1024 * 50);  // MB
-  engine.arena = &arena;
-
   File__StartMonitor(&fm);
-  if (load_logic(LOGIC_FILENAME)) {
-    logic_oninit_data(&engine);
-    logic_oninit_compute(&engine);
-  }
-
-  sg_setup(&(sg_desc){
-      .environment = sglue_environment(),  //
-      .logger.func = slog_func,  //
-  });
-
-  // a vertex buffer with 3 vertices
-  float vertices[] = {
-      // positions                             // colors
-      0.0f,  0.5f,  0.5f, /*    */ 1.0f, 0.0f, 0.0f, 1.0f,  //
-      0.5f,  -0.5f, 0.5f, /*    */ 0.0f, 1.0f, 0.0f, 1.0f,  //
-      -0.5f, -0.5f, 0.5f, /* */ 0.0f,    0.0f, 1.0f, 1.0f  //
-  };
-  state.bind.vertex_buffers[0] = sg_make_buffer(&(sg_buffer_desc){
-      .data = SG_RANGE(vertices),  //
-      .label = "triangle-vertices"  //
-  });
-
-  // create shader from code-generated sg_shader_desc
-  sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
-
-  // create a pipeline object (default render states are fine for triangle)
-  state.pip = sg_make_pipeline(&(sg_pipeline_desc){
-      .shader = shd,
-      // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
-      .layout =
-          {
-              .attrs =
-                  {
-                      [ATTR_vs_position].format = SG_VERTEXFORMAT_FLOAT3,  //
-                      [ATTR_vs_color0].format = SG_VERTEXFORMAT_FLOAT4,  //
-                  }  //
-          },
-      .label = "triangle-pipeline",
-  });
-
-  // a pass action to clear framebuffer to black
-  state.pass_action = (sg_pass_action){
-      .colors[0] = {
-          .load_action = SG_LOADACTION_CLEAR,  //
-          .clear_value = {0.0f, 0.0f, 0.0f, 1.0f},  //
-      }};
-
-  saudio_setup(&(saudio_desc){
-      .stream_cb = stream_cb,
-      .logger = {
-          .func = slog_func,
-      }});
-
-  LOG_DEBUGF(
-      "audio system init. sample_rate: %u, channels: %u",
-      saudio_sample_rate(),
-      saudio_channels());
-
-  Wav__Read("../assets/audio/sfx/pickupCoin.wav", &wr);
+  logic_onpreload();
 }
 
-void frame(void) {
-  if (NULL != engine.local) {
-    engine.local->now = stm_ms(stm_now());
-    logic_onupdate(&engine);
-    state.pass_action.colors[0].clear_value.r = engine.local->red;
-  }
-
-  sg_begin_pass(&(sg_pass){.action = state.pass_action, .swapchain = sglue_swapchain()});
-  sg_apply_pipeline(state.pip);
-  sg_apply_bindings(&state.bind);
-  sg_draw(0, 3, 1);
-  sg_end_pass();
-  sg_commit();
-
+static void frame(void) {
   // check for fs changes
   char path[32] = "src/game/";
   char file[31];
@@ -146,33 +82,22 @@ void frame(void) {
     LOG_DEBUGF("saw file %s", file);
     strcat_s(path, 32, file);
     LOG_DEBUGF("path %s", path);
+    engine.stream_cb2 = NULL;
     if (load_logic(path)) {
       logic_onreload(&engine);
-      wr.offset = 0;  // replay the sfx
     }
   }
+
+  logic_onupdate();
 }
 
-void cleanup(void) {
-  sg_shutdown();
-  saudio_shutdown();
+static void cleanup(void) {
+  logic_onshutdown();
   File__EndMonitor(&fm);
 }
 
-sapp_desc sokol_main(int argc, char* argv[]) {
-  (void)argc;
-  (void)argv;
-
-  return (sapp_desc){
-      .init_cb = init,
-      .frame_cb = frame,
-      .cleanup_cb = cleanup,
-      .width = 640,
-      .height = 480,
-      .window_title = "Triangle",
-      .icon.sokol_default = false,
-      .logger.func = slog_func,
-      .win32_console_utf8 = true,
-      .win32_console_attach = true,
-  };
+static void stream_cb(float* buffer, int num_frames, int num_channels) {
+  if (NULL != engine.stream_cb2) {
+    engine.stream_cb2(buffer, num_frames, num_channels);
+  }
 }

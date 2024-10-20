@@ -12,9 +12,9 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SDHC_PATH = path.join('..', 'vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: multiplatform support
 const BUILD_PATH = "build";
 const C_COMPILER_PATH = 'clang';
-const RX_C = /\.c$/i;
 const OUT_FILE = "compile_commands.json";
 const abs = (...args) => path.join(...args);
+const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 const workspaceFolder = path.join(__dirname, '..');
 const rel = (...args) => path.relative(path.join(workspaceFolder, BUILD_PATH), path.join(...args));
 const DEBUG_COMPILER_ARGS = [
@@ -32,11 +32,12 @@ const C_COMPILER_ARGS = [
 ];
 const C_COMPILER_INCLUDES = [
 ];
-const C_ENGINE_COMPILER_INCLUDES = [
-  `-I${rel(workspaceFolder, 'vendor', 'sokol')}`,
-  `-I${rel(workspaceFolder, 'assets', 'shaders')}`,
-];
 const C_ENGINE_COMPILER_FLAGS = [
+  // '-DSOKOL_IMPL', // use Sokol
+  '-DSOKOL_GLCORE', // use GL backend
+];
+const C_DLL_COMPILER_FLAGS = [
+  // '-DSOKOL_API_DECL=static', // headers-only
   '-DSOKOL_GLCORE', // use GL backend
 ];
 const ENGINE_ONLY = [
@@ -59,21 +60,20 @@ const nixPath = (p) =>
 
 const generate_clangd_compile_commands = async () => {
   console.log('scanning directory...');
-  const unit_files = await glob('{src,tests}/**/*.c');
-
-  console.debug('unit_files: ', unit_files);
-
   const compile_commands = [];
-
+  const unit_files = await glob('{src,tests}/**/*.c');
+  console.debug('unit_files: ', unit_files);
+  const dll_files = await glob('{src,tests}/game/**/*.c');
+  let is_dll = false;
   for (const unit_file of unit_files) {
+    is_dll = dll_files.includes(unit_file);
     compile_commands.push({
       directory: path.join(workspaceFolder, BUILD_PATH),
       arguments: [
         C_COMPILER_PATH,
         ...C_COMPILER_ARGS,
         // ...C_COMPILER_INCLUDES,
-        ...C_ENGINE_COMPILER_INCLUDES,
-        ...C_ENGINE_COMPILER_FLAGS,
+        ...(is_dll ? C_DLL_COMPILER_FLAGS : C_ENGINE_COMPILER_FLAGS),
         '-c',
         '-o', `${unit_file}.o`,
         rel(unit_file),
@@ -171,9 +171,8 @@ const compile = async (basename) => {
   const code = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     ...C_COMPILER_ARGS,
-    // ...C_COMPILER_INCLUDES,
-    ...C_ENGINE_COMPILER_INCLUDES,
     ...C_ENGINE_COMPILER_FLAGS,
+    // ...C_COMPILER_INCLUDES,
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
     ...unit_files.map(unit => rel(workspaceFolder, unit)),
@@ -197,8 +196,6 @@ const compile_reload = async (outname) => {
   console.log(`recompiling...`);
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });
-
-  const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 
   const dsts = [];
   for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
@@ -245,6 +242,7 @@ const compile_reload = async (outname) => {
     ...DEBUG_COMPILER_ARGS,
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
+    ...C_DLL_COMPILER_FLAGS,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
     '-shared',
