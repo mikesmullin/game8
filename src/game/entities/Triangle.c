@@ -5,6 +5,7 @@
 #include "../../../vendor/sokol/sokol_gfx.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
+#include "../common/Math.h"
 
 //
 #include "../../../assets/shaders/triangle-sapp.glsl.h"
@@ -65,8 +66,10 @@ void Triangle__render() {
   Logic__State* logic = g_engine->logic;
 
   g_engine->logic->now = g_engine->stm_ms(g_engine->stm_now());
-  f32 s = (sinf(logic->now / 1000.0f) + 1.0f) * 0.5f;
-  logic->pass_action->colors[0].clear_value.r = s;
+  f32 s1 = Math__map(sinf(logic->now / 500.0f), -1, 1, 0, 0.25f);
+  logic->pass_action->colors[0].clear_value.r = s1;
+  logic->pass_action->colors[0].clear_value.g = 0;
+  logic->pass_action->colors[0].clear_value.b = 0;
 
   g_engine->sg_begin_pass(
       &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
