@@ -33,6 +33,21 @@ static struct {
   sg_pass_action pass_action;
 } state;
 
+// the sample callback, running in audio thread
+static void stream_cb(float* buffer, int num_frames, int num_channels) {
+  assert(1 == num_channels);
+  static uint32_t count = 0;
+  float amp = 0.05f;
+  uint32_t freq = 0;
+  if (NULL != engine.local) {
+    uint32_t factor = (uint32_t)((1.0f - engine.local->red) * 4.0f) + 5.0f;
+    freq = (1 << factor);
+  }
+  for (int i = 0; i < num_frames; i++) {
+    buffer[i] = (count++ & freq) ? amp : -amp;
+  }
+}
+
 static void init(void) {
   stm_setup();
 
@@ -86,6 +101,12 @@ static void init(void) {
           .load_action = SG_LOADACTION_CLEAR,  //
           .clear_value = {0.0f, 0.0f, 0.0f, 1.0f},  //
       }};
+
+  saudio_setup(&(saudio_desc){
+      .stream_cb = stream_cb,
+      .logger = {
+          .func = slog_func,
+      }});
 }
 
 void frame(void) {
@@ -117,6 +138,7 @@ void frame(void) {
 
 void cleanup(void) {
   sg_shutdown();
+  saudio_shutdown();
   File__EndMonitor(&fm);
 }
 
