@@ -21,10 +21,12 @@
 #include "lib/File.h"
 #include "lib/HotReload.h"
 #include "lib/Log.h"
+#include "lib/Wav.h"
 
 static FileMonitor_t fm = {.directory = "src/game", .fileName = "Logic.c.dll"};
 static Arena_t arena;
 static Engine__State_t engine;
+static WavReader wr;
 
 // application state
 static struct {
@@ -43,8 +45,15 @@ static void stream_cb(float* buffer, int num_frames, int num_channels) {
     uint32_t factor = (uint32_t)((1.0f - engine.local->red) * 4.0f) + 5.0f;
     freq = (1 << factor);
   }
+  uint8_t samples[wr.bytesPerSample * wr.numChannels];
+  float sampleFloat;
   for (int i = 0; i < num_frames; i++) {
-    buffer[i] = (count++ & freq) ? amp : -amp;
+    Wav__NextSample(&wr, samples);
+    sampleFloat = ((int)(samples[0]) - 128) / 128.0f;  // assume 1 channel, 1 byte per sample
+    buffer[i] = sampleFloat;
+    // buffer[i] = (count++ & freq) ? amp : -amp;
+    // buffer[i] = 0;
+    // printf(" %f", buffer[i]);
   }
 }
 
@@ -107,6 +116,13 @@ static void init(void) {
       .logger = {
           .func = slog_func,
       }});
+
+  LOG_DEBUGF(
+      "audio system init. sample_rate: %u, channels: %u",
+      saudio_sample_rate(),
+      saudio_channels());
+
+  Wav__Read("../assets/audio/sfx/pickupCoin.wav", &wr);
 }
 
 void frame(void) {
@@ -132,6 +148,7 @@ void frame(void) {
     LOG_DEBUGF("path %s", path);
     if (load_logic(path)) {
       logic_onreload(&engine);
+      wr.offset = 0;  // replay the sfx
     }
   }
 }
@@ -145,6 +162,7 @@ void cleanup(void) {
 sapp_desc sokol_main(int argc, char* argv[]) {
   (void)argc;
   (void)argv;
+
   return (sapp_desc){
       .init_cb = init,
       .frame_cb = frame,
