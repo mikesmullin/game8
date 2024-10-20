@@ -1,14 +1,6 @@
-//------------------------------------------------------------------------------
-//  triangle-sapp.c
-//  Simple 2D rendering from vertex buffer.
-//------------------------------------------------------------------------------
 #define SOKOL_IMPL
-/* this is only needed for the debug-inspection headers */
-// #define SOKOL_TRACE_HOOKS
-/* sokol 3D-API defines are provided by build options */
 #include "../vendor/sokol/sokol_app.h"
 #include "../vendor/sokol/sokol_audio.h"
-#include "../vendor/sokol/sokol_fetch.h"
 #include "../vendor/sokol/sokol_gfx.h"
 #include "../vendor/sokol/sokol_glue.h"
 #include "../vendor/sokol/sokol_log.h"
