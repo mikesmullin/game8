@@ -12,6 +12,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SDHC_PATH = path.join('..', 'vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: multiplatform support
 const BUILD_PATH = "build";
 const C_COMPILER_PATH = 'clang';
+const EMCC_COMPILER_PATH = 'emcc.bat';
+const EMRUN_PATH = 'emrun.bat';
 const OUT_FILE = "compile_commands.json";
 const abs = (...args) => path.join(...args);
 const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
@@ -40,6 +42,11 @@ const C_DLL_COMPILER_FLAGS = [
   // '-DSOKOL_API_DECL=static', // headers-only
   '-DSOKOL_GLCORE', // use GL backend
 ];
+const C_WEB_COMPILER_FLAGS = [
+  '-DSOKOL_GLES3', // use GLES3 backend
+  '-sUSE_WEBGL2' // use WebGL2
+];
+
 const ENGINE_ONLY = [
   'src/app.c',
   'src/lib/HotReload.c',
@@ -53,6 +60,16 @@ const COMPILER_TRANSLATION_UNITS = [
 const COMPILER_TRANSLATION_UNITS_DLL = [
   rel(workspaceFolder, 'src', 'lib', '**', '*.c'),
   rel(workspaceFolder, 'src', 'game', '**', '*.c'),
+];
+const COMPILER_TRANSLATION_UNITS_WEB = [
+  rel(workspaceFolder, 'src', '**', '*.c'),
+];
+const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
+  rel(workspaceFolder, 'src', 'lib', 'HotReload.c'),
+  rel(workspaceFolder, 'src', 'game', 'common', 'Wav.c'),
+];
+const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
+  rel(workspaceFolder, 'assets', 'web', '*'),
 ];
 
 const nixPath = (p) =>
@@ -123,10 +140,23 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
 const all = async () => {
   await clean();
   await copy_dlls();
-  await shaders();
+  await shaders('hlsl5:glsl430');
   await compile('main');
   await compile_reload("src/game/Logic.c.dll");
   await run('main');
+};
+
+const web = async () => {
+  await clean();
+  await copy_dlls();
+  await shaders('glsl300es');
+  // for these to work,
+  // you may need to enter the python emsdk env first (sets env vars)
+  // $ cd vendor/emsdk
+  // $ emsdk activate latest
+  // $ emsdk_env
+  await compile_web('main');
+  await run_web('main');
 };
 
 const copy_dlls = async () => {
@@ -137,11 +167,11 @@ const copy_dlls = async () => {
   }
 };
 
-const shaders = async () => {
+const shaders = async (out_type) => {
   // compile shaders for HLSL and GLSL
   await child_spawn(SDHC_PATH, ['-i',
     '../assets/shaders/triangle-sapp.glsl', '-o', '../assets/shaders/triangle-sapp.glsl.h',
-    '-l', 'hlsl5:glsl430']);
+    '-l', out_type]);
 };
 
 const clean = async () => {
@@ -156,7 +186,6 @@ const clean = async () => {
 
 const compile = async (basename) => {
   console.log(`compiling ${basename}...`);
-  const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 
   const unit_files = [];
   for (const u of COMPILER_TRANSLATION_UNITS) {
@@ -176,7 +205,7 @@ const compile = async (basename) => {
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
     ...unit_files.map(unit => rel(workspaceFolder, unit)),
-    '-o', rel(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''} `),
+    '-o', rel(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);
 
   console.log("done compiling.");
@@ -310,6 +339,69 @@ const run = async (basename) => {
   await child_spawn(exePath);
 }
 
+const compile_web = async (basename) => {
+  console.log(`compiling w/ emscripten...`);
+
+  const unit_files = [];
+  let candidates, noncandidates;
+  for (const u of COMPILER_TRANSLATION_UNITS_WEB) {
+    candidates = await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'));
+    nextFile:
+    for (const file of candidates) {
+      for (const nu of COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE) {
+        noncandidates = await glob(path.relative(workspaceFolder, absBuild(nu)).replace(/\\/g, '/'));
+        for (const nonFile of noncandidates) {
+          if (file == nonFile) continue nextFile;
+        }
+      }
+
+      unit_files.push(file);
+    }
+  }
+
+  // compile and link in one step
+  const code = await child_spawn(EMCC_COMPILER_PATH, [
+    ...DEBUG_COMPILER_ARGS,
+    '-gsource-map',
+    // ...C_COMPILER_ARGS,
+    ...C_WEB_COMPILER_FLAGS,
+    // ...C_COMPILER_INCLUDES,
+    //...LINKER_LIBS,
+    //...LINKER_LIB_PATHS,
+    ...unit_files.map(unit => rel(workspaceFolder, unit)),
+    '-o', rel(workspaceFolder, BUILD_PATH, `${basename}.html`),
+  ]);
+
+  // copy static assets
+  const dest = path.join(workspaceFolder, BUILD_PATH);
+  for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY) {
+    for (const src of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+      await fs.copyFile(src, path.join(dest, path.basename(src)));
+    }
+  }
+
+  console.log("done compiling.");
+};
+
+const run_web = async (basename) => {
+  const html = `${basename}.html`;
+  const htmlPath = path.join(workspaceFolder, BUILD_PATH, html);
+
+  try {
+    await fs.stat(htmlPath);
+  } catch (e) {
+    console.log(".html is missing. probably failed to compile.", e);
+    return;
+  }
+
+  await child_spawn(EMRUN_PATH, [
+    '--port', 9090,
+    '--serve-root', path.join(workspaceFolder, BUILD_PATH),
+    html,
+  ]);
+}
+
+
 (async () => {
   const [, , ...cmds] = process.argv;
   loop:
@@ -318,6 +410,9 @@ const run = async (basename) => {
       case 'all':
         all();
         break;
+      case 'web':
+        web();
+        break;
       case 'clean':
         await clean();
         break;
@@ -325,7 +420,8 @@ const run = async (basename) => {
         await copy_dlls();
         break;
       case 'shaders':
-        await shaders();
+        await shaders('hlsl5:glsl430');
+        // await shaders('glsl300es');
         break;
       case 'clang':
         await generate_clangd_compile_commands();
@@ -349,6 +445,7 @@ node build_scripts\\Makefile.mjs < SUBCOMMAND >
 
 SUBCOMMANDS:
   all        Clean, rebuild, and launch the default app.
+  web        Clean, rebuild, and launch the default app in browser.
   clean      Delete all build output.
   copy_dlls  Copy dynamic libraries to build directory.
   shaders    Compile SPIRV shaders with GLSLC.

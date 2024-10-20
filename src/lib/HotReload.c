@@ -5,6 +5,7 @@
 
 #include "Log.h"
 
+
 static void* logic = NULL;
 
 logic_oninit_t logic_oninit;

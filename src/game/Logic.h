@@ -69,12 +69,21 @@ typedef struct Engine__State {
 
 } Engine__State;
 
+#ifdef __EMSCRIPTEN__
+void logic_oninit(Engine__State* state);
+void logic_onpreload(void);
+void logic_onreload(Engine__State* state);
+void logic_onfixedupdate(void);
+void logic_onupdate(void);
+void logic_onshutdown(void);
+#else
 typedef void (*logic_oninit_t)(Engine__State* state);
 typedef void (*logic_onpreload_t)(void);
 typedef void (*logic_onreload_t)(Engine__State* state);
 typedef void (*logic_onfixedupdate_t)(void);
 typedef void (*logic_onupdate_t)(void);
 typedef void (*logic_onshutdown_t)(void);
+#endif
 
 typedef struct WavReader WavReader;
 

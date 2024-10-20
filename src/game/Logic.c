@@ -5,9 +5,14 @@
 #include "../lib/Log.h"
 #include "Game.h"
 #include "common/Arena.h"
-#include "common/Wav.h"
+// #include "common/Wav.h"
 
+#ifdef __EMSCRIPTEN__
+#define LOGIC_DECL
+#else
 #define LOGIC_DECL __declspec(dllexport)
+#endif
+
 Engine__State* g_engine;
 static void stream_cb(float* buffer, int num_frames, int num_channels);
 
@@ -17,7 +22,8 @@ LOGIC_DECL void logic_oninit(Engine__State* state) {
 
   Game__init();
 
-  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 50);  // MB
+  //Arena__Alloc(&g_engine->arena, 1024 * 1024 * 50);  // MB (16mb is max for emscripten + firefox)
+  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 12);  // MB
   g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
 
   g_engine->stream_cb2 = stream_cb;
@@ -35,10 +41,11 @@ LOGIC_DECL void logic_onpreload(void) {
 
   Game__preload();
 
-  logic->wr = Arena__Push(g_engine->arena, sizeof(WavReader));
+  // logic->wr = Arena__Push(g_engine->arena, sizeof(WavReader));
 
   g_engine->saudio_setup(&(saudio_desc){
-      .stream_cb = g_engine->stream_cb1,
+
+      //.stream_cb = g_engine->stream_cb1,
       .logger = {
           .func = g_engine->slog_func,
       }});
@@ -48,7 +55,7 @@ LOGIC_DECL void logic_onpreload(void) {
       g_engine->saudio_sample_rate(),
       g_engine->saudio_channels());
 
-  Wav__Read("../assets/audio/sfx/pickupCoin.wav", logic->wr);
+  // Wav__Read("../assets/audio/sfx/pickupCoin.wav", logic->wr);
 }
 
 LOGIC_DECL void logic_onreload(Engine__State* state) {
@@ -57,7 +64,7 @@ LOGIC_DECL void logic_onreload(Engine__State* state) {
   Logic__State* logic = g_engine->logic;
 
   LOG_DEBUGF("Logic dll loaded state %p at %p", g_engine, &g_engine);
-  logic->wr->offset = 0;  // replay the sfx
+  // logic->wr->offset = 0;  // replay the sfx
 }
 
 // on physics
@@ -84,14 +91,14 @@ static void stream_cb(float* buffer, int num_frames, int num_channels) {
   //   uint32_t factor = (uint32_t)((1.0f - g_engine->logic->red) * 4.0f) + 5.0f;
   //   freq = (1 << factor);
   // }
-  uint8_t samples[logic->wr->bytesPerSample * logic->wr->numChannels];
+  // uint8_t samples[logic->wr->bytesPerSample * logic->wr->numChannels];
   float sampleFloat;
   for (int i = 0; i < num_frames; i++) {
-    Wav__NextSample(logic->wr, samples);
-    sampleFloat = ((int)(samples[0]) - 128) / 128.0f;  // assume 1 channel, 1 byte per sample
-    buffer[i] = sampleFloat;
+    // Wav__NextSample(logic->wr, samples);
+    // sampleFloat = ((int)(samples[0]) - 128) / 128.0f;  // assume 1 channel, 1 byte per sample
+    // buffer[i] = sampleFloat;
     // buffer[i] = (count++ & freq) ? amp : -amp;
-    // buffer[i] = 0;
+    buffer[i] = 0;
     // printf(" %f", buffer[i]);
   }
 }

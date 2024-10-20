@@ -6,12 +6,16 @@
 #include "../vendor/sokol/sokol_log.h"
 #include "../vendor/sokol/sokol_time.h"
 #include "game/Logic.h"
+#ifndef __EMSCRIPTEN__
 #include "lib/HotReload.h"
+#endif
 #include "lib/Log.h"
 
 Engine__State engine;
 
+#ifndef __EMSCRIPTEN__
 static FileMonitor fm = {.directory = "src/game", .fileName = "Logic.c.dll"};
+#endif
 static void init(void);
 static void frame(void);
 static void cleanup(void);
@@ -44,8 +48,14 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_shutdown = sg_shutdown;
   engine.stream_cb1 = stream_cb;
 
+#ifndef __EMSCRIPTEN__
   ASSERT_CONTEXT(load_logic(LOGIC_FILENAME), "Failed to load Logic.dll");
+#endif
   logic_oninit(&engine);
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM({ document.title = UTF8ToString($0); }, engine.window_title);
+#endif
 
   return (sapp_desc){
       .init_cb = init,
@@ -53,6 +63,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
       .cleanup_cb = cleanup,
       .width = engine.window_width,
       .height = engine.window_height,
+      .html5_canvas_resize = true,
       .window_title = engine.window_title,
       .icon.sokol_default = false,
       .logger.func = slog_func,
@@ -62,11 +73,14 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 }
 
 static void init(void) {
+#ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);
+#endif
   logic_onpreload();
 }
 
 static void frame(void) {
+#ifndef __EMSCRIPTEN__
   // check for fs changes
   char path[32] = "src/game/";
   char file[31];
@@ -79,13 +93,16 @@ static void frame(void) {
       logic_onreload(&engine);
     }
   }
+#endif
 
   logic_onupdate();
 }
 
 static void cleanup(void) {
   logic_onshutdown();
+#ifndef __EMSCRIPTEN__
   File__EndMonitor(&fm);
+#endif
 }
 
 static void stream_cb(float* buffer, int num_frames, int num_channels) {
