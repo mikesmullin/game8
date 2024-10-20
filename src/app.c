@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 #define SOKOL_IMPL
 /* this is only needed for the debug-inspection headers */
-#define SOKOL_TRACE_HOOKS
+// #define SOKOL_TRACE_HOOKS
 /* sokol 3D-API defines are provided by build options */
 #include "sokol_app.h"
 #include "sokol_audio.h"
@@ -13,11 +13,6 @@
 #include "sokol_glue.h"
 #include "sokol_log.h"
 #include "sokol_time.h"
-
-// #include "sokol_app.h"
-// #include "sokol_gfx.h"
-// #include "sokol_glue.h"
-// #include "sokol_log.h"
 #include "triangle-sapp.glsl.h"
 
 //
@@ -95,7 +90,7 @@ static void init(void) {
 
 void frame(void) {
   if (NULL != engine.local) {
-    engine.local->now = stm_sec(stm_now());
+    engine.local->now = stm_ms(stm_now());
     logic_onupdate(&engine);
     state.pass_action.colors[0].clear_value.r = engine.local->red;
   }
@@ -137,5 +132,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
       .window_title = "Triangle",
       .icon.sokol_default = false,
       .logger.func = slog_func,
+      .win32_console_utf8 = true,
+      .win32_console_attach = true,
   };
 }

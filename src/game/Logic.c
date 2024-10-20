@@ -31,5 +31,5 @@ __declspec(dllexport) void logic_onfixedupdate(Engine__State_t* state) {
 __declspec(dllexport) void logic_onupdate(Engine__State_t* state) {
   Logic__State_t* logic = state->local;
 
-  logic->red = (sin(logic->now) + 1.0f) * 0.5f;
+  logic->red = (sin(logic->now / 1000.0f) + 1.0f) * 0.5f;
 }
