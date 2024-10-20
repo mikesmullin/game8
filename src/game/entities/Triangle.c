@@ -77,5 +77,4 @@ void Triangle__render() {
   g_engine->sg_apply_bindings(logic->bind);
   g_engine->sg_draw(0, 3, 1);
   g_engine->sg_end_pass();
-  g_engine->sg_commit();
 }

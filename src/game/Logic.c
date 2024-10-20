@@ -69,6 +69,7 @@ LOGIC_DECL void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   Game__render();
+  g_engine->sg_commit();
 }
 
 // the sample callback, running in audio thread
