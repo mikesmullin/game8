@@ -24,16 +24,20 @@ void Triangle__preload() {
   logic->bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
   logic->pass_action = Arena__Push(g_engine->arena, sizeof(sg_pass_action));
 
-  // a vertex buffer with 3 vertices
+  // a vertex buffer of vertices
+  f32 u = 0.5f, z = 0, o = 1.0f;
   float vertices[] = {
-      // positions                             // colors
-      0.0f,  0.5f,  0.5f, /*    */ 1.0f, 0.0f, 0.0f, 1.0f,  //
-      0.5f,  -0.5f, 0.5f, /*    */ 0.0f, 1.0f, 0.0f, 1.0f,  //
-      -0.5f, -0.5f, 0.5f, /* */ 0.0f,    0.0f, 1.0f, 1.0f  //
+      // positions                   // colors
+      -u, u,  z, /*   */ o, o, o, o,  //
+      u,  u,  z, /*   */ o, z, z, o,  //
+      u,  -u, z, /**/ z,    o, z, o,  //
+      -u, u,  z, /*   */ o, o, o, o,  //
+      u,  -u, z, /**/ z,    o, z, o,  //
+      -u, -u, z, /**/ z,    z, o, o,  //
   };
   logic->bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
       .data = SG_RANGE(vertices),  //
-      .label = "triangle-vertices"  //
+      .label = "square-vertices"  //
   });
 
   // create shader from code-generated sg_shader_desc
@@ -51,7 +55,7 @@ void Triangle__preload() {
                       [ATTR_vs_color0].format = SG_VERTEXFORMAT_FLOAT4,  //
                   }  //
           },
-      .label = "triangle-pipeline",
+      .label = "square-pipeline",
   });
 
   // a pass action to clear framebuffer to black
@@ -75,6 +79,6 @@ void Triangle__render() {
       &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
   g_engine->sg_apply_pipeline(*logic->pip);
   g_engine->sg_apply_bindings(logic->bind);
-  g_engine->sg_draw(0, 3, 1);
+  g_engine->sg_draw(0, 6, 1);
   g_engine->sg_end_pass();
 }
