@@ -1,5 +1,7 @@
 #include "Triangle.h"
 
+#include <math.h>
+
 #include "../../../vendor/sokol/sokol_gfx.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
@@ -63,8 +65,8 @@ void Triangle__render() {
   Logic__State* logic = g_engine->logic;
 
   g_engine->logic->now = g_engine->stm_ms(g_engine->stm_now());
-  //f32 s = (sin(logic->now / 1000.0f) + 1.0f) * 0.5f;
-  logic->pass_action->colors[0].clear_value.r = 0.5f;
+  f32 s = (sinf(logic->now / 1000.0f) + 1.0f) * 0.5f;
+  logic->pass_action->colors[0].clear_value.r = s;
 
   g_engine->sg_begin_pass(
       &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
