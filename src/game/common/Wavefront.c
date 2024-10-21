@@ -1,6 +1,5 @@
 #include "Wavefront.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include "../../../vendor/sokol/sokol_fetch.h"

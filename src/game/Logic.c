@@ -81,13 +81,6 @@ LOGIC_DECL void logic_onupdate(void) {
 
   g_engine->sfetch_dowork();
 
-  if (logic->wf->loaded) {
-    logic->wf->loaded = false;
-    char* s = Wavefront__ToString(logic->wf, 1024 * 2);
-    LOG_DEBUGF("%s", s);
-    free(s);
-  }
-
   Game__render();
   g_engine->sg_commit();
 }

@@ -2,15 +2,11 @@
 
 #include "Arena.h"
 
-#ifdef __EMSCRIPTEN__
-#define NULL (0)
-#endif
-
 List* List__alloc(Arena* arena) {
   List* list = Arena__Push(arena, sizeof(List));
   list->len = 0;
-  list->head = NULL;
-  list->tail = NULL;
+  list->head = 0;
+  list->tail = 0;
   return list;
 }
 
@@ -20,14 +16,14 @@ List__Node* List__Node__alloc(Arena* arena) {
 
 void List__Node__init(List__Node* node, void* data) {
   node->data = data;
-  node->next = NULL;
+  node->next = 0;
 }
 
 void List__append(Arena* arena, List* list, void* data) {
   List__Node* node = List__Node__alloc(arena);
   List__Node__init(node, data);
 
-  if (NULL == list->tail) {
+  if (0 == list->tail) {
     list->head = node;
     list->tail = node;
   } else {
@@ -40,12 +36,12 @@ void List__append(Arena* arena, List* list, void* data) {
 void* List__get(List* list, u32 index) {
   List__Node* c = list->head;
   u32 i = 0;
-  while (NULL != c) {
+  while (0 != c) {
     if (i == index) {
       return c->data;
     }
     i++;
     c = c->next;
   }
-  return NULL;
+  return 0;
 }
