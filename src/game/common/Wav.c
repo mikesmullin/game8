@@ -12,6 +12,7 @@
 #define MAX_FILE_SIZE 1024 * 1024 * 1  // 1MB
 extern Engine__State* g_engine;
 
+#pragma pack(push, 1)
 typedef struct RIFFHeader {
   char chunkID[4];  // "RIFF"
   u32 chunkSize;  // File size - 8 bytes
@@ -38,6 +39,7 @@ typedef struct DataChunk {
   char subChunk2ID[4];  // "data"
   u32 subChunk2Size;  // NumSamples * NumChannels * BitsPerSample / 8
 } DataChunk;
+#pragma pack(pop)
 
 static void response_callback(const sfetch_response_t* response);
 

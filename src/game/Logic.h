@@ -109,12 +109,14 @@ typedef void (*logic_onshutdown_t)(void);
 
 typedef struct WavReader WavReader;
 typedef struct Wavefront Wavefront;
+typedef struct BmpReader BmpReader;
 
 typedef struct Logic__State {
   u64 now;
 
   WavReader* wr;
   Wavefront* wf;
+  BmpReader* bmp;
   bool finishedPreload;
 
   sg_pipeline* pip;

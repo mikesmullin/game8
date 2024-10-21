@@ -6,7 +6,9 @@
 #include "../../../vendor/sokol/sokol_gfx.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
+#include "../common/Bmp.h"
 #include "../common/List.h"
+#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Wavefront.h"
 
@@ -18,8 +20,8 @@ extern Engine__State* g_engine;
 static const sg_sampler_desc global_sampler_desc = {
     .wrap_u = SG_WRAP_REPEAT,
     .wrap_v = SG_WRAP_REPEAT,
-    .min_filter = SG_FILTER_LINEAR,
-    .mag_filter = SG_FILTER_LINEAR,
+    .min_filter = SG_FILTER_NEAREST,
+    .mag_filter = SG_FILTER_NEAREST,
     .compare = SG_COMPAREFUNC_NEVER,
 };
 
@@ -33,11 +35,13 @@ void Cube__preload() {
 
   // preload assets
   logic->wf = Wavefront__Read("../assets/models/box.obj");
+  logic->bmp = Bmp__Read("../assets/textures/test.bmp");
 }
 
 static void Cube__finish_preload() {
   Logic__State* logic = g_engine->logic;
   if (!logic->wf->loaded) return;
+  if (!logic->bmp->loaded) return;
   if (logic->finishedPreload) return;
   logic->finishedPreload = true;
 
@@ -109,34 +113,35 @@ static void Cube__finish_preload() {
   sg_image image1 = logic->bind->fs.images[SLOT__texture1];
   sg_image image2 = logic->bind->fs.images[SLOT__texture2];
 
-  u32 w = 8, h = 8;
-  u32 pixels[w * h * 4];
-  for (u32 y = 0; y < h; y++) {
-    f32 yd = ((f32)(y) / h) * 255.0f;
-    for (u32 x = 0; x < w; x++) {
-      f32 xd = ((f32)(x) / w) * 255.0f;
-      pixels[x + y * w] = 0xff000000 | (u8)yd << 8 | (u8)xd;
+  u32 pixels[logic->bmp->w * logic->bmp->h * 4];  // ABGR
+  u32 ii = 0;
+  for (u32 y = logic->bmp->h - 1; y != (u32)-1; y--) {  // flip-h; GL texture is stored flipped
+    // for (u32 y = 0; y < logic->bmp->h; y++) {
+    for (u32 x = 0; x < logic->bmp->w; x++) {
+      u32 color = Bmp__Get2DPixel(logic->bmp, x, y, 0xffff00ff);
+      pixels[ii++] = color;
+      LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
     }
   }
   g_engine->sg_init_image(
       image1,
       &(sg_image_desc){
-          .width = w,
-          .height = h,
+          .width = logic->bmp->w,
+          .height = logic->bmp->h,
           .pixel_format = SG_PIXELFORMAT_RGBA8,
           .data.subimage[0][0] = {
               .ptr = pixels,
-              .size = w * h * 4,
+              .size = logic->bmp->w * logic->bmp->h * 4,
           }});
   g_engine->sg_init_image(
       image2,
       &(sg_image_desc){
-          .width = w,
-          .height = h,
+          .width = logic->bmp->w,
+          .height = logic->bmp->h,
           .pixel_format = SG_PIXELFORMAT_RGBA8,
           .data.subimage[0][0] = {
               .ptr = pixels,
-              .size = w * h * 4,
+              .size = logic->bmp->w * logic->bmp->h * 4,
           }});
 }
 

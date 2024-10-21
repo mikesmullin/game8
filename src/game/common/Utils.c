@@ -12,6 +12,7 @@
 extern Engine__State* g_engine;
 
 u64 mindexOf(u8* src, char byte, s64 smaxlen) {
+  if (smaxlen < 1) return 0;  // not possible to find
   u8* start = src;
   u8* end = src + smaxlen;
   while (src < end) {
@@ -25,7 +26,7 @@ u64 mindexOf(u8* src, char byte, s64 smaxlen) {
 
 u64 mread(void* dst, s64 readlen, u8** srcCursor, s64 smaxlen) {
   // validate
-  u64 r = Math__min(readlen, smaxlen);
+  s64 r = Math__min(readlen, smaxlen);
   if (r < 1 || NULL == srcCursor) return 0;
 
   // copy requested bytes up to maxlen
