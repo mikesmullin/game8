@@ -15,5 +15,5 @@ typedef struct WavReader {
   u32 offset;
 } WavReader;
 
-void Wav__Read(const char* filePath, WavReader* r);
+WavReader* Wav__Read(const char* filePath);
 void Wav__NextSample(WavReader* r, u8* buffer);

@@ -9,6 +9,7 @@ typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
 typedef int32_t s32;
+typedef int64_t s64;
 typedef float f32;
 typedef double f64;
 
@@ -95,11 +96,13 @@ typedef void (*logic_onshutdown_t)(void);
 #endif
 
 typedef struct WavReader WavReader;
+typedef struct Wavefront Wavefront;
 
 typedef struct Logic__State {
   u64 now;
 
   WavReader* wr;
+  Wavefront* wf;
 
   sg_pipeline* pip;
   sg_bindings* bind;

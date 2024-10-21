@@ -5,9 +5,9 @@
 
 #include "../../../vendor/sokol/sokol_fetch.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
+#include "Arena.h"
+#include "Log.h"
+#include "Utils.h"
 
 #define MAX_FILE_SIZE 1024 * 1024 * 1  // 1MB
 extern Engine__State* g_engine;
@@ -41,7 +41,8 @@ typedef struct DataChunk {
 
 static void response_callback(const sfetch_response_t* response);
 
-void Wav__Read(const char* filePath, WavReader* r) {
+WavReader* Wav__Read(const char* filePath) {
+  WavReader* r = Arena__Push(g_engine->arena, sizeof(WavReader));
   u8* buf = malloc(sizeof(u8[MAX_FILE_SIZE]));
 
   g_engine->sfetch_send(&(sfetch_request_t){
@@ -49,13 +50,8 @@ void Wav__Read(const char* filePath, WavReader* r) {
       .user_data = {.ptr = &r, .size = sizeof(size_t)},
       .callback = response_callback,
       .buffer = {.ptr = buf, .size = sizeof(u8[MAX_FILE_SIZE])}});
-}
 
-static void memread(void* dst, u64 readlen, u8** srcCursor, u64 smaxlen) {
-  // copy requested bytes up to maxlen
-  memcpy(dst, *srcCursor, Math__min(readlen, smaxlen));
-  // advance pointer similar to fread()
-  (*srcCursor) += readlen;
+  return r;
 }
 
 static void response_callback(const sfetch_response_t* response) {
@@ -66,7 +62,7 @@ static void response_callback(const sfetch_response_t* response) {
 
     // Read RIFF header
     RIFFHeader riff;
-    memread(&riff, sizeof(RIFFHeader), &ptr, end - ptr);
+    mread(&riff, sizeof(RIFFHeader), &ptr, end - ptr);
 
     ASSERT_CONTEXT(
         strncmp(riff.chunkID, "RIFF", 4) == 0 &&  //
@@ -80,7 +76,7 @@ static void response_callback(const sfetch_response_t* response) {
 
     // Read Format Chunk
     FormatChunk fmt;
-    memread(&fmt, sizeof(FormatChunk), &ptr, end - ptr);
+    mread(&fmt, sizeof(FormatChunk), &ptr, end - ptr);
     ASSERT_CONTEXT(
         strncmp(fmt.subChunk1ID, "fmt ", 4) == 0,  //
         "Invalid WAV format. file: %s,"
@@ -103,7 +99,7 @@ static void response_callback(const sfetch_response_t* response) {
 
     // Read Data Chunk
     DataChunk data;
-    memread(&data, sizeof(DataChunk), &ptr, end - ptr);
+    mread(&data, sizeof(DataChunk), &ptr, end - ptr);
     ASSERT_CONTEXT(
         strncmp(data.subChunk2ID, "data", 4) == 0,  //
         "Invalid WAV format. file: %s,"
@@ -122,7 +118,7 @@ static void response_callback(const sfetch_response_t* response) {
     r->numChannels = fmt.numChannels;
     r->totalSamples = data.subChunk2Size / (r->numChannels * (r->bitsPerSample / 8));
     r->data = Arena__Push(g_engine->arena, data.subChunk2Size);
-    memread(r->data, data.subChunk2Size, &ptr, end - ptr);
+    mread(r->data, data.subChunk2Size, &ptr, end - ptr);
     r->loaded = true;
   }
   if (response->finished) {

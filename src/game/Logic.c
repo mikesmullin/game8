@@ -9,6 +9,7 @@
 #include "common/Arena.h"
 #include "common/Log.h"
 #include "common/Wav.h"
+#include "common/Wavefront.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
@@ -46,8 +47,6 @@ LOGIC_DECL void logic_onpreload(void) {
 
   Game__preload();
 
-  logic->wr = Arena__Push(g_engine->arena, sizeof(WavReader));
-
   g_engine->saudio_setup(&(saudio_desc){
       .stream_cb = g_engine->stream_cb1,
       .logger = {
@@ -59,7 +58,8 @@ LOGIC_DECL void logic_onpreload(void) {
   //     g_engine->saudio_sample_rate(),
   //     g_engine->saudio_channels());
 
-  Wav__Read("../assets/audio/sfx/pickupCoin.wav", logic->wr);
+  logic->wr = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
+  logic->wf = Wavefront__Read("../assets/models/box.obj");
 }
 
 LOGIC_DECL void logic_onreload(Engine__State* state) {
@@ -80,6 +80,13 @@ LOGIC_DECL void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   g_engine->sfetch_dowork();
+
+  if (logic->wf->loaded) {
+    logic->wf->loaded = false;
+    char* s = Wavefront__ToString(logic->wf, 1024 * 2);
+    LOG_DEBUGF("%s", s);
+    free(s);
+  }
 
   Game__render();
   g_engine->sg_commit();
