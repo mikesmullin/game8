@@ -5,7 +5,6 @@
 
 #include "Log.h"
 
-
 static void* logic = NULL;
 
 logic_oninit_t logic_oninit;
@@ -21,7 +20,7 @@ int load_logic(const char* file) {
       return 0;
     }
   }
-  LOG_DEBUGF("load lib %s", file);
+  // LOG_DEBUGF("load lib %s", file);
   logic = LoadLibrary(file);
   if (!logic) {
     // Retrieve the error code
@@ -136,7 +135,7 @@ int File__StartMonitor(FileMonitor* fm) {
     return 1;  // error
   }
 
-  LOG_DEBUGF("Monitoring for changes. directory: %s, file: %s", fm->directory, fm->fileName);
+  // LOG_DEBUGF("Monitoring for changes. directory: %s, file: %s", fm->directory, fm->fileName);
 
   return 0;
 }
@@ -201,7 +200,7 @@ int File__CheckMonitor(FileMonitor* fm, char* file) {
     return 1;
   }
 
-  return r;  // no matching changes
+  return r;
 }
 
 int File__EndMonitor(const FileMonitor* fm) {

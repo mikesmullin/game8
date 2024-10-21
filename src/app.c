@@ -1,11 +1,13 @@
 #define SOKOL_IMPL
 #include "../vendor/sokol/sokol_app.h"
 #include "../vendor/sokol/sokol_audio.h"
+#include "../vendor/sokol/sokol_fetch.h"
 #include "../vendor/sokol/sokol_gfx.h"
 #include "../vendor/sokol/sokol_glue.h"
 #include "../vendor/sokol/sokol_log.h"
 #include "../vendor/sokol/sokol_time.h"
 #include "game/Logic.h"
+
 #ifndef __EMSCRIPTEN__
 #include "lib/HotReload.h"
 #endif
@@ -47,6 +49,11 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_commit = sg_commit;
   engine.sg_shutdown = sg_shutdown;
   engine.stream_cb1 = stream_cb;
+  engine.sfetch_setup = sfetch_setup;
+  engine.sfetch_dowork = sfetch_dowork;
+  engine.sfetch_shutdown = sfetch_shutdown;
+  engine.sfetch_send = sfetch_send;
+  engine.log = logit;
 
 #ifndef __EMSCRIPTEN__
   ASSERT_CONTEXT(load_logic(LOGIC_FILENAME), "Failed to load Logic.dll");
@@ -56,6 +63,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 #ifdef __EMSCRIPTEN__
   EM_ASM({ document.title = UTF8ToString($0); }, engine.window_title);
 #endif
+
+  // NOTICE: You can't log here--it's too early. The window + console aren't initialized, yet.
 
   return (sapp_desc){
       .init_cb = init,
@@ -73,6 +82,12 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 }
 
 static void init(void) {
+  // stm_setup();
+  // u64 started_at = stm_now();
+  // while (stm_ms(stm_diff(stm_now(), started_at)) < 5000) {
+  //   // allow time to attach debugger
+  // }
+
 #ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);
 #endif
@@ -85,9 +100,10 @@ static void frame(void) {
   char path[32] = "src/game/";
   char file[31];
   if (2 == File__CheckMonitor(&fm, file)) {
-    LOG_DEBUGF("saw file %s", file);
     strcat_s(path, 32, file);
-    LOG_DEBUGF("path %s", path);
+    while (2 == File__CheckMonitor(&fm, file)) {
+      // flush all pending events
+    }
     engine.stream_cb2 = NULL;
     if (load_logic(path)) {
       logic_onreload(&engine);

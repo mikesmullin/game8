@@ -2,7 +2,10 @@
 
 #include <stdlib.h>
 
-#include "../../lib/Log.h"
+#include "../Logic.h"
+#include "Log.h"
+
+extern Engine__State* g_engine;
 
 void Arena__Alloc(Arena** a, u64 sz) {
   *a = malloc(sizeof(Arena));

@@ -8,6 +8,7 @@ typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
 typedef uint64_t u64;
+typedef int32_t s32;
 typedef float f32;
 typedef double f64;
 
@@ -28,6 +29,9 @@ typedef struct sg_pipeline sg_pipeline;
 typedef struct sg_desc sg_desc;
 typedef struct sg_bindings sg_bindings;
 typedef struct sg_pass_action sg_pass_action;
+typedef struct sfetch_desc_t sfetch_desc_t;
+typedef struct sfetch_handle_t sfetch_handle_t;
+typedef struct sfetch_request_t sfetch_request_t;
 
 typedef struct Engine__State {
   char* window_title;
@@ -66,6 +70,11 @@ typedef struct Engine__State {
   void (*sg_commit)(void);
   void (*sg_shutdown)(void);
   void (*saudio_shutdown)(void);
+  void (*sfetch_setup)(const sfetch_desc_t* desc);
+  void (*sfetch_dowork)(void);
+  void (*sfetch_shutdown)(void);
+  sfetch_handle_t (*sfetch_send)(const sfetch_request_t* request);
+  void (*log)(const char* line, ...);
 
 } Engine__State;
 

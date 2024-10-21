@@ -66,10 +66,12 @@ const COMPILER_TRANSLATION_UNITS_WEB = [
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
   rel(workspaceFolder, 'src', 'lib', 'HotReload.c'),
-  rel(workspaceFolder, 'src', 'game', 'common', 'Wav.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   rel(workspaceFolder, 'assets', 'web', '*'),
+];
+const COMPILER_TRANSLATION_UNITS_WEB_COPY2 = [
+  rel(workspaceFolder, 'assets', 'audio', '**', '*.wav'),
 ];
 
 const nixPath = (p) =>
@@ -108,7 +110,7 @@ const generate_clangd_compile_commands = async () => {
 const child_spawn = async (cmd, args = [], opts = {}) => {
   const cwd = path.relative(process.cwd(), path.join(workspaceFolder, BUILD_PATH));
   // console.log(`cd ${cwd}`);
-  console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
+  // console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
   let stdin, stdout;
   const stdio = ['inherit', 'inherit', 'inherit'];
   if (opts.stdin) {
@@ -377,6 +379,15 @@ const compile_web = async (basename) => {
   for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY) {
     for (const src of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
       await fs.copyFile(src, path.join(dest, path.basename(src)));
+    }
+  }
+  for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY2) {
+    for (const src of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+      const reldir = path.relative(process.cwd(), absBuild(path.dirname(src)));
+      const dir = path.join(workspaceFolder, reldir);
+      await fs.mkdir(dir, { recursive: true });
+      const target = path.join(dir, path.basename(src));
+      await fs.copyFile(src, target);
     }
   }
 
