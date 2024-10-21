@@ -70,9 +70,6 @@ const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   rel(workspaceFolder, 'assets', 'web', '*'),
 ];
-const COMPILER_TRANSLATION_UNITS_WEB_COPY2 = [
-  rel(workspaceFolder, 'assets', 'audio', '**', '*.wav'),
-];
 
 const nixPath = (p) =>
   path.posix.normalize(p.replace(/\\/g, '/'));
@@ -381,15 +378,6 @@ const compile_web = async (basename) => {
       await fs.copyFile(src, path.join(dest, path.basename(src)));
     }
   }
-  for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY2) {
-    for (const src of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
-      const reldir = path.relative(process.cwd(), absBuild(path.dirname(src)));
-      const dir = path.join(workspaceFolder, reldir);
-      await fs.mkdir(dir, { recursive: true });
-      const target = path.join(dir, path.basename(src));
-      await fs.copyFile(src, target);
-    }
-  }
 
   console.log("done compiling.");
 };
@@ -405,13 +393,13 @@ const run_web = async (basename) => {
     return;
   }
 
+  const serve_root = path.relative(path.join(workspaceFolder, BUILD_PATH), process.cwd());
   await child_spawn(EMRUN_PATH, [
     '--port', 9090,
-    '--serve-root', path.join(workspaceFolder, BUILD_PATH),
+    '--serve-root', serve_root,
     html,
   ]);
 }
-
 
 (async () => {
   const [, , ...cmds] = process.argv;
