@@ -7,6 +7,7 @@
 #include "../Logic.h"
 #include "../common/Arena.h"
 #include "../common/Bmp.h"
+#include "../common/Color.h"
 #include "../common/List.h"
 #include "../common/Log.h"
 #include "../common/Math.h"
@@ -35,7 +36,7 @@ void Cube__preload() {
 
   // preload assets
   logic->wf = Wavefront__Read("../assets/models/box.obj");
-  logic->bmp = Bmp__Read("../assets/textures/test.bmp");
+  logic->bmp = Bmp__Read("../assets/textures/atlas.bmp");
 }
 
 static void Cube__finish_preload() {
@@ -113,12 +114,13 @@ static void Cube__finish_preload() {
   sg_image image1 = logic->bind->fs.images[SLOT__texture1];
   sg_image image2 = logic->bind->fs.images[SLOT__texture2];
 
-  u32 pixels[logic->bmp->w * logic->bmp->h * 4];  // ABGR
+  u32 tx = 5, ty = 0, ts = 8;
+  u32 pixels[ts * ts * 4];  // ABGR
   u32 ii = 0;
-  for (u32 y = logic->bmp->h - 1; y != (u32)-1; y--) {  // flip-h; GL texture is stored flipped
-    // for (u32 y = 0; y < logic->bmp->h; y++) {
-    for (u32 x = 0; x < logic->bmp->w; x++) {
-      u32 color = Bmp__Get2DPixel(logic->bmp, x, y, 0xffff00ff);
+  for (u32 y = ts - 1; y != (u32)-1; y--) {  // flip-h; GL texture is stored flipped
+    for (u32 x = 0; x < ts; x++) {
+      u32 color = Bmp__Get2DTiledPixel(logic->bmp, x, y, ts, tx, ty, PINK);
+      color = alpha_blend(color, 0x66ff0000);  // tint
       pixels[ii++] = color;
       LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
     }
@@ -126,22 +128,22 @@ static void Cube__finish_preload() {
   g_engine->sg_init_image(
       image1,
       &(sg_image_desc){
-          .width = logic->bmp->w,
-          .height = logic->bmp->h,
+          .width = ts,
+          .height = ts,
           .pixel_format = SG_PIXELFORMAT_RGBA8,
           .data.subimage[0][0] = {
               .ptr = pixels,
-              .size = logic->bmp->w * logic->bmp->h * 4,
+              .size = ts * ts * 4,
           }});
   g_engine->sg_init_image(
       image2,
       &(sg_image_desc){
-          .width = logic->bmp->w,
-          .height = logic->bmp->h,
+          .width = ts,
+          .height = ts,
           .pixel_format = SG_PIXELFORMAT_RGBA8,
           .data.subimage[0][0] = {
               .ptr = pixels,
-              .size = logic->bmp->w * logic->bmp->h * 4,
+              .size = ts * ts * 4,
           }});
 }
 

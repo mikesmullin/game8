@@ -121,6 +121,24 @@ u32 Bmp__Get2DPixel(BmpReader* bmp, u32 x, u32 y, u32 def) {
   return def;
 }
 
+/**
+ * Get a pixel from an atlas of tiled artwork.
+ *
+ * @param bmp Source bitmap
+ * @param x x coordinate within tile (overflow will wrap/repeat)
+ * @param y y coordinate within tile (overflow will wrap/repeat)
+ * @param ts tile size (assumed square dimensions)
+ * @param tx tile index (x)
+ * @param ty tile index (y)
+ * @param def default/error color, if bitmap can't be read
+ * @return u32 pixel color
+ */
+u32 Bmp__Get2DTiledPixel(BmpReader* bmp, u32 x, u32 y, u32 ts, u32 tx, u32 ty, u32 def) {
+  u32 xt = ((u32)x & (ts - 1)) + (ts * tx);
+  u32 yt = ((u32)y & (ts - 1)) + (ts * ty);
+  return Bmp__Get2DPixel(bmp, xt, yt, def);
+}
+
 char* Bmp__ToString(BmpReader* bmp, u32 sz) {
   char* out = malloc(sizeof(char) * sz);
   char* p = out;
