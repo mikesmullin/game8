@@ -1,6 +1,7 @@
 #include "Game.h"
 
 #include "Logic.h"
+#include "entities/Cube.h"
 #include "entities/Triangle.h"
 
 extern Engine__State* g_engine;
@@ -13,9 +14,11 @@ void Game__init() {
 }
 
 void Game__preload() {
-  Triangle__preload();
+  // Triangle__preload();
+  Cube__preload();
 }
 
 void Game__render() {
-  Triangle__render();
+  // Triangle__render();
+  Cube__render();
 }

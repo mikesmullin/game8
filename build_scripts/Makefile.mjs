@@ -107,7 +107,7 @@ const generate_clangd_compile_commands = async () => {
 const child_spawn = async (cmd, args = [], opts = {}) => {
   const cwd = path.relative(process.cwd(), path.join(workspaceFolder, BUILD_PATH));
   // console.log(`cd ${cwd}`);
-  // console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
+  console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
   let stdin, stdout;
   const stdio = ['inherit', 'inherit', 'inherit'];
   if (opts.stdin) {
@@ -167,17 +167,21 @@ const copy_dlls = async () => {
 };
 
 const shaders = async (out_type) => {
-  // compile shaders for HLSL and GLSL
-  await child_spawn(SDHC_PATH, ['-i',
-    '../assets/shaders/triangle-sapp.glsl', '-o', '../assets/shaders/triangle-sapp.glsl.h',
-    '-l', out_type]);
+  const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
+  for (const shaderFile of shaderFiles) {
+    const relPath = path.relative(path.join(workspaceFolder, BUILD_PATH), shaderFile);
+    await child_spawn(SDHC_PATH, ['-i',
+      relPath, '-o', `${relPath}.h`,
+      '-l', out_type]);
+  }
+
 };
 
 const clean = async () => {
   await fs.rm(path.join(workspaceFolder, BUILD_PATH), { recursive: true, force: true });
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH));
 
-  const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.spv').replace(/\\/g, '/'));
+  const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl.h').replace(/\\/g, '/'));
   for (const shaderFile of shaderFiles) {
     await fs.rm(shaderFile, { force: true });
   }

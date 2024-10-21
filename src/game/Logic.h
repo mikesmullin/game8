@@ -33,6 +33,12 @@ typedef struct sg_pass_action sg_pass_action;
 typedef struct sfetch_desc_t sfetch_desc_t;
 typedef struct sfetch_handle_t sfetch_handle_t;
 typedef struct sfetch_request_t sfetch_request_t;
+typedef struct sg_image sg_image;
+typedef struct sg_sampler sg_sampler;
+typedef struct sg_sampler_desc sg_sampler_desc;
+typedef enum sg_shader_stage sg_shader_stage;
+typedef struct sg_range sg_range;
+typedef struct sg_image_desc sg_image_desc;
 
 typedef struct Engine__State {
   char* window_title;
@@ -42,6 +48,7 @@ typedef struct Engine__State {
   void (*stream_cb1)(float* buffer, int num_frames, int num_channels);
   void (*stream_cb2)(float* buffer, int num_frames, int num_channels);
 
+  void (*log)(const char* line, ...);
   void (*stm_setup)(void);
   void (*sg_setup)(const sg_desc* desc);
   sg_environment (*sglue_environment)(void);
@@ -61,8 +68,9 @@ typedef struct Engine__State {
   void (*saudio_setup)(const saudio_desc* desc);
   int (*saudio_sample_rate)(void);
   int (*saudio_channels)(void);
-  double (*stm_ms)(uint64_t ticks);
   uint64_t (*stm_now)(void);
+  double (*stm_ms)(uint64_t ticks);
+  double (*stm_sec)(uint64_t ticks);
   void (*sg_begin_pass)(const sg_pass* pass);
   void (*sg_apply_pipeline)(sg_pipeline pip);
   void (*sg_apply_bindings)(const sg_bindings* bindings);
@@ -75,7 +83,11 @@ typedef struct Engine__State {
   void (*sfetch_dowork)(void);
   void (*sfetch_shutdown)(void);
   sfetch_handle_t (*sfetch_send)(const sfetch_request_t* request);
-  void (*log)(const char* line, ...);
+  sg_image (*sg_alloc_image)(void);
+  sg_sampler (*sg_alloc_sampler)(void);
+  void (*sg_init_sampler)(sg_sampler smp_id, const sg_sampler_desc* desc);
+  void (*sg_apply_uniforms)(sg_shader_stage stage, int ub_index, const sg_range* data);
+  void (*sg_init_image)(sg_image img_id, const sg_image_desc* desc);
 
 } Engine__State;
 
@@ -103,6 +115,7 @@ typedef struct Logic__State {
 
   WavReader* wr;
   Wavefront* wf;
+  bool finishedPreload;
 
   sg_pipeline* pip;
   sg_bindings* bind;

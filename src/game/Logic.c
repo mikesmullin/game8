@@ -1,7 +1,5 @@
 #include "Logic.h"
 
-#include <stdio.h>
-
 #include "../../vendor/sokol/sokol_audio.h"
 #include "../../vendor/sokol/sokol_fetch.h"
 #include "../../vendor/sokol/sokol_gfx.h"
@@ -9,7 +7,6 @@
 #include "common/Arena.h"
 #include "common/Log.h"
 #include "common/Wav.h"
-#include "common/Wavefront.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
@@ -36,30 +33,35 @@ LOGIC_DECL void logic_oninit(Engine__State* state) {
 LOGIC_DECL void logic_onpreload(void) {
   Logic__State* logic = g_engine->logic;
 
+  // sokol_time.h
   g_engine->stm_setup();
 
-  g_engine->sfetch_setup(&(sfetch_desc_t){.logger.func = g_engine->slog_func});
+  // sokol_fetch.h
+  g_engine->sfetch_setup(&(sfetch_desc_t){
+      .logger.func = g_engine->slog_func,
+  });
 
+  // sokol_gfx.h
   g_engine->sg_setup(&(sg_desc){
       .environment = g_engine->sglue_environment(),  //
       .logger.func = g_engine->slog_func,  //
   });
 
-  Game__preload();
-
+  // sokol_audio.h
   g_engine->saudio_setup(&(saudio_desc){
       .stream_cb = g_engine->stream_cb1,
       .logger = {
           .func = g_engine->slog_func,
       }});
-
   // LOG_DEBUGF(
   //     "audio system init. sample_rate: %u, channels: %u",
   //     g_engine->saudio_sample_rate(),
   //     g_engine->saudio_channels());
 
+  // preload assets
   logic->wr = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
-  logic->wf = Wavefront__Read("../assets/models/box.obj");
+
+  Game__preload();
 }
 
 LOGIC_DECL void logic_onreload(Engine__State* state) {

@@ -27,6 +27,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   (void)argc;
   (void)argv;
 
+  engine.log = logit;
   engine.stm_setup = stm_setup;
   engine.sg_setup = sg_setup;
   engine.sglue_environment = sglue_environment;
@@ -39,8 +40,10 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.saudio_setup = saudio_setup;
   engine.saudio_sample_rate = saudio_sample_rate;
   engine.saudio_channels = saudio_channels;
-  engine.stm_ms = stm_ms;
   engine.stm_now = stm_now;
+  engine.stm_sec = stm_sec;
+  engine.stm_ms = stm_ms;
+  engine.stm_sec = stm_sec;
   engine.sg_begin_pass = sg_begin_pass;
   engine.sg_apply_pipeline = sg_apply_pipeline;
   engine.sg_apply_bindings = sg_apply_bindings;
@@ -53,7 +56,11 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sfetch_dowork = sfetch_dowork;
   engine.sfetch_shutdown = sfetch_shutdown;
   engine.sfetch_send = sfetch_send;
-  engine.log = logit;
+  engine.sg_alloc_image = sg_alloc_image;
+  engine.sg_alloc_sampler = sg_alloc_sampler;
+  engine.sg_init_sampler = sg_init_sampler;
+  engine.sg_apply_uniforms = sg_apply_uniforms;
+  engine.sg_init_image = sg_init_image;
 
 #ifndef __EMSCRIPTEN__
   ASSERT_CONTEXT(load_logic(LOGIC_FILENAME), "Failed to load Logic.dll");
