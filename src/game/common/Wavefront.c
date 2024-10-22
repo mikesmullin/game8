@@ -7,7 +7,6 @@
 #include "Arena.h"
 #include "List.h"
 #include "Log.h"
-#include "Math.h"
 #include "Utils.h"
 
 #define MAX_FILE_SIZE 1024 * 1024 * 1  // 1MB

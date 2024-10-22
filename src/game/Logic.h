@@ -1,8 +1,9 @@
 #pragma once
 
+// General ----------------------------------------------
+
 #include <stdbool.h>
 #include <stdint.h>
-
 typedef int8_t s8;
 typedef uint8_t u8;
 typedef uint16_t u16;
@@ -12,6 +13,24 @@ typedef int32_t s32;
 typedef int64_t s64;
 typedef float f32;
 typedef double f64;
+
+typedef struct v2 {
+  f32 x, y;
+} v2;
+
+typedef struct v3 {
+  f32 x, y, z;
+} v3;
+
+typedef struct v4 {
+  f32 x, y, z, w;
+} v4;
+
+typedef struct m4 {
+  v4 a, b, c, d;
+} m4;
+
+// Engine ----------------------------------------------
 
 typedef struct Arena Arena;
 typedef struct Logic__State Logic__State;
@@ -107,19 +126,227 @@ typedef void (*logic_onupdate_t)(void);
 typedef void (*logic_onshutdown_t)(void);
 #endif
 
+typedef struct QuadTreeNode QuadTreeNode;
 typedef struct WavReader WavReader;
 typedef struct Wavefront Wavefront;
 typedef struct BmpReader BmpReader;
+typedef struct List List;
+typedef struct Entity Entity;
+typedef enum DispatchFnId DispatchFnId;
+typedef struct KbInputState KbInputState;
+typedef struct PointerInputState PointerInputState;
 
-typedef struct Logic__State {
-  u64 now;
+// Components ----------------------------------------------
 
-  WavReader* wr;
-  Wavefront* wf;
-  BmpReader* bmp;
-  bool finishedPreload;
+#define MAX_LISTENERS 10
+
+typedef enum EventType {
+  EVENT_NONE,
+  EVENT_HELLO,
+  EVENT_GOODBYE,
+  EVENT_DEATH,
+  EVENT_ATTACKED,
+  EVENT_ANIMOVER,
+} EventType;
+
+typedef enum ListenerFnId {
+  BLOCK__HELLO,
+  ENTITY__HELLO,
+  CAT_ENTITY__GOODBYE,
+  LISTENER_FN_COUNT
+} ListenerFnId;
+
+typedef struct EventEmitter {
+  EventType event[MAX_LISTENERS];
+  ListenerFnId listeners[MAX_LISTENERS];
+  int count;
+} EventEmitter;
+
+typedef struct EngineComponent {
+  DispatchFnId tick;
+  DispatchFnId render;
+  DispatchFnId gui;
+} EngineComponent;
+
+typedef struct TransformComponent {
+  v3 pos;  // (x, y, z)
+  v3 rot;  // (yaw, pitch, roll)
+} TransformComponent;
+
+typedef enum ColliderType {
+  BOX_COLLIDER_2D,
+  CIRCLE_COLLIDER_2D,
+} ColliderType;
+
+typedef struct OnCollideClosure_t {
+  Entity *source, *target;
+  f32 x, y;
+  bool before, after;
+  bool noclip;
+} OnCollideParams;
+
+typedef struct ColliderComponent {
+  ColliderType type;
+  DispatchFnId collide;
+} ColliderComponent;
+
+typedef struct BoxCollider2DComponent {
+  ColliderComponent base;
+  //f32 x, y; // origin
+  f32 hw, hh;  // half width/height (radius)
+} BoxCollider2DComponent;
+
+typedef struct CircleCollider2DComponent {
+  ColliderComponent base;
+  //f32 x, y; // origin
+  f32 r;  // radius
+} CircleCollider2DComponent;
+
+typedef struct Rigidbody2DComponent {
+  f32 xa, za;  // movement deltas (pre-collision)
+} Rigidbody2DComponent;
+
+typedef enum RendererType {
+  SPRITE_RENDERER,
+  MESH_RENDERER,
+} RendererType;
+
+#define ATLAS_SPRITE_SZ (8)
+
+typedef struct RendererComponent {
+  RendererType type;
+  Wavefront* mesh;
+  BmpReader* texture;
+  u32 tx, ty, ts;
+  bool useMask;
+  u32 mask, color;
+  bool loaded;
 
   sg_pipeline* pip;
   sg_bindings* bind;
+} RendererComponent;
+
+// Entities ----------------------------------------------
+
+typedef enum EntityTags1 : u64 {
+  TAG_NONE = 0,
+  TAG_LOADED = 1 << 1,
+  TAG_WALL = 1 << 2,
+  TAG_CAT = 1 << 3,
+  TAG_BRICK = 1 << 4,
+  TAG_BROKEN = 1 << 5,
+} EntityTags1;
+
+typedef struct Entity {
+  u32 id;
+  u64 tags1;
+  EngineComponent* engine;
+  TransformComponent* tform;
+  // EventEmitterComponent* event;
+  ColliderComponent* collider;
+  Rigidbody2DComponent* rb;
+  RendererComponent* render;
+  // HealthComponent* health;
+  // // TODO: if we don't need to iterate, these can be moved within subclass
+  // AudioSourceComponent* audio;
+  // AudioListenerComponent* hear;
+  EventEmitter* events;
+} Entity;
+
+enum MODELS {
+  MODEL_BOX = 0,  // models/box.obj
+};
+
+typedef struct Camera {
+  f32 fov;  // field of view
+  f32 nearZ;  // near plane
+  f32 farZ;  // far plane
+} Camera;
+
+typedef struct VirtualJoystick {
+  f32 xAxis, yAxis, zAxis;
+} VirtualJoystick;
+
+typedef struct Player {
+  Entity base;
+  Camera camera;
+  VirtualJoystick input;
+  f32 bobPhase;
+} Player;
+
+typedef struct Block {
+  Entity base;
+  enum MODELS meshId;
+  bool masked;
+} Block;
+
+typedef struct WallBlock {
+  Block base;
+} WallBlock;
+
+// typedef struct BreakBlock {
+//   Block base;
+//   RubbleSprite* sprites[32];
+//   StateGraph* sg;
+// } BreakBlock;
+
+typedef struct SpawnBlock {
+  Block base;
+  bool firstTick;
+} SpawnBlock;
+
+// Game ----------------------------------------------
+
+typedef struct Level {
+  BmpReader* bmp;
+  char* levelFile;
+  bool skybox;
+  BmpReader* world;
+  char* worldFile;
+  bool loaded;
+  List* entities;
+  u32 wallTex;
+  u32 ceilTex;
+  u32 floorTex;
+  u32 wallCol;
+  u32 ceilCol;
+  u32 floorCol;
+  u32 width;
+  u32 depth;
+  u32 height;
+  SpawnBlock* spawner;
+  Arena* qtArena;
+  QuadTreeNode* qt;
+} Level;
+
+typedef struct PreloadedAudio {
+  WavReader *pickupCoin, *powerUp;
+} PreloadedAudio;
+
+typedef struct PreloadedModels {
+  Wavefront* box;
+} PreloadedModels;
+
+typedef struct PreloadedTextures {
+  BmpReader *atlas, *glyphs0;
+} PreloadedTextures;
+
+typedef struct Logic__State {
+  // Menu* menu;
+  Level* level;
+  Player* player;
+  u32 lastUid;
+  PreloadedAudio audio;
+  PreloadedModels models;
+  PreloadedTextures textures;
+  WavReader* aSrc;  // current audio source
+
+  bool mouseCaptured;
+  KbInputState* kbState;
+  PointerInputState* mState;
+
   sg_pass_action* pass_action;
+
 } Logic__State;
+
+#undef MAX_LISTENERS

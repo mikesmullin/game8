@@ -89,11 +89,13 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 }
 
 static void init(void) {
-  // stm_setup();
-  // u64 started_at = stm_now();
-  // while (stm_ms(stm_diff(stm_now(), started_at)) < 4000) {
-  //   // allow time to attach debugger
-  // }
+  if (false) {
+    stm_setup();
+    u64 started_at = stm_now();
+    while (stm_ms(stm_diff(stm_now(), started_at)) < 4000) {
+      // allow time to attach debugger
+    }
+  }
 
 #ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);

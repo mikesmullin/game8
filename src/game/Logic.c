@@ -1,12 +1,11 @@
 #include "Logic.h"
 
-#include "../../vendor/sokol/sokol_audio.h"
 #include "../../vendor/sokol/sokol_fetch.h"
 #include "../../vendor/sokol/sokol_gfx.h"
 #include "Game.h"
 #include "common/Arena.h"
+#include "common/Audio.h"
 #include "common/Log.h"
-#include "common/Wav.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
@@ -15,23 +14,24 @@
 #endif
 
 Engine__State* g_engine;
-static void stream_cb(float* buffer, int num_frames, int num_channels);
 
 // on init (data only)
 LOGIC_DECL void logic_oninit(Engine__State* state) {
   g_engine = state;
 
-  // NOTICE: logging won't work from here
+  // NOTICE: logging won't work in here
 
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 12);  // MB (16mb is max for emscripten + firefox)
   g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
-  g_engine->stream_cb2 = stream_cb;
 
+  Audio__init();
   Game__init();
 }
 
 LOGIC_DECL void logic_onpreload(void) {
   Logic__State* logic = g_engine->logic;
+
+  logic->pass_action = Arena__Push(g_engine->arena, sizeof(sg_pass_action));
 
   // sokol_time.h
   g_engine->stm_setup();
@@ -47,30 +47,16 @@ LOGIC_DECL void logic_onpreload(void) {
       .logger.func = g_engine->slog_func,  //
   });
 
-  // sokol_audio.h
-  g_engine->saudio_setup(&(saudio_desc){
-      .stream_cb = g_engine->stream_cb1,
-      .logger = {
-          .func = g_engine->slog_func,
-      }});
-  // LOG_DEBUGF(
-  //     "audio system init. sample_rate: %u, channels: %u",
-  //     g_engine->saudio_sample_rate(),
-  //     g_engine->saudio_channels());
-
-  // preload assets
-  logic->wr = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
-
+  Audio__preload();
   Game__preload();
 }
 
 LOGIC_DECL void logic_onreload(Engine__State* state) {
   g_engine = state;
-  g_engine->stream_cb2 = stream_cb;
-  Logic__State* logic = g_engine->logic;
-
   LOG_DEBUGF("Logic dll reloaded.");
-  logic->wr->offset = 0;  // replay the sfx
+
+  Audio__reload();
+  Game__reload();
 }
 
 // on physics
@@ -83,41 +69,28 @@ LOGIC_DECL void logic_onupdate(void) {
 
   g_engine->sfetch_dowork();
 
+  // a pass action to clear framebuffer to black
+  (*logic->pass_action) = (sg_pass_action){
+      .colors[0] = {
+          .load_action = SG_LOADACTION_CLEAR,  //
+          .clear_value = {0.0f, 0.0f, 0.0f, 1.0f},  //
+      }};
+
+  g_engine->sg_begin_pass(
+      &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
+
+  // TODO: separate tick from render
+  Game__tick();
   Game__render();
+  Game__gui();
+
+  g_engine->sg_end_pass();
+
   g_engine->sg_commit();
-}
-
-// the sample callback, running in audio thread
-static void stream_cb(float* buffer, int num_frames, int num_channels) {
-  Logic__State* logic = g_engine->logic;
-
-  ASSERT(1 == num_channels);
-
-  u8 samples[(logic->wr->bitsPerSample / 8) * logic->wr->numChannels];
-  f32 sampleFloat;
-  for (u32 i = 0; i < num_frames; i++) {
-    Wav__NextSample(logic->wr, samples);
-    sampleFloat = ((s32)(samples[0]) - 128) / 128.0f;  // assume 1 channel, 1 byte per sample
-
-    // if (logic->wr->offset == logic->wr->totalSamples) logic->wr->offset = 0;
-
-    // LOG_DEBUGF(
-    //     "stream_cb wr %p offset %u bps %u c %u s %u data %p sample %u sF %f",
-    //     logic->wr,
-    //     logic->wr->offset,
-    //     logic->wr->bitsPerSample,
-    //     logic->wr->numChannels,
-    //     logic->wr->totalSamples,
-    //     logic->wr->data,
-    //     samples[0],
-    //     sampleFloat);
-
-    buffer[i] = sampleFloat;
-  }
 }
 
 LOGIC_DECL void logic_onshutdown(void) {
   g_engine->sg_shutdown();
-  g_engine->saudio_shutdown();
+  Audio__shutdown();
   g_engine->sfetch_shutdown();
 }

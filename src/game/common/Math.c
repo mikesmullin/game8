@@ -4,3 +4,13 @@ f64 Math__map(f64 n, f64 input_start, f64 input_end, f64 output_start, f64 outpu
   f64 range = 1.0 * (output_end - output_start) / (input_end - input_start);
   return output_start + range * (n - input_start);
 }
+
+f64 Math__fmod(f64 n, f64 max) {
+  while (n < 0.0f) {
+    n += max;
+  }
+  while (n >= max) {
+    n -= max;
+  }
+  return n;
+}
