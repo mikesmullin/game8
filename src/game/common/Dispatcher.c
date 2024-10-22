@@ -12,12 +12,17 @@
 // #include "../menus/HelpMenu.h"
 // #include "../menus/TitleMenu.h"
 // #include "../sprites/Sprite.h"
+#include "../Logic.h"
 
-static void Dispatch__None() {
+extern Engine__State* g_engine;
+
+static void Dispatch__None1(Entity* inst) {
+}
+static void Dispatch__None2(Entity* inst, void* params) {
 }
 
-static void (*VTABLE_ENGINE[])() = {
-    Dispatch__None,
+static void (*VTABLE_ENGINE1[])(Entity*) = {
+    Dispatch__None1,
 
     // CatSpawnBlock__tick,  //
     // CatSpawnBlock__gui,
@@ -43,12 +48,16 @@ static void (*VTABLE_ENGINE[])() = {
     // TitleMenu__gui,  //
 };
 
+static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
+    Dispatch__None2,
+};
+
 // static / switch / tag / conditional dispatch
 // a hot-reload safe, simple alternative to polymorphism
 // works because all fns are known at compile-time
-void Dispatcher__call1(DispatchFnId id, void* inst) {
-  return VTABLE_ENGINE[id](inst);
+void Dispatcher__call1(DispatchFnId id, Entity* inst) {
+  VTABLE_ENGINE1[id](inst);
 }
-void Dispatcher__call2(DispatchFnId id, void* inst, void* params) {
-  return VTABLE_ENGINE[id](inst, params);
+void Dispatcher__call2(DispatchFnId id, Entity* inst, void* params) {
+  VTABLE_ENGINE2[id](inst, params);
 }

@@ -18,9 +18,9 @@ Block* SpawnBlock__alloc() {
   return Arena__Push(g_engine->arena, sizeof(SpawnBlock));
 }
 
-void SpawnBlock__init(Block* block, f32 x, f32 y) {
+void SpawnBlock__init(Entity* entity, f32 x, f32 y) {
+  Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;
-  Entity* entity = &self->base.base;
   Logic__State* logic = g_engine->logic;
   Block__init(block, x, y);
   block->base.engine->tick = SPAWN_BLOCK__TICK;
@@ -37,7 +37,8 @@ void SpawnBlock__init(Block* block, f32 x, f32 y) {
   LOG_DEBUGF("SpawnBlock %u pos %f %f", entity->id, entity->tform->pos.x, entity->tform->pos.z);
 }
 
-void SpawnBlock__tick(Block* block) {
+void SpawnBlock__tick(Entity* entity) {
+  Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;
   Logic__State* logic = g_engine->logic;
 

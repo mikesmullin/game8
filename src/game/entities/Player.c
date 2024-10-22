@@ -28,9 +28,9 @@ Player* Player__alloc() {
   return Arena__Push(g_engine->arena, sizeof(Player));
 }
 
-void Player__init(Player* self) {
+void Player__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;
-  Entity* entity = &self->base;
+  Player* self = (Player*)entity;
 
   Entity__init(entity);
 
@@ -57,9 +57,9 @@ void Player__init(Player* self) {
   // entity->hear = Arena__Push(g_engine->arena, sizeof(AudioListenerComponent));
 }
 
-void Player__tick(Player* self) {
+void Player__tick(Entity* entity) {
   Logic__State* logic = g_engine->logic;
-  Entity* entity = &self->base;
+  Player* self = (Player*)entity;
 
   f32 s = Math__map(sinf(g_engine->stm_ms(g_engine->stm_now()) / 3000), -1, 1, 0, 360 - 1);
   self->base.tform->rot.y = s;

@@ -14,9 +14,9 @@ Block* WallBlock__alloc() {
   return Arena__Push(g_engine->arena, sizeof(WallBlock));
 }
 
-void WallBlock__init(Block* block, f32 x, f32 y) {
+void WallBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
-  Entity* entity = (Entity*)block;
+  Block* block = (Block*)entity;
   WallBlock* self = (WallBlock*)block;
   Block__init(block, x, y);
   entity->engine->render = WALL_BLOCK__RENDER;
@@ -43,9 +43,9 @@ void WallBlock__init(Block* block, f32 x, f32 y) {
   LOG_DEBUGF("WallBlock %u pos %f %f", entity->id, entity->tform->pos.x, entity->tform->pos.z);
 }
 
-void WallBlock__render(Block* block) {
+void WallBlock__render(Entity* entity) {
   Logic__State* logic = g_engine->logic;
-  Entity* entity = (Entity*)block;
+  Block* block = (Block*)entity;
   WallBlock* self = (WallBlock*)block;
 
   MeshRenderer__render(entity);

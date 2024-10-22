@@ -43,12 +43,12 @@ static Block* Level__makeBlock(u32 col, f32 x, f32 y) {
   }
   if (0xffffffff == col) {  // white
     Block* block = WallBlock__alloc();
-    WallBlock__init(block, x, y);
+    WallBlock__init((Entity*)block, x, y);
     return block;
   }
   if (0xff00f2ff == col) {  // yellow
     Block* block = SpawnBlock__alloc();
-    SpawnBlock__init(block, x, y);
+    SpawnBlock__init((Entity*)block, x, y);
     return block;
   }
   // if (0xff241ced == col) {  // red

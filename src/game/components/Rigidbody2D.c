@@ -7,7 +7,7 @@
 #include "../components/Collider.h"
 
 void Rigidbody2D__move(Entity* entity) {
-  if (NULL == entity->rb) return;
+  if (0 == entity->rb) return;
   if (fabs(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
   if (fabs(entity->rb->za) < FLT_MIN) entity->rb->za = 0;
 

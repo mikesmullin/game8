@@ -152,7 +152,6 @@ const web = async () => {
   // for these to work,
   // you may need to enter the python emsdk env first (sets env vars)
   // $ cd vendor/emsdk
-  // $ emsdk activate latest
   // $ emsdk_env
   await compile_web('main');
   await run_web('main');
@@ -398,9 +397,11 @@ const run_web = async (basename) => {
   }
 
   const serve_root = path.relative(path.join(workspaceFolder, BUILD_PATH), process.cwd());
+  console.log("http://localhost:9090/build/main.html");
   await child_spawn(EMRUN_PATH, [
     '--port', 9090,
     '--serve-root', serve_root,
+    '--no-browser',
     html,
   ]);
 }

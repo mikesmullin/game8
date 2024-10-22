@@ -10,10 +10,10 @@ QuadTreeNode* QuadTreeNode_create(Arena* arena, Rect boundary) {
   node->boundary = boundary;
   node->point_count = 0;
   node->subdivided = false;
-  node->northwest = NULL;
-  node->northeast = NULL;
-  node->southwest = NULL;
-  node->southeast = NULL;
+  node->northwest = 0;
+  node->northeast = 0;
+  node->southwest = 0;
+  node->southeast = 0;
   return node;
 }
 

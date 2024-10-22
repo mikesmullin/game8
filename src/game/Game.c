@@ -3,6 +3,7 @@
 #include "Logic.h"
 #include "common/Audio.h"
 #include "common/Dispatcher.h"
+#include "common/Log.h"
 #include "common/Preloader.h"
 #include "common/Wav.h"
 #include "entities/Player.h"
@@ -18,8 +19,8 @@ void Game__init() {
   g_engine->window_width = dims;
   g_engine->window_height = dims;
 
-  logic->level = NULL;
-  logic->player = NULL;
+  logic->level = 0;
+  logic->player = 0;
   logic->lastUid = 0;
 }
 
@@ -71,13 +72,13 @@ void Game__tick() {
   //   }
   // }
 
-  if (NULL == logic->player) {
-    logic->player = Player__alloc(g_engine->arena);
-    Player__init(logic->player);
+  if (0 == logic->player) {
+    logic->player = Player__alloc();
+    Player__init((Entity*)logic->player);
   }
 
   // in-game
-  Dispatcher__call1(logic->player->base.engine->tick, logic->player);
+  Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
   Level__tick(logic->level);
 }
 

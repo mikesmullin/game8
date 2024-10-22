@@ -132,7 +132,7 @@ typedef struct Wavefront Wavefront;
 typedef struct BmpReader BmpReader;
 typedef struct List List;
 typedef struct Entity Entity;
-typedef enum DispatchFnId DispatchFnId;
+// typedef enum DispatchFnId : u32 DispatchFnId;
 typedef struct KbInputState KbInputState;
 typedef struct PointerInputState PointerInputState;
 
@@ -163,9 +163,9 @@ typedef struct EventEmitter {
 } EventEmitter;
 
 typedef struct EngineComponent {
-  DispatchFnId tick;
-  DispatchFnId render;
-  DispatchFnId gui;
+  u32 /*DispatchFnId*/ tick;
+  u32 /*DispatchFnId*/ render;
+  u32 /*DispatchFnId*/ gui;
 } EngineComponent;
 
 typedef struct TransformComponent {
@@ -187,7 +187,7 @@ typedef struct OnCollideClosure_t {
 
 typedef struct ColliderComponent {
   ColliderType type;
-  DispatchFnId collide;
+  u32 /*DispatchFnId*/ collide;
 } ColliderComponent;
 
 typedef struct BoxCollider2DComponent {

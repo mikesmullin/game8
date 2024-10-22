@@ -1,6 +1,10 @@
 #pragma once
 
-typedef enum DispatchFnId {
+#include <stdint.h>
+typedef uint32_t u32;
+typedef struct Entity Entity;
+
+typedef enum DispatchFnId : u32 {
   DISPATCH_NONE,
 
   // CAT_SPAWN_BLOCK__TICK,
@@ -27,5 +31,5 @@ typedef enum DispatchFnId {
   // TITLE_MENU__GUI,
 } DispatchFnId;
 
-void Dispatcher__call1(DispatchFnId id, void* inst);
-void Dispatcher__call2(DispatchFnId id, void* inst, void* params);
+void Dispatcher__call1(DispatchFnId id, Entity* inst);
+void Dispatcher__call2(DispatchFnId id, Entity* inst, void* params);

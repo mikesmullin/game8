@@ -3,6 +3,7 @@
 #include "../Logic.h"
 #include "../common/Dispatcher.h"
 #include "../common/Geometry.h"
+#include "../common/Log.h"
 #include "../common/QuadTree.h"
 
 extern Engine__State* g_engine;
@@ -46,7 +47,7 @@ bool CircleCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
 }
 
 bool Collider__check(Entity* entity, f32 x, f32 y) {
-  if (NULL == entity->collider) return false;
+  if (0 == entity->collider) return false;
 
   Logic__State* logic = g_engine->logic;
   Level* level = logic->level;
@@ -71,7 +72,7 @@ bool Collider__check(Entity* entity, f32 x, f32 y) {
   for (u32 i = 0; i < matchCount; i++) {
     Entity* other = (Entity*)matchData[i];
     if (entity == other) continue;
-    if (NULL == other->collider) continue;
+    if (0 == other->collider) continue;
     if (TAG_BROKEN & other->tags1) continue;
 
     if (BOX_COLLIDER_2D == other->collider->type) {
@@ -82,7 +83,7 @@ bool Collider__check(Entity* entity, f32 x, f32 y) {
       r1 = collider->r;
     }
 
-    if (NULL != other->collider) {
+    if (0 != other->collider) {
       // TODO: use appropriate check: circle_circle, circle_box, box_box
       bool collisionBefore = CircleCollider2D__check(
           entity->tform->pos.x,
