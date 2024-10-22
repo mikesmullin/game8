@@ -39,8 +39,6 @@ void WallBlock__init(Entity* entity, f32 x, f32 y) {
           &logic->textures.atlas,  //
           "../assets/textures/atlas.bmp");
   entity->render->ts = ATLAS_SPRITE_SZ;
-
-  LOG_DEBUGF("WallBlock %u pos %f %f", entity->id, entity->tform->pos.x, entity->tform->pos.z);
 }
 
 void WallBlock__render(Entity* entity) {

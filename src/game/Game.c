@@ -42,8 +42,8 @@ void Game__preload() {
   level->skybox = true;
   // level->ceilCol = 0x77000022;  // blood red
   level->ceilCol = 0xaa000000;  // darken
-  level->levelFile = "../assets/textures/level0.bmp";  // DEBUG: single block
-  // level->levelFile = "../assets/textures/level1.bmp";
+  // level->levelFile = "../assets/textures/level0.bmp";  // DEBUG: single block
+  level->levelFile = "../assets/textures/level1.bmp";
   level->worldFile = "../assets/textures/sky.bmp";
   logic->level = level;
   Level__preload(logic->level);

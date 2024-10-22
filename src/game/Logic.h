@@ -221,10 +221,13 @@ typedef struct RendererComponent {
   bool useMask;
   u32 mask, color;
   bool loaded;
+} RendererComponent;
 
+typedef struct MeshRendererSingleton {
   sg_pipeline* pip;
   sg_bindings* bind;
-} RendererComponent;
+  bool loaded;
+} MeshRendererSingleton;
 
 // Entities ----------------------------------------------
 
@@ -346,6 +349,7 @@ typedef struct Logic__State {
   PointerInputState* mState;
 
   sg_pass_action* pass_action;
+  MeshRendererSingleton meshRenderer;
 
 } Logic__State;
 

@@ -9,7 +9,6 @@
 #include "../common/Bmp.h"
 #include "../common/Color.h"
 #include "../common/List.h"
-#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Wavefront.h"
 
@@ -40,15 +39,41 @@ static void MeshRenderer__loaded(Entity* entity) {
 
   Logic__State* logic = g_engine->logic;
 
-  entity->render->pip = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
-  entity->render->bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
+  // alloc memory once for all meshRenderer instances, since it would be the same for each
+  if (!logic->meshRenderer.loaded) {
+    logic->meshRenderer.pip = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
+    logic->meshRenderer.bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
 
-  // Allocate an image handle, but don't actually initialize the image yet,
-  // this happens later when the asynchronous file load has finished.
-  // Any draw calls containing such an incomplete image handle
-  // will be silently dropped.
-  sg_alloc_image_smp(entity->render->bind->fs, SLOT__texture1, SLOT_texture1_smp);
-  sg_alloc_image_smp(entity->render->bind->fs, SLOT__texture2, SLOT_texture2_smp);
+    // Allocate an image handle, but don't actually initialize the image yet,
+    // this happens later when the asynchronous file load has finished.
+    // Any draw calls containing such an incomplete image handle
+    // will be silently dropped.
+    sg_alloc_image_smp(logic->meshRenderer.bind->fs, SLOT__texture1, SLOT_texture1_smp);
+    sg_alloc_image_smp(logic->meshRenderer.bind->fs, SLOT__texture2, SLOT_texture2_smp);
+
+    // create shader from code-generated sg_shader_desc
+    sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
+
+    // create a pipeline object (default render states are fine for triangle)
+    (*logic->meshRenderer.pip) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){
+        .shader = shd,
+        // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
+        .layout =
+            {
+                .attrs =
+                    {
+                        [ATTR_vs_aPos].format = SG_VERTEXFORMAT_FLOAT3,  //
+                        [ATTR_vs_aTexCoord].format = SG_VERTEXFORMAT_FLOAT2,  //
+                    },
+            },
+        .depth =
+            {
+                .compare = SG_COMPAREFUNC_LESS_EQUAL,
+                .write_enabled = true,
+            },
+        .label = "mesh-pipeline",
+    });
+  }
 
   f32 vertices[entity->render->mesh->faces->len * 3 /*points (tri)*/ * 5 /*v3 pos + v2 uv*/];
   u32 i = 0;
@@ -69,79 +94,66 @@ static void MeshRenderer__loaded(Entity* entity) {
       // v3* n = List__get(entity->render->mesh->normals, f->normal_idx[y]);
     }
   }
-  entity->render->bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
-      .data = SG_RANGE(vertices),  //
-      .label = "mesh-vertices"  //
-  });
 
-  // create shader from code-generated sg_shader_desc
-  sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
+  if (!logic->meshRenderer.loaded) {
+    logic->meshRenderer.loaded = true;
 
-  // create a pipeline object (default render states are fine for triangle)
-  (*entity->render->pip) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){
-      .shader = shd,
-      // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
-      .layout =
-          {
-              .attrs =
-                  {
-                      [ATTR_vs_aPos].format = SG_VERTEXFORMAT_FLOAT3,  //
-                      [ATTR_vs_aTexCoord].format = SG_VERTEXFORMAT_FLOAT2,  //
-                  },
-          },
-      .depth =
-          {
-              .compare = SG_COMPAREFUNC_LESS_EQUAL,
-              .write_enabled = true,
-          },
-      .label = "mesh-pipeline",
-  });
+    logic->meshRenderer.bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
+        .data = SG_RANGE(vertices),  //
+        .label = "mesh-vertices"  //
+    });
 
-  sg_image image1 = entity->render->bind->fs.images[SLOT__texture1];
-  sg_image image2 = entity->render->bind->fs.images[SLOT__texture2];
+    u32 pixels[entity->render->ts * entity->render->ts * 4];  // ABGR
+    u32 ii = 0;
+    for (u32 y = entity->render->ts - 1; y != (u32)-1;
+         y--) {  // flip-h; GL texture is stored flipped
+      for (u32 x = 0; x < entity->render->ts; x++) {
+        u32 color = Bmp__Get2DTiledPixel(
+            entity->render->texture,
+            x,
+            y,
+            entity->render->ts,
+            entity->render->tx,
+            entity->render->ty,
+            PINK);
 
-  u32 pixels[entity->render->ts * entity->render->ts * 4];  // ABGR
-  u32 ii = 0;
-  for (u32 y = entity->render->ts - 1; y != (u32)-1; y--) {  // flip-h; GL texture is stored flipped
-    for (u32 x = 0; x < entity->render->ts; x++) {
-      u32 color = Bmp__Get2DTiledPixel(
-          entity->render->texture,
-          x,
-          y,
-          entity->render->ts,
-          entity->render->tx,
-          entity->render->ty,
-          PINK);
+        // TODO: implement bit masking
+        // entity->render->useMask;
+        // entity->render->mask;
 
-      // TODO: implement bit masking
-      // entity->render->useMask;
-      // entity->render->mask;
-
-      color = alpha_blend(color, entity->render->color);  // tint
-      pixels[ii++] = color;
-      // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
+        color = alpha_blend(color, entity->render->color);  // tint
+        pixels[ii++] = color;
+        // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
+      }
     }
+    g_engine->sg_init_image(
+        logic->meshRenderer.bind->fs.images[SLOT__texture1],
+        &(sg_image_desc){
+            .width = entity->render->ts,
+            .height = entity->render->ts,
+            .pixel_format = SG_PIXELFORMAT_RGBA8,
+            .data.subimage[0][0] = {
+                .ptr = pixels,
+                .size = entity->render->ts * entity->render->ts * 4,
+            }});
+    // TODO: two images is too many; can discard once shader is updated
+    g_engine->sg_init_image(
+        logic->meshRenderer.bind->fs.images[SLOT__texture2],
+        &(sg_image_desc){
+            .width = entity->render->ts,
+            .height = entity->render->ts,
+            .pixel_format = SG_PIXELFORMAT_RGBA8,
+            .data.subimage[0][0] = {
+                .ptr = pixels,
+                .size = entity->render->ts * entity->render->ts * 4,
+            }});
   }
-  g_engine->sg_init_image(
-      image1,
-      &(sg_image_desc){
-          .width = entity->render->ts,
-          .height = entity->render->ts,
-          .pixel_format = SG_PIXELFORMAT_RGBA8,
-          .data.subimage[0][0] = {
-              .ptr = pixels,
-              .size = entity->render->ts * entity->render->ts * 4,
-          }});
-  g_engine->sg_init_image(
-      image2,
-      &(sg_image_desc){
-          .width = entity->render->ts,
-          .height = entity->render->ts,
-          .pixel_format = SG_PIXELFORMAT_RGBA8,
-          .data.subimage[0][0] = {
-              .ptr = pixels,
-              .size = entity->render->ts * entity->render->ts * 4,
-          }});
+
+  // TODO: update VBO (support more than one mesh globally)
+
+  // TODO: update image texture (to support more than one texture globally)
+  //   g_engine->sg_update_buffer(sg_buffer buf, const sg_range* data);
+  //   g_engine->sg_update_image(sg_image img, const sg_image_data* data);
 }
 
 void MeshRenderer__render(Entity* entity) {
@@ -220,8 +232,8 @@ void MeshRenderer__render(Entity* entity) {
       logic->player->camera.nearZ,
       logic->player->camera.farZ);
 
-  g_engine->sg_apply_pipeline(*entity->render->pip);
-  g_engine->sg_apply_bindings(entity->render->bind);
+  g_engine->sg_apply_pipeline(*logic->meshRenderer.pip);
+  g_engine->sg_apply_bindings(logic->meshRenderer.bind);
 
   vs_params_t vs_params = {.model = model, .view = view, .projection = projection};
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));

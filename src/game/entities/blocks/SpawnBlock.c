@@ -33,8 +33,6 @@ void SpawnBlock__init(Entity* entity, f32 x, f32 y) {
   Preload__audio(
       &logic->audio.powerUp,  //
       "../assets/audio/sfx/powerUp.wav");
-
-  LOG_DEBUGF("SpawnBlock %u pos %f %f", entity->id, entity->tform->pos.x, entity->tform->pos.z);
 }
 
 void SpawnBlock__tick(Entity* entity) {
