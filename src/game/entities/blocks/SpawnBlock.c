@@ -6,8 +6,8 @@
 #include "../../common/Arena.h"
 #include "../../common/Audio.h"
 #include "../../common/Dispatcher.h"
-#include "../../common/Log.h"
 #include "../../common/Preloader.h"
+#include "../../common/Wav.h"
 #include "Block.h"
 
 typedef int32_t s32;
@@ -24,7 +24,7 @@ void SpawnBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
   Block__init(block, x, y);
   block->base.engine->tick = SPAWN_BLOCK__TICK;
-  block->base.collider = NULL;
+  block->base.collider = 0;
 
   self->firstTick = true;
   logic->level->spawner = self;

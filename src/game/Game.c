@@ -3,7 +3,6 @@
 #include "Logic.h"
 #include "common/Audio.h"
 #include "common/Dispatcher.h"
-#include "common/Log.h"
 #include "common/Preloader.h"
 #include "common/Wav.h"
 #include "entities/Player.h"

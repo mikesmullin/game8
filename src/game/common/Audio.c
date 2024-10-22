@@ -7,7 +7,7 @@
 
 extern Engine__State* g_engine;
 
-#define SILENCE (128)
+#define SILENCE (0)
 
 void Audio__init() {
   g_engine->stream_cb2 = Audio__stream_cb;
@@ -59,26 +59,32 @@ void Audio__stream_cb(f32* buffer, int num_frames, int num_channels) {
   }
 
   u8 samples[(logic->aSrc->bitsPerSample / 8) * logic->aSrc->numChannels];
-  f32 sampleFloat;
   for (u32 i = 0; i < num_frames; i++) {
-    Wav__NextSample(logic->aSrc, samples);
-    // assume 1 channel, 1 byte per sample
-    sampleFloat = ((s32)(samples[0]) - 128) / 128.0f;
+    if (!logic->aSrc->loaded) {
+      buffer[i] = SILENCE;
+    } else {
+      Wav__NextSample(logic->aSrc, samples);
+      // assume 1 channel, 1 byte per sample
+      buffer[i] = ((s32)(samples[0]) - 128) / 128.0f;
 
-    // if (logic->wr->offset == logic->wr->totalSamples) logic->wr->offset = 0;
+      if (logic->aSrc->offset == logic->aSrc->totalSamples) {
+        // TODO: if not loop==true
+        // logic->aSrc->offset = 0;
+        logic->aSrc = NULL;
+        return;
+      }
+    }
 
     // LOG_DEBUGF(
-    //     "stream_cb wr %p offset %u bps %u c %u s %u data %p sample %u sF %f",
-    //     logic->wr,
-    //     logic->wr->offset,
-    //     logic->wr->bitsPerSample,
-    //     logic->wr->numChannels,
-    //     logic->wr->totalSamples,
-    //     logic->wr->data,
+    //     "stream_cb aSrc %p offset %u bps %u c %u s %u data %p sample %u sF %f",
+    //     logic->aSrc,
+    //     logic->aSrc->offset,
+    //     logic->aSrc->bitsPerSample,
+    //     logic->aSrc->numChannels,
+    //     logic->aSrc->totalSamples,
+    //     logic->aSrc->data,
     //     samples[0],
-    //     sampleFloat);
-
-    buffer[i] = sampleFloat;
+    //     buffer[i]);
   }
 }
 
