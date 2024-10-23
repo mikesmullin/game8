@@ -10,6 +10,7 @@ static void* logic = NULL;
 logic_oninit_t logic_oninit;
 logic_onpreload_t logic_onpreload;
 logic_onreload_t logic_onreload;
+logic_onevent_t logic_onevent;
 logic_onfixedupdate_t logic_onfixedupdate;
 logic_onupdate_t logic_onupdate;
 logic_onshutdown_t logic_onshutdown;
@@ -52,6 +53,7 @@ int load_logic(const char* file) {
   logic_oninit = (logic_oninit_t)GetProcAddress(logic, "logic_oninit");
   logic_onpreload = (logic_onpreload_t)GetProcAddress(logic, "logic_onpreload");
   logic_onreload = (logic_onreload_t)GetProcAddress(logic, "logic_onreload");
+  logic_onevent = (logic_onevent_t)GetProcAddress(logic, "logic_onevent");
   logic_onfixedupdate = (logic_onfixedupdate_t)GetProcAddress(logic, "logic_onfixedupdate");
   logic_onupdate = (logic_onupdate_t)GetProcAddress(logic, "logic_onupdate");
   logic_onshutdown = (logic_onshutdown_t)GetProcAddress(logic, "logic_onshutdown");

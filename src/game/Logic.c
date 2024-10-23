@@ -1,5 +1,6 @@
 #include "Logic.h"
 
+#include "../../vendor/sokol/sokol_app.h"
 #include "../../vendor/sokol/sokol_fetch.h"
 #include "../../vendor/sokol/sokol_gfx.h"
 #include "Game.h"
@@ -57,6 +58,158 @@ LOGIC_DECL void logic_onreload(Engine__State* state) {
 
   Audio__reload();
   Game__reload();
+}
+
+// window, keyboard, mouse events
+LOGIC_DECL void logic_onevent(const sapp_event* event) {
+  Logic__State* logic = g_engine->logic;
+
+  if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
+    if (KEYCODE_W == event->key_code) logic->player->kb.fwd = true;
+    if (KEYCODE_A == event->key_code) logic->player->kb.left = true;
+    if (KEYCODE_S == event->key_code) logic->player->kb.back = true;
+    if (KEYCODE_D == event->key_code) logic->player->kb.right = true;
+    if (KEYCODE_E == event->key_code) logic->player->kb.use = true;
+    if (KEYCODE_SPACE == event->key_code) logic->player->kb.up = true;
+    if (KEYCODE_LCTRL == event->key_code) logic->player->kb.down = true;
+    if (KEYCODE_R == event->key_code) logic->player->kb.reload = true;
+    if (KEYCODE_ESC == event->key_code) logic->player->kb.esc = true;
+
+    // LOG_DEBUGF(
+    //     "event keydown"
+    //     " char_code %u"
+    //     " key_code %u"
+    //     " key_repeat %u"
+    //     " modifiers %u",
+    //     event->char_code,
+    //     event->key_code,
+    //     event->key_repeat,
+    //     event->modifiers);
+  }
+  if (SAPP_EVENTTYPE_KEY_UP == event->type) {
+    if (KEYCODE_W == event->key_code) logic->player->kb.fwd = false;
+    if (KEYCODE_A == event->key_code) logic->player->kb.left = false;
+    if (KEYCODE_S == event->key_code) logic->player->kb.back = false;
+    if (KEYCODE_D == event->key_code) logic->player->kb.right = false;
+    if (KEYCODE_E == event->key_code) logic->player->kb.use = false;
+    if (KEYCODE_SPACE == event->key_code) logic->player->kb.up = false;
+    if (KEYCODE_LCTRL == event->key_code) logic->player->kb.down = false;
+    if (KEYCODE_R == event->key_code) logic->player->kb.reload = false;
+    if (KEYCODE_ESC == event->key_code) logic->player->kb.esc = false;
+
+    // LOG_DEBUGF(
+    //     "event keyup"
+    //     " char_code %u"
+    //     " key_code %u"
+    //     " key_repeat %u"
+    //     " modifiers %u",
+    //     event->char_code,
+    //     event->key_code,
+    //     event->key_repeat,
+    //     event->modifiers);
+  }
+
+  // LOG_DEBUGF(
+  //     "kbState "
+  //     "w %u a %u s %u d %u e %u sp %u ctl %u "
+  //     "r %u esc %u",
+  //     logic->player->kb.fwd,
+  //     logic->player->kb.left,
+  //     logic->player->kb.back,
+  //     logic->player->kb.right,
+  //     logic->player->kb.use,
+  //     logic->player->kb.up,
+  //     logic->player->kb.down,
+  //     logic->player->kb.reload,
+  //     logic->player->kb.esc);
+
+  if (SAPP_EVENTTYPE_MOUSE_DOWN == event->type) {
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->ptr.btn1 = true;
+
+    // LOG_DEBUGF(
+    //     "event mousedown"
+    //     " mouse_button %u"
+    //     event->mouse_button);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_UP == event->type) {
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->ptr.btn1 = false;
+
+    // LOG_DEBUGF(
+    //     "event mouseup"
+    //     " mouse_button %u"
+    //     event->mouse_button);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_SCROLL == event->type) {
+    logic->player->ptr.wheely += event->scroll_y;
+
+    // LOG_DEBUGF(
+    //     "event mousescroll"
+    //     " scroll_x %f"
+    //     " scroll_y %f",
+    //     event->scroll_x,
+    //     event->scroll_y);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_MOVE == event->type) {
+    logic->player->ptr.x += event->mouse_dx;
+    logic->player->ptr.y += event->mouse_dy;
+
+    // LOG_DEBUGF(
+    //     "event mousemove"
+    //     " mouse_dx %f"
+    //     " mouse_dy %f"
+    //     " mouse_x %f"
+    //     " mouse_y %f",
+    //     event->mouse_dx,
+    //     event->mouse_dy,
+    //     event->mouse_x,
+    //     event->mouse_y);
+  }
+
+  // switch (event->type) {
+  //   case SAPP_EVENTTYPE_TOUCHES_BEGAN:
+  //   case SAPP_EVENTTYPE_TOUCHES_MOVED:
+  //   case SAPP_EVENTTYPE_TOUCHES_ENDED:
+  //   case SAPP_EVENTTYPE_TOUCHES_CANCELLED:
+  //     LOG_DEBUGF("event touch*. num_touches: %u", event->num_touches);
+  //     break;
+  // }
+
+  // LOG_DEBUGF(
+  //     "mState "
+  //     "x %d y %d wheely %3.3f btn1 %u",
+  //     logic->player->ptr.x,
+  //     logic->player->ptr.y,
+  //     logic->player->ptr.wheely,
+  //     logic->player->ptr.btn1);
+
+  switch (event->type) {
+    case SAPP_EVENTTYPE_FOCUSED:
+      LOG_DEBUGF("event focused");
+      break;
+    case SAPP_EVENTTYPE_UNFOCUSED:
+      LOG_DEBUGF("event unfocused");
+      break;
+    case SAPP_EVENTTYPE_RESIZED:
+      LOG_DEBUGF("event resized");
+      break;
+    case SAPP_EVENTTYPE_ICONIFIED:
+      LOG_DEBUGF("event iconified/minimized");
+      break;
+    case SAPP_EVENTTYPE_RESTORED:
+      LOG_DEBUGF("event restored");
+      break;
+    case SAPP_EVENTTYPE_SUSPENDED:
+      LOG_DEBUGF("event suspended");
+      break;
+    case SAPP_EVENTTYPE_RESUMED:
+      LOG_DEBUGF("event resumed");
+      break;
+    case SAPP_EVENTTYPE_QUIT_REQUESTED:
+      LOG_DEBUGF("event quit_requested");
+      break;
+    default:
+      break;
+  }
 }
 
 // on physics

@@ -21,6 +21,7 @@ static FileMonitor fm = {.directory = "src/game", .fileName = "Logic.c.dll"};
 static void init(void);
 static void frame(void);
 static void cleanup(void);
+static void event_cb(const sapp_event* event);
 static void stream_cb(float* buffer, int num_frames, int num_channels);
 
 sapp_desc sokol_main(int argc, char* argv[]) {
@@ -61,6 +62,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_init_sampler = sg_init_sampler;
   engine.sg_apply_uniforms = sg_apply_uniforms;
   engine.sg_init_image = sg_init_image;
+  engine.sapp_lock_mouse = sapp_lock_mouse;
+  engine.sapp_mouse_locked = sapp_mouse_locked;
 
 #ifndef __EMSCRIPTEN__
   ASSERT_CONTEXT(load_logic(LOGIC_FILENAME), "Failed to load Logic.dll");
@@ -76,6 +79,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   return (sapp_desc){
       .init_cb = init,
       .frame_cb = frame,
+      .event_cb = event_cb,
       .cleanup_cb = cleanup,
       .width = engine.window_width,
       .height = engine.window_height,
@@ -89,13 +93,11 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 }
 
 static void init(void) {
-  if (false) {
-    stm_setup();
-    u64 started_at = stm_now();
-    while (stm_ms(stm_diff(stm_now(), started_at)) < 4000) {
-      // allow time to attach debugger
-    }
-  }
+  // stm_setup();
+  // u64 started_at = stm_now();
+  // while (stm_ms(stm_diff(stm_now(), started_at)) < 4000) {
+  //   // allow time to attach debugger
+  // }
 
 #ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);
@@ -120,6 +122,9 @@ static void frame(void) {
   }
 #endif
 
+  engine.now = stm_ms(stm_now());
+  static u64 lastTick;
+  engine.deltaTime = stm_sec(stm_laptime(&lastTick));
   logic_onupdate();
 }
 
@@ -128,6 +133,10 @@ static void cleanup(void) {
 #ifndef __EMSCRIPTEN__
   File__EndMonitor(&fm);
 #endif
+}
+
+static void event_cb(const sapp_event* event) {
+  logic_onevent(event);
 }
 
 static void stream_cb(float* buffer, int num_frames, int num_channels) {

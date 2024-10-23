@@ -9,6 +9,7 @@
 extern logic_oninit_t logic_oninit;
 extern logic_onpreload_t logic_onpreload;
 extern logic_onreload_t logic_onreload;
+extern logic_onevent_t logic_onevent;
 extern logic_onfixedupdate_t logic_onfixedupdate;
 extern logic_onupdate_t logic_onupdate;
 extern logic_onshutdown_t logic_onshutdown;

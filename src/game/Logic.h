@@ -58,6 +58,7 @@ typedef struct sg_sampler_desc sg_sampler_desc;
 typedef enum sg_shader_stage sg_shader_stage;
 typedef struct sg_range sg_range;
 typedef struct sg_image_desc sg_image_desc;
+typedef struct sapp_event sapp_event;
 
 typedef struct Engine__State {
   char* window_title;
@@ -107,6 +108,11 @@ typedef struct Engine__State {
   void (*sg_init_sampler)(sg_sampler smp_id, const sg_sampler_desc* desc);
   void (*sg_apply_uniforms)(sg_shader_stage stage, int ub_index, const sg_range* data);
   void (*sg_init_image)(sg_image img_id, const sg_image_desc* desc);
+  void (*sapp_lock_mouse)(bool lock);
+  bool (*sapp_mouse_locked)(void);
+
+  u64 now;
+  f32 deltaTime;
 
 } Engine__State;
 
@@ -114,6 +120,7 @@ typedef struct Engine__State {
 void logic_oninit(Engine__State* state);
 void logic_onpreload(void);
 void logic_onreload(Engine__State* state);
+void logic_onevent(const sapp_event* event);
 void logic_onfixedupdate(void);
 void logic_onupdate(void);
 void logic_onshutdown(void);
@@ -121,6 +128,7 @@ void logic_onshutdown(void);
 typedef void (*logic_oninit_t)(Engine__State* state);
 typedef void (*logic_onpreload_t)(void);
 typedef void (*logic_onreload_t)(Engine__State* state);
+typedef void (*logic_onevent_t)(const sapp_event* event);
 typedef void (*logic_onfixedupdate_t)(void);
 typedef void (*logic_onupdate_t)(void);
 typedef void (*logic_onshutdown_t)(void);
@@ -270,11 +278,41 @@ typedef struct VirtualJoystick {
   f32 xAxis, yAxis, zAxis;
 } VirtualJoystick;
 
+typedef struct PointerState {
+  s32 x, y;
+  f32 wheely;
+  bool btn1;
+} PointerState;
+
+#define KEYCODE_W 87
+#define KEYCODE_A 65
+#define KEYCODE_S 83
+#define KEYCODE_D 68
+#define KEYCODE_E 69
+#define KEYCODE_SPACE 32
+#define KEYCODE_LCTRL 341
+#define KEYCODE_R 82
+#define KEYCODE_ESC 256
+
+typedef struct KeyboardState {
+  bool fwd;
+  bool back;
+  bool left;
+  bool right;
+  bool use;
+  bool up;
+  bool down;
+  bool reload;
+  bool esc;
+} KeyboardState;
+
 typedef struct Player {
   Entity base;
   Camera camera;
-  VirtualJoystick input;
   f32 bobPhase;
+  VirtualJoystick input;
+  PointerState ptr;
+  KeyboardState kb;
 } Player;
 
 typedef struct Block {

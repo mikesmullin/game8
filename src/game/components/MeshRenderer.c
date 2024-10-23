@@ -105,8 +105,7 @@ static void MeshRenderer__loaded(Entity* entity) {
 
     u32 pixels[entity->render->ts * entity->render->ts * 4];  // ABGR
     u32 ii = 0;
-    for (u32 y = entity->render->ts - 1; y != (u32)-1;
-         y--) {  // flip-h; GL texture is stored flipped
+    for (u32 y = 0; y < entity->render->ts; y++) {
       for (u32 x = 0; x < entity->render->ts; x++) {
         u32 color = Bmp__Get2DTiledPixel(
             entity->render->texture,
@@ -205,7 +204,8 @@ void MeshRenderer__render(Entity* entity) {
   HMM_Vec3 viewRot = HMM_V3(  // Yaw, Pitch, Roll
       HMM_AngleDeg(logic->player->base.tform->rot.x),
       HMM_AngleDeg(logic->player->base.tform->rot.y),
-      HMM_AngleDeg(logic->player->base.tform->rot.z));
+      // TODO: Why do I have to rotate cam Z?
+      HMM_AngleDeg(logic->player->base.tform->rot.z + 180));
   HMM_Mat4 view;
   // apply rotation to view
   view = HMM_MulM4(I, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));

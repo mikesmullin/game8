@@ -2,6 +2,7 @@
 
 #include "Logic.h"
 #include "common/Audio.h"
+#include "common/Color.h"
 #include "common/Dispatcher.h"
 #include "common/Preloader.h"
 #include "common/Wav.h"
@@ -36,8 +37,10 @@ void Game__preload() {
   level->width = 300;
   level->depth = 300;
   level->height = 10;
-  level->wallTex = 5;
-  level->wallCol = 0x66ff0000;
+  // level->wallTex = 5;
+  level->wallTex = 0;
+  // level->wallCol = 0x66ff0000;
+  level->wallCol = TRANSPARENT;
   level->skybox = true;
   // level->ceilCol = 0x77000022;  // blood red
   level->ceilCol = 0xaa000000;  // darken
@@ -56,20 +59,6 @@ void Game__reload() {
 
 void Game__tick() {
   Logic__State* logic = g_engine->logic;
-
-  // if (!logic->mouseCaptured && logic->mState->btn1) {
-  //   logic->mState->btn1 = false;
-  //   logic->Window__CaptureMouse(true);
-  //   logic->mouseCaptured = true;
-  // }
-
-  // if (logic->mouseCaptured) {
-  //   if (logic->kbState->escape) {  // ESC
-  //     logic->kbState->escape = false;
-  //     logic->Window__CaptureMouse(false);
-  //     logic->mouseCaptured = false;
-  //   }
-  // }
 
   if (0 == logic->player) {
     logic->player = Player__alloc();
