@@ -1,6 +1,7 @@
 #include "Preloader.h"
 
 #include "../Logic.h"
+#include "Arena.h"
 #include "Bmp.h"
 #include "Log.h"
 #include "Wav.h"
@@ -20,6 +21,13 @@ BmpReader* Preload__texture(BmpReader** saveSlot, const char* filePath) {
   if (0 == *saveSlot) {
     LOG_DEBUGF("Preloading texture %s", filePath);
     (*saveSlot) = Bmp__Read(filePath);
+  }
+  return *saveSlot;
+}
+
+Material* Preload__material(Material** saveSlot) {
+  if (0 == *saveSlot) {
+    (*saveSlot) = Arena__Push(g_engine->arena, sizeof(Material));
   }
   return *saveSlot;
 }

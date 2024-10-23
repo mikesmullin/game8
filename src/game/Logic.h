@@ -59,6 +59,7 @@ typedef enum sg_shader_stage sg_shader_stage;
 typedef struct sg_range sg_range;
 typedef struct sg_image_desc sg_image_desc;
 typedef struct sapp_event sapp_event;
+typedef struct sg_image_data sg_image_data;
 
 typedef struct Engine__State {
   char* window_title;
@@ -108,6 +109,8 @@ typedef struct Engine__State {
   void (*sg_init_sampler)(sg_sampler smp_id, const sg_sampler_desc* desc);
   void (*sg_apply_uniforms)(sg_shader_stage stage, int ub_index, const sg_range* data);
   void (*sg_init_image)(sg_image img_id, const sg_image_desc* desc);
+  void (*sg_update_buffer)(sg_buffer buf_id, const sg_range* data);
+  void (*sg_update_image)(sg_image img_id, const sg_image_data* data);
   void (*sapp_lock_mouse)(bool lock);
   bool (*sapp_mouse_locked)(void);
 
@@ -214,28 +217,23 @@ typedef struct Rigidbody2DComponent {
   f32 xa, za;  // movement deltas (pre-collision)
 } Rigidbody2DComponent;
 
-typedef enum RendererType {
-  SPRITE_RENDERER,
-  MESH_RENDERER,
-} RendererType;
-
 #define ATLAS_SPRITE_SZ (8)
 
-typedef struct RendererComponent {
-  RendererType type;
+// TODO: kindof misnomer; contains mesh + texture + shader + bindings
+typedef struct Material {
   Wavefront* mesh;
   BmpReader* texture;
   u32 tx, ty, ts;
   bool useMask;
   u32 mask, color;
-  bool loaded;
-} RendererComponent;
-
-typedef struct MeshRendererSingleton {
-  sg_pipeline* pip;
+  sg_pipeline* pipe;
   sg_bindings* bind;
   bool loaded;
-} MeshRendererSingleton;
+} Material;
+
+typedef struct RendererComponent {
+  Material* material;
+} RendererComponent;
 
 // Entities ----------------------------------------------
 
@@ -263,10 +261,6 @@ typedef struct Entity {
   // AudioListenerComponent* hear;
   EventEmitter* events;
 } Entity;
-
-enum MODELS {
-  MODEL_BOX = 0,  // models/box.obj
-};
 
 typedef struct Camera {
   f32 fov;  // field of view
@@ -316,9 +310,21 @@ typedef struct Player {
   InputState input;
 } Player;
 
+typedef struct Sprite {
+  Entity base;
+  u32 tx, ty;
+  bool useMask;
+  u32 mask, color;
+} Sprite;
+
+typedef struct RubbleSprite {
+  Sprite base;
+  f32 xa, ya, za;
+  bool removed;
+} RubbleSprite;
+
 typedef struct Block {
   Entity base;
-  enum MODELS meshId;
   bool masked;
 } Block;
 
@@ -366,12 +372,16 @@ typedef struct PreloadedAudio {
 } PreloadedAudio;
 
 typedef struct PreloadedModels {
-  Wavefront* box;
+  Wavefront *box, *plane2D;
 } PreloadedModels;
 
 typedef struct PreloadedTextures {
   BmpReader *atlas, *glyphs0;
 } PreloadedTextures;
+
+typedef struct PreloadedMaterials {
+  Material *wall, *cat;
+} PreloadedMaterials;
 
 typedef struct Logic__State {
   // Menu* menu;
@@ -381,6 +391,7 @@ typedef struct Logic__State {
   PreloadedAudio audio;
   PreloadedModels models;
   PreloadedTextures textures;
+  PreloadedMaterials materials;
   WavReader* aSrc;  // current audio source
 
   bool mouseCaptured;
@@ -388,7 +399,6 @@ typedef struct Logic__State {
   PointerInputState* mState;
 
   sg_pass_action* pass_action;
-  MeshRendererSingleton meshRenderer;
 
 } Logic__State;
 

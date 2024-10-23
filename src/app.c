@@ -71,6 +71,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_init_sampler = sg_init_sampler;
   engine.sg_apply_uniforms = sg_apply_uniforms;
   engine.sg_init_image = sg_init_image;
+  engine.sg_update_buffer = sg_update_buffer;
+  engine.sg_update_image = sg_update_image;
   engine.sapp_lock_mouse = sapp_lock_mouse;
   engine.sapp_mouse_locked = sapp_mouse_locked;
 

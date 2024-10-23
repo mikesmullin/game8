@@ -14,15 +14,15 @@ typedef int32_t s32;
 
 extern Engine__State* g_engine;
 
-Block* SpawnBlock__alloc() {
+SpawnBlock* SpawnBlock__alloc() {
   return Arena__Push(g_engine->arena, sizeof(SpawnBlock));
 }
 
-void SpawnBlock__init(Entity* entity, f32 x, f32 y) {
+void SpawnBlock__init(Entity* entity, f32 x, f32 z) {
   Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;
   Logic__State* logic = g_engine->logic;
-  Block__init(block, x, y);
+  Block__init(block, x, z);
   block->base.engine->tick = SPAWN_BLOCK__TICK;
   block->base.collider = 0;
 

@@ -32,134 +32,137 @@ static const sg_sampler_desc global_sampler_desc = {
 
 static void MeshRenderer__loaded(Entity* entity) {
   if (NULL == entity->render) return;  // need component
-  if (entity->render->loaded) return;  // only do once
-  if (!entity->render->mesh->loaded) return;  // need model
-  if (!entity->render->texture->loaded) return;  // need texture
-  entity->render->loaded = true;
+  if (NULL == entity->render->material) return;  // need material
+  Material* material = entity->render->material;
+  if (material->loaded) return;  // only do once
+  Wavefront* mesh = material->mesh;
+  if (!mesh->loaded) return;  // need model
+  BmpReader* texture = material->texture;
+  if (!texture->loaded) return;  // need texture
+  material->loaded = true;
 
   Logic__State* logic = g_engine->logic;
 
   // alloc memory once for all meshRenderer instances, since it would be the same for each
-  if (!logic->meshRenderer.loaded) {
-    logic->meshRenderer.pip = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
-    logic->meshRenderer.bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
+  material->pipe = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
+  material->bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
 
-    // Allocate an image handle, but don't actually initialize the image yet,
-    // this happens later when the asynchronous file load has finished.
-    // Any draw calls containing such an incomplete image handle
-    // will be silently dropped.
-    sg_alloc_image_smp(logic->meshRenderer.bind->fs, SLOT__texture1, SLOT_texture1_smp);
-    sg_alloc_image_smp(logic->meshRenderer.bind->fs, SLOT__texture2, SLOT_texture2_smp);
+  // Allocate an image handle, but don't actually initialize the image yet,
+  // this happens later when the asynchronous file load has finished.
+  // Any draw calls containing such an incomplete image handle
+  // will be silently dropped.
+  sg_alloc_image_smp(material->bind->fs, SLOT__texture1, SLOT_texture1_smp);
+  sg_alloc_image_smp(material->bind->fs, SLOT__texture2, SLOT_texture2_smp);
 
-    // create shader from code-generated sg_shader_desc
-    sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
+  // create shader from code-generated sg_shader_desc
+  sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
 
-    // create a pipeline object (default render states are fine for triangle)
-    (*logic->meshRenderer.pip) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){
-        .shader = shd,
-        // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
-        .layout =
-            {
-                .attrs =
-                    {
-                        [ATTR_vs_aPos].format = SG_VERTEXFORMAT_FLOAT3,  //
-                        [ATTR_vs_aTexCoord].format = SG_VERTEXFORMAT_FLOAT2,  //
-                    },
-            },
-        .depth =
-            {
-                .compare = SG_COMPAREFUNC_LESS_EQUAL,
-                .write_enabled = true,
-            },
-        .label = "mesh-pipeline",
-    });
-  }
+  // create a pipeline object (default render states are fine for triangle)
+  (*material->pipe) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){
+      .shader = shd,
+      // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
+      .layout =
+          {
+              .attrs =
+                  {
+                      [ATTR_vs_aPos].format = SG_VERTEXFORMAT_FLOAT3,  //
+                      [ATTR_vs_aTexCoord].format = SG_VERTEXFORMAT_FLOAT2,  //
+                  },
+          },
+      .depth =
+          {
+              .compare = SG_COMPAREFUNC_LESS_EQUAL,
+              .write_enabled = true,
+          },
+      .label = "mesh-pipeline",
+  });
 
-  f32 vertices[entity->render->mesh->faces->len * 3 /*points (tri)*/ * 5 /*v3 pos + v2 uv*/];
+  f32 vertices[mesh->faces->len * 3 /*points (tri)*/ * 5 /*v3 pos + v2 uv*/];
   u32 i = 0;
-  List__Node* c = entity->render->mesh->faces->head;
-  for (u32 t = 0; t < entity->render->mesh->faces->len; t++) {
+  List__Node* c = mesh->faces->head;
+  for (u32 t = 0; t < mesh->faces->len; t++) {
     Wavefront__Face* f = c->data;
     c = c->next;
 
     // TODO: use indexed list in GL, instead
     for (u32 y = 0; y < 3; y++) {
-      v3* p = List__get(entity->render->mesh->vertices, f->vertex_idx[y] - 1);
+      v3* p = List__get(mesh->vertices, f->vertex_idx[y] - 1);
       vertices[i++] = p->x;
       vertices[i++] = p->y;
       vertices[i++] = p->z;
-      v2* uv = List__get(entity->render->mesh->texcoords, f->texcoord_idx[y] - 1);
+      v2* uv = List__get(mesh->texcoords, f->texcoord_idx[y] - 1);
       vertices[i++] = uv->x;
       vertices[i++] = uv->y;
-      // v3* n = List__get(entity->render->mesh->normals, f->normal_idx[y]);
+      // v3* n = List__get(mesh->normals, f->normal_idx[y]);
+    }
+  }
+  material->bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
+      .data = SG_RANGE(vertices),  //
+      .label = "mesh-vertices"  //
+  });
+
+  u32 pixels[material->ts * material->ts * 4];  // ABGR
+  u32 ii = 0;
+  for (u32 y = 0; y < material->ts; y++) {
+    for (u32 x = 0; x < material->ts; x++) {
+      u32 color =
+          Bmp__Get2DTiledPixel(texture, x, y, material->ts, material->tx, material->ty, PINK);
+
+      // TODO: implement bit masking
+      // entity->render->useMask;
+      // entity->render->mask;
+
+      color = alpha_blend(color, material->color);  // tint
+      pixels[ii++] = color;
+      // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
     }
   }
 
-  if (!logic->meshRenderer.loaded) {
-    logic->meshRenderer.loaded = true;
+  g_engine->sg_init_image(
+      material->bind->fs.images[SLOT__texture1],
+      &(sg_image_desc){
+          .width = material->ts,
+          .height = material->ts,
+          .pixel_format = SG_PIXELFORMAT_RGBA8,
+          .data.subimage[0][0] = {
+              .ptr = pixels,
+              .size = material->ts * material->ts * 4,
+          }});
+  // TODO: two images is too many; can discard once shader is updated
+  g_engine->sg_init_image(
+      material->bind->fs.images[SLOT__texture2],
+      &(sg_image_desc){
+          .width = material->ts,
+          .height = material->ts,
+          .pixel_format = SG_PIXELFORMAT_RGBA8,
+          .data.subimage[0][0] = {
+              .ptr = pixels,
+              .size = material->ts * material->ts * 4,
+          }});
 
-    logic->meshRenderer.bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
-        .data = SG_RANGE(vertices),  //
-        .label = "mesh-vertices"  //
-    });
-
-    u32 pixels[entity->render->ts * entity->render->ts * 4];  // ABGR
-    u32 ii = 0;
-    for (u32 y = 0; y < entity->render->ts; y++) {
-      for (u32 x = 0; x < entity->render->ts; x++) {
-        u32 color = Bmp__Get2DTiledPixel(
-            entity->render->texture,
-            x,
-            y,
-            entity->render->ts,
-            entity->render->tx,
-            entity->render->ty,
-            PINK);
-
-        // TODO: implement bit masking
-        // entity->render->useMask;
-        // entity->render->mask;
-
-        color = alpha_blend(color, entity->render->color);  // tint
-        pixels[ii++] = color;
-        // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
-      }
-    }
-    g_engine->sg_init_image(
-        logic->meshRenderer.bind->fs.images[SLOT__texture1],
-        &(sg_image_desc){
-            .width = entity->render->ts,
-            .height = entity->render->ts,
-            .pixel_format = SG_PIXELFORMAT_RGBA8,
-            .data.subimage[0][0] = {
-                .ptr = pixels,
-                .size = entity->render->ts * entity->render->ts * 4,
-            }});
-    // TODO: two images is too many; can discard once shader is updated
-    g_engine->sg_init_image(
-        logic->meshRenderer.bind->fs.images[SLOT__texture2],
-        &(sg_image_desc){
-            .width = entity->render->ts,
-            .height = entity->render->ts,
-            .pixel_format = SG_PIXELFORMAT_RGBA8,
-            .data.subimage[0][0] = {
-                .ptr = pixels,
-                .size = entity->render->ts * entity->render->ts * 4,
-            }});
-  }
-
-  // TODO: update VBO (support more than one mesh globally)
-
-  // TODO: update image texture (to support more than one texture globally)
-  //   g_engine->sg_update_buffer(sg_buffer buf, const sg_range* data);
-  //   g_engine->sg_update_image(sg_image img, const sg_image_data* data);
+  // g_engine->sg_update_buffer(logic->meshRenderer.bind->vertex_buffers[0], &SG_RANGE(vertices));
+  //   g_engine->sg_update_image(
+  //       logic->meshRenderer.bind->fs.images[SLOT__texture1],
+  //       &(sg_image_data){
+  //           .subimage[0][0] = {
+  //               .ptr = pixels,
+  //               .size = material->ts * material->ts * 4,
+  //           }});
+  //   g_engine->sg_update_image(
+  //       logic->meshRenderer.bind->fs.images[SLOT__texture2],
+  //       &(sg_image_data){
+  //           .subimage[0][0] = {
+  //               .ptr = pixels,
+  //               .size = material->ts * material->ts * 4,
+  //           }});
 }
 
 void MeshRenderer__render(Entity* entity) {
   Logic__State* logic = g_engine->logic;
 
   MeshRenderer__loaded(entity);
-  if (!entity->render->loaded) return;  // no draw until assets load
+  if (!entity->render->material->loaded) return;  // no draw until assets load
+  Material* material = entity->render->material;
 
   // TODO: move to OrbitalCameraComponent
   // f32 r = g_engine->stm_sec(g_engine->stm_now());
@@ -232,11 +235,11 @@ void MeshRenderer__render(Entity* entity) {
       logic->player->camera.nearZ,
       logic->player->camera.farZ);
 
-  g_engine->sg_apply_pipeline(*logic->meshRenderer.pip);
-  g_engine->sg_apply_bindings(logic->meshRenderer.bind);
+  g_engine->sg_apply_pipeline(*material->pipe);
+  g_engine->sg_apply_bindings(material->bind);
 
   vs_params_t vs_params = {.model = model, .view = view, .projection = projection};
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
 
-  g_engine->sg_draw(0, entity->render->mesh->faces->len * 3 /*points(tri)*/, 1);
+  g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, 1);
 }

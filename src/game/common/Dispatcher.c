@@ -1,5 +1,6 @@
 #include "Dispatcher.h"
 
+#include "../entities/Sprite.h"
 // #include "../blocks/Block.h"
 // #include "../blocks/BreakBlock.h"
 // #include "../blocks/CatSpawnBlock.h"
@@ -31,6 +32,7 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     // BreakBlock__render,  //
     // BreakBlock__tick,
 
+    Sprite__render,
     // CatEntity__tick,  //
     // CatEntity__render,  //
     // CatEntity__gui,  //

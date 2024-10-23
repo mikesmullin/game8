@@ -13,6 +13,7 @@
 #include "../common/Dispatcher.h"
 #include "../common/Geometry.h"
 #include "../common/QuadTree.h"
+#include "../entities/Sprite.h"
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
@@ -37,25 +38,28 @@ void Level__init(Level* level) {
   level->spawner = NULL;
 }
 
-static Block* Level__makeBlock(u32 col, f32 x, f32 y) {
+static Entity* Level__makeEntity(u32 col, f32 x, f32 y) {
   if (0xff000000 == col) {  // black; empty space
     return NULL;
   }
   if (0xffffffff == col) {  // white
-    Block* block = WallBlock__alloc();
+    WallBlock* block = WallBlock__alloc();
     WallBlock__init((Entity*)block, x, y);
-    return block;
+    return (Entity*)block;
   }
   if (0xff00f2ff == col) {  // yellow
-    Block* block = SpawnBlock__alloc();
+    SpawnBlock* block = SpawnBlock__alloc();
     SpawnBlock__init((Entity*)block, x, y);
-    return block;
+    return (Entity*)block;
   }
-  // if (0xff241ced == col) {  // red
-  //   Block* block = CatSpawnBlock__alloc();
-  //   CatSpawnBlock__init(block, x, y);
-  //   return block;
-  // }
+  if (0xff241ced == col) {  // red
+    // Block* block = CatSpawnBlock__alloc();
+    // CatSpawnBlock__init(block, x, y);
+    // return block;
+    Sprite* cat = Sprite__alloc();
+    Sprite__init((Entity*)cat, x, y);
+    return (Entity*)cat;
+  }
   // if (0xff7f7f7f == col) {  // dark gray
   //   Block* block = BreakBlock__alloc();
   //   BreakBlock__init(block, x, y);
@@ -81,9 +85,9 @@ static void Level__loaded(Level* level) {
   for (s32 y = 0; y < level->bmp->h; y++) {
     for (s32 x = 0; x < level->bmp->w; x++) {
       u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
-      Block* block = Level__makeBlock(color, x, y);
-      if (NULL != block) {
-        List__append(g_engine->arena, level->entities, block);
+      Entity* entity = Level__makeEntity(color, x, y);
+      if (NULL != entity) {
+        List__append(g_engine->arena, level->entities, entity);
       }
     }
   }

@@ -1,9 +1,9 @@
 #pragma once
 
 typedef float f32;
-typedef struct Block Block;
 typedef struct Entity Entity;
+typedef struct WallBlock WallBlock;
 
-Block* WallBlock__alloc();
-void WallBlock__init(Entity* block, f32 x, f32 y);
-void WallBlock__render(Entity* block);
+WallBlock* WallBlock__alloc();
+void WallBlock__init(Entity* entity, f32 x, f32 z);
+void WallBlock__render(Entity* entity);

@@ -14,6 +14,7 @@ typedef enum DispatchFnId : u32 {
   // BREAK_BLOCK__RENDER,
   // BREAK_BLOCK__TICK,
 
+  SPRITE__RENDER,
   // CAT_ENTITY__TICK,
   // CAT_ENTITY__RENDER,
   // CAT_ENTITY__GUI,
