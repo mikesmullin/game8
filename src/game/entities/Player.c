@@ -95,9 +95,7 @@ void Player__tick(Entity* entity) {
     }
 
     // W-S Forward/Backward axis
-    if (logic->player->kb.fwd && logic->player->kb.back) {
-      self->input.zAxis = 0.0f;
-    } else if (logic->player->kb.fwd) {
+    if (logic->player->kb.fwd) {
       self->input.zAxis = +1.0f;
     } else if (logic->player->kb.back) {
       self->input.zAxis = -1.0f;
@@ -106,20 +104,16 @@ void Player__tick(Entity* entity) {
     }
 
     // A-D Left/Right axis
-    if (logic->player->kb.left && logic->player->kb.right) {
-      self->input.xAxis = 0.0f;
+    if (logic->player->kb.right) {
+      self->input.xAxis = +1.0f;
     } else if (logic->player->kb.left) {
       self->input.xAxis = -1.0f;
-    } else if (logic->player->kb.right) {
-      self->input.xAxis = +1.0f;
     } else {
       self->input.xAxis = 0.0f;
     }
 
     // Q-E Up/Down axis
-    if (logic->player->kb.up && logic->player->kb.down) {
-      self->input.yAxis = 0.0f;
-    } else if (logic->player->kb.up) {
+    if (logic->player->kb.up) {
       self->input.yAxis = +1.0f;  // +Y_UP
     } else if (logic->player->kb.down) {
       self->input.yAxis = -1.0f;
