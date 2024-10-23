@@ -85,13 +85,14 @@ void Player__tick(Entity* entity) {
   } else {
     if (0 != logic->player->ptr.x) {  // yaw (rotate around Y-axis)
       logic->player->base.tform->rot.y += logic->player->ptr.x * PLAYER_LOOK_SPEED;
-      logic->player->base.tform->rot.y = Math__fmod(logic->player->base.tform->rot.y, 360.0f);
+      logic->player->base.tform->rot.y = Math__rclampf(0, logic->player->base.tform->rot.y, 360.0f);
       logic->player->ptr.x = 0;
     }
 
     if (0 != logic->player->ptr.y) {  // pitch (rotate around X-axis)
       logic->player->base.tform->rot.x += logic->player->ptr.y * PLAYER_LOOK_SPEED;
-      logic->player->base.tform->rot.x = Math__fmod(logic->player->base.tform->rot.x, 360.0f);
+      logic->player->base.tform->rot.x =
+          Math__clamp(-55.0f, logic->player->base.tform->rot.x, 55.0f);
       logic->player->ptr.y = 0;
     }
 

@@ -13,4 +13,4 @@ typedef double f64;
 #define Math__clamp(min, n, max) (((n) < (min)) ? (min) : ((max) < (n)) ? (max) : (n))
 
 f64 Math__map(f64 n, f64 input_start, f64 input_end, f64 output_start, f64 output_end);
-f64 Math__fmod(f64 n, f64 max);
+f64 Math__rclampf(f64 min, f64 n, f64 max);
