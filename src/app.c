@@ -90,7 +90,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
       .cleanup_cb = cleanup,
       .width = engine.window_width,
       .height = engine.window_height,
-      .html5_canvas_resize = true,
       .window_title = engine.window_title,
       .icon.sokol_default = false,
       .logger.func = slog_func,

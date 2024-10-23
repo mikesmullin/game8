@@ -192,7 +192,9 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
       LOG_DEBUGF("event unfocused");
       break;
     case SAPP_EVENTTYPE_RESIZED:
-      LOG_DEBUGF("event resized");
+      LOG_DEBUGF("event resized %u %u", event->window_width, event->window_height);
+      g_engine->window_width = event->window_width;
+      g_engine->window_height = event->window_height;
       break;
     case SAPP_EVENTTYPE_ICONIFIED:
       LOG_DEBUGF("event iconified/minimized");
