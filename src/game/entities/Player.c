@@ -108,6 +108,13 @@ void Player__tick(Entity* entity) {
       logic->level->spawner->firstTick = true;  // tp to spawn
     }
 
+    // TODO: could implement player camera zoom (also from 1P to 3P)
+    // if (0 != logic->player->ptr.wheely) {
+    //   logic->player->base.tform->pos.z +=
+    //       -logic->player->ptr.wheely * PLAYER_ZOOM_SPEED /* deltaTime*/;
+    //   logic->player->ptr.wheely = 0;
+    // }
+
     // W-S Forward/Backward axis
     if (logic->player->input.fwd) {
       self->joy.zAxis = +1.0f;

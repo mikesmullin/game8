@@ -64,6 +64,8 @@ LOGIC_DECL void logic_onreload(Engine__State* state) {
 LOGIC_DECL void logic_onevent(const sapp_event* event) {
   Logic__State* logic = g_engine->logic;
 
+  // LOG_DEBUGF("event frame_count %llu", event->frame_count);
+
   if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
     if (KEYCODE_W == event->key_code) logic->player->input.fwd = true;
     if (KEYCODE_A == event->key_code) logic->player->input.left = true;
@@ -214,13 +216,16 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
 
 // on physics
 LOGIC_DECL void logic_onfixedupdate(void) {
+  Logic__State* logic = g_engine->logic;
+
+  g_engine->sfetch_dowork();
+
+  Game__tick();
 }
 
 // on draw
 LOGIC_DECL void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
-
-  g_engine->sfetch_dowork();
 
   // a pass action to clear framebuffer to black
   (*logic->pass_action) = (sg_pass_action){
@@ -232,8 +237,6 @@ LOGIC_DECL void logic_onupdate(void) {
   g_engine->sg_begin_pass(
       &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
 
-  // TODO: separate tick from render
-  Game__tick();
   Game__render();
   Game__gui();
 

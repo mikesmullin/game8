@@ -7,6 +7,7 @@
 #include "../vendor/sokol/sokol_log.h"
 #include "../vendor/sokol/sokol_time.h"
 #include "game/Logic.h"
+#include "game/common/Arena.h"
 
 #ifndef __EMSCRIPTEN__
 #include "lib/HotReload.h"
@@ -23,6 +24,14 @@ static void frame(void);
 static void cleanup(void);
 static void event_cb(const sapp_event* event);
 static void stream_cb(float* buffer, int num_frames, int num_channels);
+
+static void update_window_title(const char* title) {
+#ifdef __EMSCRIPTEN__
+  EM_ASM({ document.title = UTF8ToString($0); }, title);
+#else
+  sapp_set_window_title(title);
+#endif
+}
 
 sapp_desc sokol_main(int argc, char* argv[]) {
   (void)argc;
@@ -70,9 +79,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 #endif
   logic_oninit(&engine);
 
-#ifdef __EMSCRIPTEN__
-  EM_ASM({ document.title = UTF8ToString($0); }, engine.window_title);
-#endif
+  update_window_title(engine.window_title);
 
   // NOTICE: You can't log here--it's too early. The window + console aren't initialized, yet.
 
@@ -125,7 +132,42 @@ static void frame(void) {
   engine.now = stm_ms(stm_now());
   static u64 lastTick;
   engine.deltaTime = stm_sec(stm_laptime(&lastTick));
+
+  u64 startPhysics = stm_now(), costPhysics;
+  logic_onfixedupdate();
+  costPhysics = stm_ms(stm_laptime(&startPhysics));
+
+  u64 startRender = stm_now(), costRender;
   logic_onupdate();
+  costRender = stm_ms(stm_laptime(&startRender));
+
+  // performance stats
+  static f64 accumulator2 = 0.0f;
+  static const f32 FPS_LOG_TIME_STEP = 1.0f;  // every second
+  static u16 frames = 0;
+  accumulator2 += engine.deltaTime;
+  frames++;
+  if (accumulator2 >= FPS_LOG_TIME_STEP) {
+    static char title[100];
+    sprintf(
+        title,
+        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB",
+        engine.window_title,
+        frames,  // FPS = measured/counted frames per second
+        costPhysics,  // P = cost of last physics in ms
+        costRender,  // R = cost of last render in ms
+        // pFPS = potential frames per second (if it wasn't fixed)
+        1000 / (costPhysics + costRender + 1),  // +1 avoids div/0
+        // A = Arena memory used/capacity
+        ((u64)(engine.arena->pos - engine.arena->buf)) / 1024 / 1024,
+        ((u64)(engine.arena->end - engine.arena->buf)) / 1024 / 1024);
+    update_window_title(title);
+    frames = 0;
+
+    while (accumulator2 >= FPS_LOG_TIME_STEP) {
+      accumulator2 -= FPS_LOG_TIME_STEP;
+    }
+  }
 }
 
 static void cleanup(void) {
