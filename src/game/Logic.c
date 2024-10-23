@@ -65,37 +65,37 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
   Logic__State* logic = g_engine->logic;
 
   if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
-    if (KEYCODE_W == event->key_code) logic->player->kb.fwd = true;
-    if (KEYCODE_A == event->key_code) logic->player->kb.left = true;
-    if (KEYCODE_S == event->key_code) logic->player->kb.back = true;
-    if (KEYCODE_D == event->key_code) logic->player->kb.right = true;
-    if (KEYCODE_E == event->key_code) logic->player->kb.use = true;
-    if (KEYCODE_SPACE == event->key_code) logic->player->kb.up = true;
-    if (KEYCODE_LCTRL == event->key_code) logic->player->kb.down = true;
-    if (KEYCODE_R == event->key_code) logic->player->kb.reload = true;
-    if (KEYCODE_ESC == event->key_code) logic->player->kb.esc = true;
+    if (KEYCODE_W == event->key_code) logic->player->input.fwd = true;
+    if (KEYCODE_A == event->key_code) logic->player->input.left = true;
+    if (KEYCODE_S == event->key_code) logic->player->input.back = true;
+    if (KEYCODE_D == event->key_code) logic->player->input.right = true;
+    if (KEYCODE_E == event->key_code) logic->player->input.use = true;
+    if (KEYCODE_SPACE == event->key_code) logic->player->input.up = true;
+    if (KEYCODE_TAB == event->key_code) logic->player->input.down = true;
+    if (KEYCODE_R == event->key_code) logic->player->input.reload = true;
+    if (KEYCODE_ESC == event->key_code) logic->player->input.esc = true;
 
-    // LOG_DEBUGF(
-    //     "event keydown"
-    //     " char_code %u"
-    //     " key_code %u"
-    //     " key_repeat %u"
-    //     " modifiers %u",
-    //     event->char_code,
-    //     event->key_code,
-    //     event->key_repeat,
-    //     event->modifiers);
+    LOG_DEBUGF(
+        "event keydown"
+        " char_code %u"
+        " key_code %u"
+        " key_repeat %u"
+        " modifiers %u",
+        event->char_code,
+        event->key_code,
+        event->key_repeat,
+        event->modifiers);
   }
   if (SAPP_EVENTTYPE_KEY_UP == event->type) {
-    if (KEYCODE_W == event->key_code) logic->player->kb.fwd = false;
-    if (KEYCODE_A == event->key_code) logic->player->kb.left = false;
-    if (KEYCODE_S == event->key_code) logic->player->kb.back = false;
-    if (KEYCODE_D == event->key_code) logic->player->kb.right = false;
-    if (KEYCODE_E == event->key_code) logic->player->kb.use = false;
-    if (KEYCODE_SPACE == event->key_code) logic->player->kb.up = false;
-    if (KEYCODE_LCTRL == event->key_code) logic->player->kb.down = false;
-    if (KEYCODE_R == event->key_code) logic->player->kb.reload = false;
-    if (KEYCODE_ESC == event->key_code) logic->player->kb.esc = false;
+    if (KEYCODE_W == event->key_code) logic->player->input.fwd = false;
+    if (KEYCODE_A == event->key_code) logic->player->input.left = false;
+    if (KEYCODE_S == event->key_code) logic->player->input.back = false;
+    if (KEYCODE_D == event->key_code) logic->player->input.right = false;
+    if (KEYCODE_E == event->key_code) logic->player->input.use = false;
+    if (KEYCODE_SPACE == event->key_code) logic->player->input.up = false;
+    if (KEYCODE_TAB == event->key_code) logic->player->input.down = false;
+    if (KEYCODE_R == event->key_code) logic->player->input.reload = false;
+    if (KEYCODE_ESC == event->key_code) logic->player->input.esc = false;
 
     // LOG_DEBUGF(
     //     "event keyup"
@@ -124,7 +124,7 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
   //     logic->player->kb.esc);
 
   if (SAPP_EVENTTYPE_MOUSE_DOWN == event->type) {
-    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->ptr.btn1 = true;
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->input.use = true;
 
     // LOG_DEBUGF(
     //     "event mousedown"
@@ -132,7 +132,7 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
     //     event->mouse_button);
   }
   if (SAPP_EVENTTYPE_MOUSE_UP == event->type) {
-    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->ptr.btn1 = false;
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->input.use = false;
 
     // LOG_DEBUGF(
     //     "event mouseup"

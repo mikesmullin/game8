@@ -37,9 +37,9 @@ void Player__init(Entity* entity) {
 
   entity->engine->tick = PLAYER_ENTITY__TICK;
 
-  self->input.xAxis = 0.0f;
-  self->input.yAxis = 0.0f;
-  self->input.zAxis = 0.0f;
+  self->joy.xAxis = 0.0f;
+  self->joy.yAxis = 0.0f;
+  self->joy.zAxis = 0.0f;
 
   self->camera.fov = 45.0f;
   self->camera.nearZ = 0.1f;
@@ -69,8 +69,14 @@ void Player__tick(Entity* entity) {
   // self->base.tform->pos.x = -25;
   // self->base.tform->pos.z = -25;
 
-  if (logic->player->ptr.btn1 && !logic->mouseCaptured) g_engine->sapp_lock_mouse(true);
-  if (logic->player->kb.esc && logic->mouseCaptured) g_engine->sapp_lock_mouse(false);
+  if (logic->player->input.use && !logic->mouseCaptured) {
+    logic->player->input.use = false;
+    g_engine->sapp_lock_mouse(true);
+  }
+  if (logic->player->input.esc && logic->mouseCaptured) {
+    logic->player->input.esc = false;
+    g_engine->sapp_lock_mouse(false);
+  }
   logic->mouseCaptured = g_engine->sapp_mouse_locked();
 
   if (!logic->mouseCaptured) {
@@ -89,36 +95,36 @@ void Player__tick(Entity* entity) {
       logic->player->ptr.y = 0;
     }
 
-    if (true == logic->player->kb.reload) {  // R
-      logic->player->kb.reload = false;
+    if (true == logic->player->input.reload) {  // R
+      logic->player->input.reload = false;
       logic->level->spawner->firstTick = true;  // tp to spawn
     }
 
     // W-S Forward/Backward axis
-    if (logic->player->kb.fwd) {
-      self->input.zAxis = +1.0f;
-    } else if (logic->player->kb.back) {
-      self->input.zAxis = -1.0f;
+    if (logic->player->input.fwd) {
+      self->joy.zAxis = +1.0f;
+    } else if (logic->player->input.back) {
+      self->joy.zAxis = -1.0f;
     } else {
-      self->input.zAxis = 0.0f;
+      self->joy.zAxis = 0.0f;
     }
 
     // A-D Left/Right axis
-    if (logic->player->kb.right) {
-      self->input.xAxis = +1.0f;
-    } else if (logic->player->kb.left) {
-      self->input.xAxis = -1.0f;
+    if (logic->player->input.right) {
+      self->joy.xAxis = +1.0f;
+    } else if (logic->player->input.left) {
+      self->joy.xAxis = -1.0f;
     } else {
-      self->input.xAxis = 0.0f;
+      self->joy.xAxis = 0.0f;
     }
 
     // Q-E Up/Down axis
-    if (logic->player->kb.up) {
-      self->input.yAxis = +1.0f;  // +Y_UP
-    } else if (logic->player->kb.down) {
-      self->input.yAxis = -1.0f;
+    if (logic->player->input.up) {
+      self->joy.yAxis = +1.0f;  // +Y_UP
+    } else if (logic->player->input.down) {
+      self->joy.yAxis = -1.0f;
     } else {
-      self->input.yAxis = 0.0f;
+      self->joy.yAxis = 0.0f;
     }
 
     // Direction vectors for movement
@@ -146,36 +152,36 @@ void Player__tick(Entity* entity) {
     // TODO: can manipulate this to simulate slipping/ice
     entity->rb->xa = 0;
     entity->rb->za = 0;
-    if (0 != self->input.zAxis) {
-      forward = HMM_MulV3F(front, self->input.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
+    if (0 != self->joy.zAxis) {
+      forward = HMM_MulV3F(front, self->joy.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
       pos = HMM_AddV3(p1, forward);
       entity->rb->xa += pos.X - entity->tform->pos.x;
       entity->rb->za += pos.Z - entity->tform->pos.z;
     }
 
     // apply left/right motion
-    if (0 != self->input.xAxis) {
+    if (0 != self->joy.xAxis) {
       forward = HMM_MulV3F(
           right,
-          self->input.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
+          self->joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
       pos = HMM_AddV3(p1, forward);
       entity->rb->xa += pos.X - entity->tform->pos.x;
       entity->rb->za += pos.Z - entity->tform->pos.z;
     }
 
     // apply up/down motion
-    if (0 != self->input.yAxis) {
-      entity->tform->pos.y += self->input.yAxis * PLAYER_FLY_SPEED * g_engine->deltaTime;
+    if (0 != self->joy.yAxis) {
+      entity->tform->pos.y += self->joy.yAxis * PLAYER_FLY_SPEED * g_engine->deltaTime;
 
       entity->tform->pos.y = Math__clamp(0, entity->tform->pos.y, logic->level->height);
     }
 
     static const f32 SQRT_TWO = 1.414214f;
 
-    f32 xm = self->input.xAxis;
-    f32 zm = self->input.zAxis;
+    f32 xm = self->joy.xAxis;
+    f32 zm = self->joy.zAxis;
     f32 d = sqrtf(xm * xm + zm * zm);
-    if (0 != self->input.zAxis && 0 != self->input.xAxis) {
+    if (0 != self->joy.zAxis && 0 != self->joy.xAxis) {
       // normalize diagonal movement, so it is not faster
       entity->rb->xa /= SQRT_TWO;
       entity->rb->za /= SQRT_TWO;
@@ -191,55 +197,56 @@ void Player__tick(Entity* entity) {
       self->bobPhase += d;
     }
 
-    LOG_DEBUGF(
-        "Player move %f %f %f dT %f",
-        entity->tform->pos.x,
-        entity->tform->pos.y,
-        entity->tform->pos.z,
-        g_engine->deltaTime);
+    // LOG_DEBUGF(
+    //     "Player move %f %f %f dT %f",
+    //     entity->tform->pos.x,
+    //     entity->tform->pos.y,
+    //     entity->tform->pos.z,
+    //     g_engine->deltaTime);
     Rigidbody2D__move(entity);
 
-    // Space (Use)
-    // if (logic->player->kb.use) {
-    //   logic->player->kb.use = false;
+    if (logic->player->input.use) {
+      logic->player->input.use = false;
 
-    //   // find nearest cat
-    //   // TODO: make into reusable FindNearestEntity() type of fn
-    //   u32 matchCount = 0;
-    //   void* matchData[40];  // TODO: don't limit search results?
-    //   forward = HMM_MulV3F(front, -1);
-    //   pos = HMM_AddV3(p1, forward);
-    //   Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
-    //   QuadTreeNode_query(logic->level->qt, range, 40, matchData, &matchCount);
+      LOG_DEBUGF("use");
 
-    //   for (u32 i = 0; i < matchCount; i++) {
-    //     Entity* other = (Entity*)matchData[i];
-    //     if (entity == other) continue;
+      //   // find nearest cat
+      //   // TODO: make into reusable FindNearestEntity() type of fn
+      //   u32 matchCount = 0;
+      //   void* matchData[40];  // TODO: don't limit search results?
+      //   forward = HMM_MulV3F(front, -1);
+      //   pos = HMM_AddV3(p1, forward);
+      //   Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
+      //   QuadTreeNode_query(logic->level->qt, range, 40, matchData, &matchCount);
 
-    //     if (TAG_CAT & other->tags1) {
-    //       CatEntity* cat = (CatEntity*)other;
-    //       Action action = {.type = ACTION_USE, .actor = entity, .target = other};
+      //   for (u32 i = 0; i < matchCount; i++) {
+      //     Entity* other = (Entity*)matchData[i];
+      //     if (entity == other) continue;
 
-    //       // Action__PerformBuffered(other, &action);
-    //       if (NULL != cat->sg) {
-    //         CatEntity__callSGAction(cat->sg, &action);
-    //       }
-    //       break;
-    //     }
+      //     if (TAG_CAT & other->tags1) {
+      //       CatEntity* cat = (CatEntity*)other;
+      //       Action action = {.type = ACTION_USE, .actor = entity, .target = other};
 
-    //     if (TAG_BRICK & other->tags1) {
-    //       BreakBlock* brick = (BreakBlock*)other;
-    //       Action action = {.type = ACTION_USE, .actor = entity, .target = other};
+      //       // Action__PerformBuffered(other, &action);
+      //       if (NULL != cat->sg) {
+      //         CatEntity__callSGAction(cat->sg, &action);
+      //       }
+      //       break;
+      //     }
 
-    //       if (!(TAG_BROKEN & other->tags1)) {
-    //         if (NULL != brick->sg) {
-    //           BreakBlock__callSGAction(brick->sg, &action);
-    //           break;
-    //         }
-    //       }
-    //     }
-    //   }
-    // }
+      //     if (TAG_BRICK & other->tags1) {
+      //       BreakBlock* brick = (BreakBlock*)other;
+      //       Action action = {.type = ACTION_USE, .actor = entity, .target = other};
+
+      //       if (!(TAG_BROKEN & other->tags1)) {
+      //         if (NULL != brick->sg) {
+      //           BreakBlock__callSGAction(brick->sg, &action);
+      //           break;
+      //         }
+      //       }
+      //     }
+      //   }
+    }
   }
 
   // if (entity->health->hurtTime > 0) {

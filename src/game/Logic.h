@@ -281,7 +281,6 @@ typedef struct VirtualJoystick {
 typedef struct PointerState {
   s32 x, y;
   f32 wheely;
-  bool btn1;
 } PointerState;
 
 #define KEYCODE_W 87
@@ -289,12 +288,14 @@ typedef struct PointerState {
 #define KEYCODE_S 83
 #define KEYCODE_D 68
 #define KEYCODE_E 69
+#define KEYCODE_Q 81
+#define KEYCODE_TAB 258
 #define KEYCODE_SPACE 32
 #define KEYCODE_LCTRL 341
 #define KEYCODE_R 82
 #define KEYCODE_ESC 256
 
-typedef struct KeyboardState {
+typedef struct InputState {
   bool fwd;
   bool back;
   bool left;
@@ -304,15 +305,15 @@ typedef struct KeyboardState {
   bool down;
   bool reload;
   bool esc;
-} KeyboardState;
+} InputState;
 
 typedef struct Player {
   Entity base;
   Camera camera;
   f32 bobPhase;
-  VirtualJoystick input;
+  VirtualJoystick joy;
   PointerState ptr;
-  KeyboardState kb;
+  InputState input;
 } Player;
 
 typedef struct Block {
