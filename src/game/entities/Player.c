@@ -48,7 +48,7 @@ void Player__init(Entity* entity) {
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
   collider->base.type = CIRCLE_COLLIDER_2D;
-  collider->r = 0.60f;
+  collider->r = 0.65f;
   entity->collider = (ColliderComponent*)collider;
 
   // entity->health = Arena__Push(g_engine->arena, sizeof(HealthComponent));
