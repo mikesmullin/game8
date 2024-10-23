@@ -72,12 +72,19 @@ void Player__tick(Entity* entity) {
   if (logic->player->input.use && !logic->mouseCaptured) {
     logic->player->input.use = false;
     g_engine->sapp_lock_mouse(true);
+    LOG_DEBUGF("request mouse lock");
   }
   if (logic->player->input.esc && logic->mouseCaptured) {
     logic->player->input.esc = false;
     g_engine->sapp_lock_mouse(false);
+    LOG_DEBUGF("request mouse unlock");
   }
-  logic->mouseCaptured = g_engine->sapp_mouse_locked();
+  bool ml = g_engine->sapp_mouse_locked();
+  if (ml != logic->mouseCaptured) {
+    if (ml) LOG_DEBUGF("response mouse locked");
+    if (!ml) LOG_DEBUGF("response mouse unlocked");
+  }
+  logic->mouseCaptured = ml;
 
   if (!logic->mouseCaptured) {
     logic->player->ptr.x = 0;

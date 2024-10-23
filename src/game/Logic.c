@@ -75,16 +75,16 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
     if (KEYCODE_R == event->key_code) logic->player->input.reload = true;
     if (KEYCODE_ESC == event->key_code) logic->player->input.esc = true;
 
-    LOG_DEBUGF(
-        "event keydown"
-        " char_code %u"
-        " key_code %u"
-        " key_repeat %u"
-        " modifiers %u",
-        event->char_code,
-        event->key_code,
-        event->key_repeat,
-        event->modifiers);
+    // LOG_DEBUGF(
+    //     "event keydown"
+    //     " char_code %u"
+    //     " key_code %u"
+    //     " key_repeat %u"
+    //     " modifiers %u",
+    //     event->char_code,
+    //     event->key_code,
+    //     event->key_repeat,
+    //     event->modifiers);
   }
   if (SAPP_EVENTTYPE_KEY_UP == event->type) {
     if (KEYCODE_W == event->key_code) logic->player->input.fwd = false;
