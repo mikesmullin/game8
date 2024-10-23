@@ -37,10 +37,11 @@ void Game__preload() {
   level->width = 300;
   level->depth = 300;
   level->height = 10;
-  // level->wallTex = 5;
-  level->wallTex = 0;
-  // level->wallCol = 0x66ff0000;
-  level->wallCol = TRANSPARENT;
+  // DEBUG: UV ColorMap
+  // level->wallTex = 0;
+  // level->wallCol = TRANSPARENT;
+  level->wallTex = 5;
+  level->wallCol = 0x66ff0000;
   level->skybox = true;
   // level->ceilCol = 0x77000022;  // blood red
   level->ceilCol = 0xaa000000;  // darken
