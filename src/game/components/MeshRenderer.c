@@ -119,12 +119,12 @@ static void MeshRenderer__loaded(Entity* entity) {
       .label = "mesh-vertices"  //
   });
 
-  u32 pixels[material->texture->w * material->texture->h * 4];  // ABGR
-  u32 ii = 0;
+  u32 pixels[material->texture->w * material->texture->h];  // ABGR
+  u32 ii = 0, mask, color;
   for (u32 y = 0; y < material->texture->h; y++) {
     for (u32 x = 0; x < material->texture->w; x++) {
-      u32 mask = material->useMask ? material->mask : PINK;
-      u32 color = Bmp__Get2DPixel(texture, x, y, mask);
+      mask = material->useMask ? material->mask : PINK;
+      color = Bmp__Get2DPixel(texture, x, y, mask);
       pixels[ii++] = color;
     }
   }
