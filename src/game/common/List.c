@@ -62,7 +62,7 @@ void List__insort(Arena* arena, List* list, void* data, s32 (*sortCb)(void* a, v
   // locate the node before the point of insertion
   List__Node* c = list->head;
   // while data is deeper than head (-Z_FWD = head -Z, tail +Z)
-  while (c->next != NULL && sortCb(node->data, c->next->data) == -1) {  // -1 a<b, 0 a==b, +1 a>b
+  while (c->next != 0 && sortCb(node->data, c->next->data) == -1) {  // -1 a<b, 0 a==b, +1 a>b
     c = c->next;
   }
 

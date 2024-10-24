@@ -72,7 +72,7 @@ static void MeshRenderer__loaded(Entity* entity) {
       .depth =
           {
               .compare = SG_COMPAREFUNC_LESS_EQUAL,
-              .write_enabled = false,
+              .write_enabled = true,
           },
       .colors[0] =
           {
@@ -119,33 +119,25 @@ static void MeshRenderer__loaded(Entity* entity) {
       .label = "mesh-vertices"  //
   });
 
-  u32 pixels[material->ts * material->ts * 4];  // ABGR
+  u32 pixels[material->texture->w * material->texture->h * 4];  // ABGR
   u32 ii = 0;
-  for (u32 y = 0; y < material->ts; y++) {
-    for (u32 x = 0; x < material->ts; x++) {
+  for (u32 y = 0; y < material->texture->h; y++) {
+    for (u32 x = 0; x < material->texture->w; x++) {
       u32 mask = material->useMask ? material->mask : PINK;
-      u32 color =
-          Bmp__Get2DTiledPixel(texture, x, y, material->ts, material->tx, material->ty, mask);
-
-      if (material->useMask && mask == color) {
-        color = TRANSPARENT;
-      } else {
-        color = alpha_blend(color, material->color);  // tint
-      }
+      u32 color = Bmp__Get2DPixel(texture, x, y, mask);
       pixels[ii++] = color;
-      // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
     }
   }
 
   g_engine->sg_init_image(
       material->bind->fs.images[SLOT__texture1],
       &(sg_image_desc){
-          .width = material->ts,
-          .height = material->ts,
+          .width = material->texture->w,
+          .height = material->texture->h,
           .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
           .data.subimage[0][0] = {
               .ptr = pixels,
-              .size = material->ts * material->ts * 4,
+              .size = material->texture->w * material->texture->h * 4,
           }});
 
   // g_engine->sg_update_buffer(logic->meshRenderer.bind->vertex_buffers[0], &SG_RANGE(vertices));
@@ -154,7 +146,7 @@ static void MeshRenderer__loaded(Entity* entity) {
   //       &(sg_image_data){
   //           .subimage[0][0] = {
   //               .ptr = pixels,
-  //               .size = material->ts * material->ts * 4,
+  //               .size = material->texture->w * material->texture->h * 4,
   //           }});
 }
 
@@ -241,6 +233,19 @@ void MeshRenderer__render(Entity* entity) {
 
   vs_params_t vs_params = {.model = model, .view = view, .projection = projection};
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
+
+  u8 s = Math__map(HMM_SinF(g_engine->now / 1000.0f), -1, 1, 0, 8);
+
+  fs_params_t fs_params = {
+      .ts = material->ts,
+      .tx = s,  // material->tx,
+      .ty = material->ty,
+      .tw = material->texture->w,
+      .th = material->texture->h,
+      .useMask = material->useMask ? 1 : 0,
+      .mask = material->mask,
+      .color = material->color};
+  g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));
 
   g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, 1);
 }
