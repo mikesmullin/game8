@@ -45,3 +45,29 @@ void* List__get(List* list, u32 index) {
   }
   return 0;
 }
+
+// insert in sorted position
+void List__insort(Arena* arena, List* list, void* data, s32 (*sortCb)(void* a, void* b)) {
+  List__Node* node = List__Node__alloc(arena);
+  List__Node__init(node, data);
+
+  // special case for first node
+  if (0 == list->head) {
+    list->head = node;
+    list->tail = node;
+    list->len++;
+    return;
+  }
+
+  // locate the node before the point of insertion
+  List__Node* c = list->head;
+  // while data is deeper than head (-Z_FWD = head -Z, tail +Z)
+  while (c->next != NULL && sortCb(node->data, c->next->data) == -1) {  // -1 a<b, 0 a==b, +1 a>b
+    c = c->next;
+  }
+
+  // insert
+  node->next = c->next;
+  c->next = node;
+  list->len++;
+}

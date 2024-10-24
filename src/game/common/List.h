@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 typedef uint32_t u32;
+typedef int32_t s32;
 
 typedef struct Arena Arena;
 
@@ -22,3 +23,4 @@ void List__init(List* list);
 void List__Node__init(List__Node* node, void* data);
 void List__append(Arena* arena, List* list, void* data);
 void* List__get(List* list, u32 index);
+void List__insort(Arena* arena, List* list, void* data, s32 (*sortCb)(void* a, void* b));

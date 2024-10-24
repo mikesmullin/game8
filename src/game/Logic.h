@@ -353,7 +353,7 @@ typedef struct Level {
   BmpReader* world;
   char* worldFile;
   bool loaded;
-  List* entities;
+  List* entities;  // RenderGroup1; entities sorted by z-depth (deepest first)
   u32 wallTex;
   u32 ceilTex;
   u32 floorTex;
@@ -364,7 +364,9 @@ typedef struct Level {
   u32 depth;
   u32 height;
   SpawnBlock* spawner;
-  Arena* qtArena;
+  u8 frame;
+  u8 frames;
+  Arena* frameScratch[2];
   QuadTreeNode* qt;
 } Level;
 

@@ -1,5 +1,6 @@
 #include "Level.h"
 
+#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
 #include "../common/Bmp.h"
@@ -23,7 +24,17 @@ Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = NULL;
   level->world = NULL;
-  level->entities = List__alloc(g_engine->arena);
+
+  level->frames = 2;
+
+  for (u8 i = 0; i < level->frames; i++) {
+    if (NULL == level->frameScratch[i]) {
+      // TODO: tune the size of this; it is large for load testing only
+      level->frameScratch[i] = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 5);  // MB
+    }
+  }
+  level->entities = List__alloc(level->frameScratch[level->frame]);
+
   return level;
 }
 
@@ -76,6 +87,33 @@ void Level__preload(Level* level) {
   // Preload__texture(&level->world, level->worldFile);
 }
 
+static s32 zsort(void* a, void* b) {
+  Logic__State* logic = g_engine->logic;
+  Entity* ea = (Entity*)a;
+  Entity* eb = (Entity*)b;
+
+  HMM_Vec3 cPos = HMM_V3(  //
+      logic->player->base.tform->pos.x,
+      logic->player->base.tform->pos.y,
+      logic->player->base.tform->pos.z);
+  HMM_Vec3 aPos = HMM_V3(  //
+      ea->tform->pos.x,
+      ea->tform->pos.y,
+      ea->tform->pos.z);
+  HMM_Vec3 bPos = HMM_V3(  //
+      eb->tform->pos.x,
+      eb->tform->pos.y,
+      eb->tform->pos.z);
+
+  // get position relative to player camera
+  HMM_Vec3 adPos = HMM_SubV3(cPos, aPos);
+  f32 alen = fabsf(HMM_LenV3(adPos));
+  HMM_Vec3 bdPos = HMM_SubV3(cPos, bPos);
+  f32 blen = fabsf(HMM_LenV3(bdPos));
+
+  return alen < blen ? -1 : alen > blen ? +1 : 0;
+}
+
 static void Level__loaded(Level* level) {
   if (level->loaded) return;
   if (!level->bmp->loaded) return;
@@ -87,49 +125,45 @@ static void Level__loaded(Level* level) {
       u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
       Entity* entity = Level__makeEntity(color, x, y);
       if (NULL != entity) {
-        List__append(g_engine->arena, level->entities, entity);
+        List__insort(level->frameScratch[level->frame], level->entities, entity, zsort);
       }
     }
   }
 }
 
-void Level__render(Level* level) {
-  Level__loaded(level);
-  if (!level->loaded) return;
-
-  List__Node* node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
-    Entity* entity = node->data;
-    Dispatcher__call1(entity->engine->render, entity);
-    node = node->next;
-  }
-}
-
-void Level__gui(Level* level) {
-  List__Node* node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
-    Entity* entity = node->data;
-    Dispatcher__call1(entity->engine->gui, entity);
-    node = node->next;
-  }
-}
-
 void Level__tick(Level* level) {
+  if (NULL == level->entities || 0 == level->entities->len) return;
+
   // build a QuadTree of all entities
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-  if (NULL == level->qtArena) {
-    // TODO: reduce size back to 1MB; instead don't store entities in the tree that can't collide
-    level->qtArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 10);  // MB
-  }
-  Arena__Reset(level->qtArena);
-  level->qt = QuadTreeNode_create(level->qtArena, boundary);
+
+  // cpu-side swapchain for arena memory management
+  level->frame = (level->frame + 1) % 2;
+  Arena* scratch = level->frameScratch[level->frame];
+  Arena* lastScratch = level->frameScratch[(level->frame + 1) % 2];
+
+  // perform swap (and update z-order)
+  Arena__Reset(scratch);
+  List* entities2 = List__alloc(scratch);
   List__Node* node = level->entities->head;
+  for (u32 i = 0; i < level->entities->len; i++) {
+    Entity* entity = node->data;
+    node = node->next;
+
+    List__insort(scratch, entities2, entity, zsort);
+  }
+  Arena__Reset(lastScratch);
+  level->entities = entities2;
+
+  // rebuild quadtree
+  level->qt = QuadTreeNode_create(scratch, boundary);
+  node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
     QuadTreeNode_insert(
-        level->qtArena,
+        scratch,
         level->qt,
         (Point){entity->tform->pos.x, entity->tform->pos.z},
         entity);
@@ -140,5 +174,29 @@ void Level__tick(Level* level) {
     Entity* entity = node->data;
     node = node->next;
     Dispatcher__call1(entity->engine->tick, entity);
+  }
+}
+
+void Level__render(Level* level) {
+  Level__loaded(level);
+  if (!level->loaded) return;
+
+  if (NULL == level->entities || 0 == level->entities->len) return;
+
+  List__Node* node = level->entities->head;
+  for (u32 i = 0; i < level->entities->len; i++) {
+    Entity* entity = node->data;
+    node = node->next;
+
+    Dispatcher__call1(entity->engine->render, entity);
+  }
+}
+
+void Level__gui(Level* level) {
+  List__Node* node = level->entities->head;
+  for (u32 i = 0; i < level->entities->len; i++) {
+    Entity* entity = node->data;
+    Dispatcher__call1(entity->engine->gui, entity);
+    node = node->next;
   }
 }

@@ -9,6 +9,7 @@
 #include "../common/Bmp.h"
 #include "../common/Color.h"
 #include "../common/List.h"
+#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Wavefront.h"
 
@@ -71,7 +72,7 @@ static void MeshRenderer__loaded(Entity* entity) {
       .depth =
           {
               .compare = SG_COMPAREFUNC_LESS_EQUAL,
-              .write_enabled = true,
+              .write_enabled = false,
           },
       .colors[0] =
           {
@@ -209,9 +210,9 @@ void MeshRenderer__render(Entity* entity) {
       HMM_AngleDeg(logic->player->base.tform->rot.y),
       // TODO: Why do I have to rotate cam Z?
       HMM_AngleDeg(logic->player->base.tform->rot.z + 180));
-  HMM_Mat4 view;
+  HMM_Mat4 view = I;
   // apply rotation to view
-  view = HMM_MulM4(I, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
+  view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
   view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
   view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
   // apply translation to view
