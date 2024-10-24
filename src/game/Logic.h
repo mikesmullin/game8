@@ -146,6 +146,7 @@ typedef struct Entity Entity;
 // typedef enum DispatchFnId : u32 DispatchFnId;
 typedef struct KbInputState KbInputState;
 typedef struct PointerInputState PointerInputState;
+typedef struct BTNode_t BTNode;
 
 // Components ----------------------------------------------
 
@@ -189,7 +190,7 @@ typedef enum ColliderType {
   CIRCLE_COLLIDER_2D,
 } ColliderType;
 
-typedef struct OnCollideClosure_t {
+typedef struct OnCollideParams {
   Entity *source, *target;
   f32 x, y;
   bool before, after;
@@ -223,9 +224,6 @@ typedef struct Rigidbody2DComponent {
 typedef struct Material {
   Wavefront* mesh;
   BmpReader* texture;
-  u32 tx, ty, ts;
-  bool useMask;
-  u32 mask, color;
   sg_pipeline* pipe;
   sg_bindings* bind;
   bool loaded;
@@ -233,7 +231,24 @@ typedef struct Material {
 
 typedef struct RendererComponent {
   Material* material;
+  u32 tx, ty, ts;
+  bool useMask;
+  u32 mask, color;
 } RendererComponent;
+
+typedef struct HealthComponent_t {
+  f32 hp;
+  f32 hurtTime;
+} HealthComponent;
+
+typedef struct EventEmitterComponent_t {
+} EventEmitterComponent;
+
+typedef struct AudioListenerComponent {
+} AudioListenerComponent;
+
+typedef struct AudioSourceComponent {
+} AudioSourceComponent;
 
 // Entities ----------------------------------------------
 
@@ -251,14 +266,14 @@ typedef struct Entity {
   u64 tags1;
   EngineComponent* engine;
   TransformComponent* tform;
-  // EventEmitterComponent* event;
+  EventEmitterComponent* event;
   ColliderComponent* collider;
   Rigidbody2DComponent* rb;
   RendererComponent* render;
-  // HealthComponent* health;
+  HealthComponent* health;
   // // TODO: if we don't need to iterate, these can be moved within subclass
-  // AudioSourceComponent* audio;
-  // AudioListenerComponent* hear;
+  AudioSourceComponent* audio;
+  AudioListenerComponent* hear;
   EventEmitter* events;
 } Entity;
 
@@ -310,19 +325,63 @@ typedef struct Player {
   InputState input;
 } Player;
 
+typedef enum ActionType {
+  ACTION_NONE,  //
+  ACTION_USE,
+} ActionType;
+
+typedef struct Action {
+  ActionType type;
+  Entity* actor;
+  Entity* target;
+} Action;
+
+typedef enum SGStateTags1 : u64 {
+  SGST_NONE = 0,  //
+  SGST_BUSY = 1 << 1,
+} SGStateTags1;
+
+typedef struct StateGraph StateGraph;
+typedef struct SGState SGState;
+typedef void (*SGStateFn)(StateGraph* sg);
+typedef void (*SGActionFn)(StateGraph* sg, Action* action);
+
+typedef struct SGStateKeyframe {
+  u32 id;
+  SGStateFn cb;
+} SGStateKeyframe;
+
+typedef struct SGState {
+  SGStateFn onEnter;
+  SGStateFn onUpdate;
+  SGStateFn onExit;
+  u32 frameCount;
+  u32 keyframeCount;
+  SGStateKeyframe* keyframes;
+  // eventListeners[];
+} SGState;
+
+typedef enum SGFSM_t {
+  SGFSM_NULL,  //
+  SGFSM_ENTERING,
+  SGFSM_UPDATING,
+  SGFSM_EXITING,
+} SGFSM;
+
+typedef struct StateGraph {
+  Entity* entity;
+  u32 currentState;
+  SGFSM fsm;
+  u32 frame;
+  // SGActionFn actions;
+  EventEmitter events;
+  u64 tags1;  // SGStateTags1
+} StateGraph;
+
 typedef struct Sprite {
   Entity base;
-  u32 tx, ty;
-  bool useMask;
-  u32 mask, color;
   bool billboard;
 } Sprite;
-
-typedef struct RubbleSprite {
-  Sprite base;
-  f32 xa, ya, za;
-  bool removed;
-} RubbleSprite;
 
 typedef struct Block {
   Entity base;
@@ -333,16 +392,38 @@ typedef struct WallBlock {
   Block base;
 } WallBlock;
 
-// typedef struct BreakBlock {
-//   Block base;
-//   RubbleSprite* sprites[32];
-//   StateGraph* sg;
-// } BreakBlock;
+typedef struct RubbleSprite {
+  Sprite base;
+  f32 xa, ya, za;
+  bool removed;
+} RubbleSprite;
+
+typedef struct BreakBlock {
+  Block base;
+  StateGraph* sg;
+} BreakBlock;
 
 typedef struct SpawnBlock {
   Block base;
   bool firstTick;
 } SpawnBlock;
+
+typedef struct CatSpawnBlock {
+  Block base;
+  bool firstTick;
+  u32 spawnCount;
+  f32 spawnInterval;
+  f32 animTime;
+  u32 spawnedCount;
+  u32 maxSpawnCount;
+} CatSpawnBlock;
+
+typedef struct CatEntity {
+  Sprite base;
+  f32 xa, ya, za;
+  StateGraph* sg;
+  BTNode* brain;
+} CatEntity;
 
 // Game ----------------------------------------------
 
@@ -371,7 +452,7 @@ typedef struct Level {
 } Level;
 
 typedef struct PreloadedAudio {
-  WavReader *pickupCoin, *powerUp;
+  WavReader *pickupCoin, *powerUp, *bash, *meow;
 } PreloadedAudio;
 
 typedef struct PreloadedModels {
@@ -383,7 +464,7 @@ typedef struct PreloadedTextures {
 } PreloadedTextures;
 
 typedef struct PreloadedMaterials {
-  Material *wall, *cat;
+  Material *wall, *sprite;
 } PreloadedMaterials;
 
 typedef struct Logic__State {

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdint.h>
+typedef int16_t s16;
 typedef float f32;
 
 typedef struct WavReader WavReader;

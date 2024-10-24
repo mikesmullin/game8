@@ -9,7 +9,6 @@
 #include "../common/Bmp.h"
 #include "../common/Color.h"
 #include "../common/List.h"
-#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Wavefront.h"
 
@@ -123,7 +122,7 @@ static void MeshRenderer__loaded(Entity* entity) {
   u32 ii = 0, mask, color;
   for (u32 y = 0; y < material->texture->h; y++) {
     for (u32 x = 0; x < material->texture->w; x++) {
-      mask = material->useMask ? material->mask : PINK;
+      mask = entity->render->useMask ? entity->render->mask : PINK;
       color = Bmp__Get2DPixel(texture, x, y, mask);
       pixels[ii++] = color;
     }
@@ -234,17 +233,15 @@ void MeshRenderer__render(Entity* entity) {
   vs_params_t vs_params = {.model = model, .view = view, .projection = projection};
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
 
-  u8 s = Math__map(HMM_SinF(g_engine->now / 1000.0f), -1, 1, 0, 8);
-
   fs_params_t fs_params = {
-      .ts = material->ts,
-      .tx = s,  // material->tx,
-      .ty = material->ty,
+      .ts = entity->render->ts,
+      .tx = entity->render->tx,
+      .ty = entity->render->ty,
       .tw = material->texture->w,
       .th = material->texture->h,
-      .useMask = material->useMask ? 1 : 0,
-      .mask = material->mask,
-      .color = material->color};
+      .useMask = entity->render->useMask ? 1 : 0,
+      .mask = entity->render->mask,
+      .color = entity->render->color};
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));
 
   g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, 1);

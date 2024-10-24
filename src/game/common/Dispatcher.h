@@ -4,21 +4,22 @@
 typedef uint32_t u32;
 typedef struct Entity Entity;
 
-typedef enum DispatchFnId : u32 {
-  DISPATCH_NONE,
+typedef enum DispatchFnId1 : u32 {
+  DISPATCH_NONE1,
 
-  // CAT_SPAWN_BLOCK__TICK,
-  // CAT_SPAWN_BLOCK__GUI,
+  CAT_SPAWN_BLOCK__TICK,
+  CAT_SPAWN_BLOCK__GUI,
   SPAWN_BLOCK__TICK,
   WALL_BLOCK__RENDER,
-  // BREAK_BLOCK__RENDER,
-  // BREAK_BLOCK__TICK,
+  BREAK_BLOCK__RENDER,
+  BREAK_BLOCK__TICK,
 
   SPRITE__RENDER,
-  // CAT_ENTITY__TICK,
-  // CAT_ENTITY__RENDER,
-  // CAT_ENTITY__GUI,
-  // CAT_ENTITY__COLLIDE,
+  CAT_ENTITY__TICK,
+  CAT_ENTITY__RENDER,
+  CAT_ENTITY__GUI,
+  RUBBLE_SPRITE__TICK,
+  RUBBLE_SPRITE__RENDER,
   PLAYER_ENTITY__TICK,
 
   // ABOUT_MENU__TICK,
@@ -30,7 +31,13 @@ typedef enum DispatchFnId : u32 {
   // TITLE_MENU__TICK,
   // TITLE_MENU__RENDER,
   // TITLE_MENU__GUI,
-} DispatchFnId;
+} DispatchFnId1;
 
-void Dispatcher__call1(DispatchFnId id, Entity* inst);
-void Dispatcher__call2(DispatchFnId id, Entity* inst, void* params);
+typedef enum DispatchFnId2 : u32 {
+  DISPATCH_NONE2,
+
+  CAT_ENTITY__COLLIDE,
+} DispatchFnId2;
+
+void Dispatcher__call1(DispatchFnId1 id, Entity* inst);
+void Dispatcher__call2(DispatchFnId2 id, Entity* inst, void* params);

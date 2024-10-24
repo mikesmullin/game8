@@ -2,7 +2,6 @@
 
 #include "Logic.h"
 #include "common/Audio.h"
-#include "common/Color.h"
 #include "common/Dispatcher.h"
 #include "common/Preloader.h"
 #include "common/Wav.h"

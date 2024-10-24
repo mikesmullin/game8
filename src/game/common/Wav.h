@@ -5,6 +5,7 @@
 typedef uint8_t u8;
 typedef uint16_t u16;
 typedef uint32_t u32;
+typedef float f32;
 
 typedef struct WavReader {
   u32 numChannels;
@@ -13,7 +14,8 @@ typedef struct WavReader {
   uint8_t* data;
   bool loaded;
   u32 offset;
+  f32 gain;
 } WavReader;
 
 WavReader* Wav__Read(const char* filePath);
-void Wav__NextSample(WavReader* r, u8* buffer);
+void Wav__NextSample(WavReader* r, u32* buffer);

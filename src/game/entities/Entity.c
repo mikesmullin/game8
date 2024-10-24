@@ -28,7 +28,7 @@ void Entity__init(Entity* entity) {
   entity->rb->za = 0;
 
   entity->engine = Arena__Push(g_engine->arena, sizeof(EngineComponent));
-  entity->engine->tick = DISPATCH_NONE;
-  entity->engine->render = DISPATCH_NONE;
-  entity->engine->gui = DISPATCH_NONE;
+  entity->engine->tick = DISPATCH_NONE1;
+  entity->engine->render = DISPATCH_NONE1;
+  entity->engine->gui = DISPATCH_NONE1;
 }

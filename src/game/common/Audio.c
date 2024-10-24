@@ -58,14 +58,14 @@ void Audio__stream_cb(f32* buffer, int num_frames, int num_channels) {
     return;
   }
 
-  u8 samples[(logic->aSrc->bitsPerSample / 8) * logic->aSrc->numChannels];
+  u32 samples[logic->aSrc->numChannels];
   for (u32 i = 0; i < num_frames; i++) {
     if (!logic->aSrc->loaded) {
       buffer[i] = SILENCE;
     } else {
       Wav__NextSample(logic->aSrc, samples);
       // assume 1 channel, 1 byte per sample
-      buffer[i] = ((s32)(samples[0]) - 128) / 128.0f;
+      buffer[i] = (((s32)(samples[0]) - 128) / 128.0f) * logic->aSrc->gain;
 
       if (logic->aSrc->offset == logic->aSrc->totalSamples) {
         // TODO: if not loop==true

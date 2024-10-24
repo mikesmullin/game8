@@ -130,7 +130,7 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
 
     // LOG_DEBUGF(
     //     "event mousedown"
-    //     " mouse_button %u"
+    //     " mouse_button %u",
     //     event->mouse_button);
   }
   if (SAPP_EVENTTYPE_MOUSE_UP == event->type) {
@@ -138,7 +138,7 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
 
     // LOG_DEBUGF(
     //     "event mouseup"
-    //     " mouse_button %u"
+    //     " mouse_button %u",
     //     event->mouse_button);
   }
   if (SAPP_EVENTTYPE_MOUSE_SCROLL == event->type) {

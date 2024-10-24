@@ -4,17 +4,17 @@
 #include "../Logic.h"
 #include "../common/Arena.h"
 #include "../common/Bmp.h"
-#include "../common/List.h"
-#include "../common/Log.h"
-#include "../common/Preloader.h"
-// #include "../common/Math.h"
-// #include "../blocks/BreakBlock.h"
-// #include "../blocks/CatSpawnBlock.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
 #include "../common/Geometry.h"
+#include "../common/List.h"
+#include "../common/Log.h"
+#include "../common/Math.h"
+#include "../common/Preloader.h"
 #include "../common/QuadTree.h"
 #include "../entities/Sprite.h"
+#include "../entities/blocks/BreakBlock.h"
+#include "../entities/blocks/CatSpawnBlock.h"
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
@@ -64,18 +64,15 @@ static Entity* Level__makeEntity(u32 col, f32 x, f32 y) {
     return (Entity*)block;
   }
   if (0xff241ced == col) {  // red
-    // Block* block = CatSpawnBlock__alloc();
-    // CatSpawnBlock__init(block, x, y);
-    // return block;
-    Sprite* cat = Sprite__alloc();
-    Sprite__init((Entity*)cat, x, y);
-    return (Entity*)cat;
+    Block* block = (Block*)CatSpawnBlock__alloc();
+    CatSpawnBlock__init((Entity*)block, x, y);
+    return (Entity*)block;
   }
-  // if (0xff7f7f7f == col) {  // dark gray
-  //   Block* block = BreakBlock__alloc();
-  //   BreakBlock__init(block, x, y);
-  //   return block;
-  // }
+  if (0xff7f7f7f == col) {  // dark gray
+    Block* block = (Block*)BreakBlock__alloc();
+    BreakBlock__init((Entity*)block, x, y);
+    return (Entity*)block;
+  }
 
   LOG_DEBUGF("Unimplemented Level Block pixel color %08x", col);
   return NULL;
@@ -87,7 +84,7 @@ void Level__preload(Level* level) {
   // Preload__texture(&level->world, level->worldFile);
 }
 
-static s32 zsort(void* a, void* b) {
+s32 Level__zsort(void* a, void* b) {
   Logic__State* logic = g_engine->logic;
   Entity* ea = (Entity*)a;
   Entity* eb = (Entity*)b;
@@ -125,7 +122,7 @@ static void Level__loaded(Level* level) {
       u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
       Entity* entity = Level__makeEntity(color, x, y);
       if (NULL != entity) {
-        List__insort(level->frameScratch[level->frame], level->entities, entity, zsort);
+        List__insort(level->frameScratch[level->frame], level->entities, entity, Level__zsort);
       }
     }
   }
@@ -151,7 +148,7 @@ void Level__tick(Level* level) {
     Entity* entity = node->data;
     node = node->next;
 
-    List__insort(scratch, entities2, entity, zsort);
+    List__insort(scratch, entities2, entity, Level__zsort);
   }
   Arena__Reset(lastScratch);
   level->entities = entities2;
@@ -171,6 +168,7 @@ void Level__tick(Level* level) {
 
   node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
+    if (NULL == node) continue;  // TODO: how does len get > list?
     Entity* entity = node->data;
     node = node->next;
     Dispatcher__call1(entity->engine->tick, entity);

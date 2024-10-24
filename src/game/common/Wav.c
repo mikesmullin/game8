@@ -45,6 +45,7 @@ static void response_callback(const sfetch_response_t* response);
 
 WavReader* Wav__Read(const char* filePath) {
   WavReader* r = Arena__Push(g_engine->arena, sizeof(WavReader));
+  r->gain = 1.0f;
   u8* buf = malloc(sizeof(u8[MAX_FILE_SIZE]));
 
   g_engine->sfetch_send(&(sfetch_request_t){
@@ -86,13 +87,30 @@ static void response_callback(const sfetch_response_t* response) {
         response->path,
         fmt.subChunk1ID);
 
-    ASSERT_CONTEXT(fmt.audioFormat == PCM, "WAV not supported. audioFormat: %u", fmt.audioFormat);
+    ASSERT_CONTEXT(
+        fmt.audioFormat == PCM,
+        "WAV not supported. file: %s,"
+        " audioFormat: %u",
+        response->path,
+        fmt.audioFormat);
     ASSERT_CONTEXT(
         fmt.bitsPerSample == 8,
-        "WAV not supported. bitsPerSample: %u",
+        "WAV not supported. file: %s,"
+        " bitsPerSample: %u",
+        response->path,
         fmt.bitsPerSample);
-    ASSERT_CONTEXT(fmt.numChannels == 1, "WAV not supported. numChannels: %u", fmt.numChannels);
-    ASSERT_CONTEXT(fmt.sampleRate == 44100, "WAV not supported. sampleRate: %u", fmt.sampleRate);
+    ASSERT_CONTEXT(
+        fmt.numChannels == 1,
+        "WAV not supported. file: %s,"
+        " numChannels: %u",
+        response->path,
+        fmt.numChannels);
+    ASSERT_CONTEXT(
+        fmt.sampleRate == 44100,
+        "WAV not supported. file: %s,"
+        " sampleRate: %u",
+        response->path,
+        fmt.sampleRate);
 
     // Skip any extra format data (subChunk1Size could be larger than expected)
     if (fmt.subChunk1Size > 16) {
@@ -141,7 +159,7 @@ static void response_callback(const sfetch_response_t* response) {
 }
 
 // read one sample at a time
-void Wav__NextSample(WavReader* r, uint8_t* buffer) {
+void Wav__NextSample(WavReader* r, u32* buffer) {
   // if not loaded, or cursor past end
   if (!r->loaded || r->offset >= r->totalSamples) {
     // r->offset = 0;  // loop forever
@@ -176,13 +194,13 @@ void Wav__NextSample(WavReader* r, uint8_t* buffer) {
       sampleValue = ((int32_t*)sbuf)[ch];  // 32-bit is signed
     }
 
-    ((int*)buffer)[ch] = sampleValue;
+    buffer[ch] = sampleValue;
   }
 
   r->offset++;
 
   // return data should be read like:
-  // u8 samples[(logic->wr->bitsPerSample / 8) * logic->wr->numChannels];
+  // u32 samples[logic->wr->numChannels];
 }
 
 #undef MAX_FILE_SIZE

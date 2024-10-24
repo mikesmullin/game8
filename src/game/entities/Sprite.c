@@ -5,7 +5,6 @@
 #include "../common/Arena.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
-#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Preloader.h"
 #include "../components/MeshRenderer.h"
@@ -21,44 +20,34 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
   Sprite* self = (Sprite*)entity;
   Entity__init(entity);
+  entity->engine->render = SPRITE__RENDER;
   entity->tform->pos.x = x;
   entity->tform->pos.y = -(1.0f / 8);
   entity->tform->pos.z = z;
-
-  entity->engine->render = SPRITE__RENDER;
+  self->billboard = true;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.cat);
+  entity->render->material = Preload__material(&logic->materials.sprite);
   entity->render->material->mesh = Preload__model(  //
       &logic->models.plane2D,
       "../assets/models/plane2D.obj");
   entity->render->material->texture = Preload__texture(  //
       &logic->textures.atlas,
       "../assets/textures/atlas.bmp");
-  entity->render->material->ts = ATLAS_SPRITE_SZ;
-  entity->render->material->tx = 0;
-  entity->render->material->ty = 1;
-  entity->render->material->color = TRANSPARENT;
-  entity->render->material->useMask = true;
-  entity->render->material->mask = BLACK;
-
-  self->billboard = true;
+  entity->render->ts = ATLAS_SPRITE_SZ;
+  entity->render->tx = 0;
+  entity->render->ty = 1;
+  entity->render->useMask = true;
+  entity->render->mask = BLACK;
+  entity->render->color = TRANSPARENT;
 }
 
 void Sprite__render(Entity* entity) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   Sprite* self = (Sprite*)block;
-
-  static f32 sx = 0, sz = 0;
-  if (sx == 0) sx = self->base.tform->pos.x;
-  if (sz == 0) sz = self->base.tform->pos.z;
-  f32 s = Math__map(HMM_SinF(g_engine->now / 1000.f), -1, 1, -2, 2);
-  f32 c = Math__map(HMM_CosF(g_engine->now / 1000.f), -1, 1, -2, 2);
-  self->base.tform->pos.x = sx + s;
-  self->base.tform->pos.z = sz + c;
 
   if (self->billboard) {
     HMM_Vec3 cPos = HMM_V3(  //
