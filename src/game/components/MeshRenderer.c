@@ -52,7 +52,6 @@ static void MeshRenderer__loaded(Entity* entity) {
   // Any draw calls containing such an incomplete image handle
   // will be silently dropped.
   sg_alloc_image_smp(material->bind->fs, SLOT__texture1, SLOT_texture1_smp);
-  sg_alloc_image_smp(material->bind->fs, SLOT__texture2, SLOT_texture2_smp);
 
   // create shader from code-generated sg_shader_desc
   sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
@@ -74,6 +73,24 @@ static void MeshRenderer__loaded(Entity* entity) {
               .compare = SG_COMPAREFUNC_LESS_EQUAL,
               .write_enabled = true,
           },
+      .colors[0] =
+          {
+              .blend =
+                  {.enabled = true,  // Enable blending
+                   //  source color (the fragment's color) will be multiplied by its alpha.
+                   .src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
+                   .dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+                   // destination color (the existing color in the framebuffer)
+                   // will be multiplied by (1 - src_alpha),
+                   // providing the transparency effect.
+                   .src_factor_alpha = SG_BLENDFACTOR_SRC_ALPHA,
+                   .dst_factor_alpha = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+                   // add the source and destination colors together
+                   // after applying the blend factors.
+                   .op_rgb = SG_BLENDOP_ADD,
+                   .op_alpha = SG_BLENDOP_ADD},
+          },
+      .cull_mode = SG_CULLMODE_BACK,
       .label = "mesh-pipeline",
   });
 
@@ -105,14 +122,15 @@ static void MeshRenderer__loaded(Entity* entity) {
   u32 ii = 0;
   for (u32 y = 0; y < material->ts; y++) {
     for (u32 x = 0; x < material->ts; x++) {
+      u32 mask = material->useMask ? material->mask : PINK;
       u32 color =
-          Bmp__Get2DTiledPixel(texture, x, y, material->ts, material->tx, material->ty, PINK);
+          Bmp__Get2DTiledPixel(texture, x, y, material->ts, material->tx, material->ty, mask);
 
-      // TODO: implement bit masking
-      // entity->render->useMask;
-      // entity->render->mask;
-
-      color = alpha_blend(color, material->color);  // tint
+      if (material->useMask && mask == color) {
+        color = TRANSPARENT;
+      } else {
+        color = alpha_blend(color, material->color);  // tint
+      }
       pixels[ii++] = color;
       // LOG_DEBUGF("color(%u,%u) %08x ABGR", x, y, color);
     }
@@ -123,18 +141,7 @@ static void MeshRenderer__loaded(Entity* entity) {
       &(sg_image_desc){
           .width = material->ts,
           .height = material->ts,
-          .pixel_format = SG_PIXELFORMAT_RGBA8,
-          .data.subimage[0][0] = {
-              .ptr = pixels,
-              .size = material->ts * material->ts * 4,
-          }});
-  // TODO: two images is too many; can discard once shader is updated
-  g_engine->sg_init_image(
-      material->bind->fs.images[SLOT__texture2],
-      &(sg_image_desc){
-          .width = material->ts,
-          .height = material->ts,
-          .pixel_format = SG_PIXELFORMAT_RGBA8,
+          .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
           .data.subimage[0][0] = {
               .ptr = pixels,
               .size = material->ts * material->ts * 4,
@@ -143,13 +150,6 @@ static void MeshRenderer__loaded(Entity* entity) {
   // g_engine->sg_update_buffer(logic->meshRenderer.bind->vertex_buffers[0], &SG_RANGE(vertices));
   //   g_engine->sg_update_image(
   //       logic->meshRenderer.bind->fs.images[SLOT__texture1],
-  //       &(sg_image_data){
-  //           .subimage[0][0] = {
-  //               .ptr = pixels,
-  //               .size = material->ts * material->ts * 4,
-  //           }});
-  //   g_engine->sg_update_image(
-  //       logic->meshRenderer.bind->fs.images[SLOT__texture2],
   //       &(sg_image_data){
   //           .subimage[0][0] = {
   //               .ptr = pixels,
@@ -190,13 +190,13 @@ void MeshRenderer__render(Entity* entity) {
       HMM_AngleDeg(entity->tform->rot.x),
       HMM_AngleDeg(entity->tform->rot.y),
       HMM_AngleDeg(entity->tform->rot.z));
-  HMM_Mat4 model;
-  // apply rotation to model
-  model = HMM_MulM4(I, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
-  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
-  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+  HMM_Mat4 model = I;
   // apply translation to model
   model = HMM_MulM4(model, HMM_Translate(modelPos));
+  // apply rotation to model
+  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
+  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
+  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
 
   // View (Camera)
   HMM_Vec3 viewPos = HMM_V3(  //

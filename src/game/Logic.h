@@ -315,6 +315,7 @@ typedef struct Sprite {
   u32 tx, ty;
   bool useMask;
   u32 mask, color;
+  bool billboard;
 } Sprite;
 
 typedef struct RubbleSprite {
