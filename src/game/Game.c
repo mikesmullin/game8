@@ -1,6 +1,7 @@
 #include "Game.h"
 
 #include "Logic.h"
+#include "common/Arena.h"
 #include "common/Audio.h"
 #include "common/Dispatcher.h"
 #include "common/Preloader.h"
@@ -61,7 +62,7 @@ void Game__tick() {
   Logic__State* logic = g_engine->logic;
 
   if (0 == logic->player) {
-    logic->player = Player__alloc();
+    logic->player = Arena__Push(g_engine->arena, sizeof(Player));
     Player__init((Entity*)logic->player);
   }
 

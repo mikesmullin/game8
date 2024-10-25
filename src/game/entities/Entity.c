@@ -6,10 +6,6 @@
 
 extern Engine__State* g_engine;
 
-Entity* Entity__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(Entity));
-}
-
 void Entity__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;
 

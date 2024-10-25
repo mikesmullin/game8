@@ -5,5 +5,4 @@
 
 typedef struct Entity Entity;
 
-Entity* Entity__alloc();
 void Entity__init(Entity* entity);

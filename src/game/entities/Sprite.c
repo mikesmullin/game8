@@ -12,10 +12,6 @@
 
 extern Engine__State* g_engine;
 
-Sprite* Sprite__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(Sprite));
-}
-
 void Sprite__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
   Sprite* self = (Sprite*)entity;

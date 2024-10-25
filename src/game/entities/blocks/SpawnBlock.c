@@ -14,10 +14,6 @@ typedef int32_t s32;
 
 extern Engine__State* g_engine;
 
-SpawnBlock* SpawnBlock__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(SpawnBlock));
-}
-
 void SpawnBlock__init(Entity* entity, f32 x, f32 z) {
   Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;

@@ -14,10 +14,6 @@
 
 extern Engine__State* g_engine;
 
-BreakBlock* BreakBlock__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(BreakBlock));
-}
-
 void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
@@ -25,6 +21,7 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   Block__init(block, x, y);
   entity->engine->render = BREAK_BLOCK__RENDER;
   entity->engine->tick = BREAK_BLOCK__TICK;
+  entity->engine->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
 
   self->sg = Arena__Push(g_engine->arena, sizeof(StateGraph));
@@ -68,16 +65,15 @@ void BreakBlock__tick(Entity* entity) {
   BreakBlock* self = (BreakBlock*)block;
 }
 
-void BreakBlock__callSGAction(StateGraph* sg, Action* action) {
+void BreakBlock__action(Entity* entity, void* _action) {
   Logic__State* logic = g_engine->logic;
-
-  Entity* entity = (Entity*)sg->entity;
   BreakBlock* self = (BreakBlock*)entity;
+  Action* action = (Action*)_action;
 
   if (ACTION_USE == action->type) {
     if (!(TAG_BROKEN & entity->tags1)) {
       entity->tags1 |= TAG_BROKEN;
-      AudioSource__play(sg->entity, logic->audio.bash);
+      AudioSource__play(entity, logic->audio.bash);
 
       for (u32 i = 0; i < 32; i++) {
         RubbleSprite* rs = Arena__Push(g_engine->arena, sizeof(RubbleSprite));

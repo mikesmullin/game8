@@ -178,6 +178,7 @@ typedef struct EngineComponent {
   u32 /*DispatchFnId*/ tick;
   u32 /*DispatchFnId*/ render;
   u32 /*DispatchFnId*/ gui;
+  u32 /*DispatchFnId2*/ action;
 } EngineComponent;
 
 typedef struct TransformComponent {
@@ -257,8 +258,9 @@ typedef enum EntityTags1 : u64 {
   TAG_LOADED = 1 << 1,
   TAG_WALL = 1 << 2,
   TAG_CAT = 1 << 3,
-  TAG_BRICK = 1 << 4,
-  TAG_BROKEN = 1 << 5,
+  TAG_CATSPAWN = 1 << 4,
+  TAG_BRICK = 1 << 5,
+  TAG_BROKEN = 1 << 6,
 } EntityTags1;
 
 typedef struct Entity {
@@ -452,7 +454,7 @@ typedef struct Level {
 } Level;
 
 typedef struct PreloadedAudio {
-  WavReader *pickupCoin, *powerUp, *bash, *meow;
+  WavReader *pickupCoin, *powerUp, *bash, *meow, *click;
 } PreloadedAudio;
 
 typedef struct PreloadedModels {

@@ -37,6 +37,9 @@ typedef enum DispatchFnId2 : u32 {
   DISPATCH_NONE2,
 
   CAT_ENTITY__COLLIDE,
+  CAT_ENTITY__ACTION,
+  BREAK_BLOCK__ACTION,
+  RED_WALL_BLOCK__ACTION,
 } DispatchFnId2;
 
 void Dispatcher__call1(DispatchFnId1 id, Entity* inst);

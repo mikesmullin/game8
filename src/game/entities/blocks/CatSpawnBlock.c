@@ -15,10 +15,6 @@ extern Engine__State* g_engine;
 
 typedef int32_t s32;
 
-CatSpawnBlock* CatSpawnBlock__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(CatSpawnBlock));
-}
-
 void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
@@ -27,10 +23,11 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   block->base.engine->tick = CAT_SPAWN_BLOCK__TICK;
   block->base.engine->gui = CAT_SPAWN_BLOCK__GUI;
   block->base.collider = 0;
+  entity->tags1 |= TAG_CATSPAWN;
 
   self->firstTick = true;
   self->spawnCount = 1;  // instances
-  self->spawnInterval = 1.0f;  // per sec
+  self->spawnInterval = 1.0f / 100;  // per sec
   self->animTime = 0;  // counter
   self->spawnedCount = 0;
   self->maxSpawnCount = 5;

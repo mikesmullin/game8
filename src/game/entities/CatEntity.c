@@ -31,6 +31,7 @@ void CatEntity__init(Entity* entity) {
   entity->engine->tick = CAT_ENTITY__TICK;
   entity->engine->render = CAT_ENTITY__RENDER;
   entity->engine->gui = CAT_ENTITY__GUI;
+  entity->engine->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
   entity->tform->pos.x = 0.0f;
@@ -79,8 +80,11 @@ SGState* CatEntity__getSGState(u32 id) {
   return &SGidle;
 }
 
-void CatEntity__callSGAction(StateGraph* sg, Action* action) {
-  subbedActions(sg, action);
+void CatEntity__action(Entity* entity, void* action) {
+  Logic__State* logic = g_engine->logic;
+  CatEntity* self = (CatEntity*)entity;
+
+  subbedActions(self->sg, action);
 }
 
 void CatEntity__render(Entity* entity) {

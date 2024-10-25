@@ -8,6 +8,7 @@
 #include "../common/Arena.h"
 #include "../common/Dispatcher.h"
 #include "../common/Geometry.h"
+#include "../common/List.h"
 #include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/QuadTree.h"
@@ -22,10 +23,6 @@ static const f32 PLAYER_WALK_SPEED = 5.0f;  // per-second
 static const f32 PLAYER_STRAFE_MOD = 0.5f;  // percent of walk
 static const f32 PLAYER_FLY_SPEED = 3.0f;  // per-second
 static const f32 PLAYER_LOOK_SPEED = 0.3f;  // deg/sec
-
-Player* Player__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(Player));
-}
 
 void Player__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;
@@ -218,37 +215,22 @@ void Player__tick(Entity* entity) {
 
       // find block immediately in front
       u32 matchCount = 0;
-      void* matchData[40];  // TODO: don't limit search results?
+      void* matchData[3];
       forward = HMM_MulV3F(front, 1);
       pos = HMM_AddV3(p1, forward);
       Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
-      QuadTreeNode_query(logic->level->qt, range, 40, matchData, &matchCount);
+      QuadTreeNode_query(logic->level->qt, range, 3, matchData, &matchCount);
 
       for (u32 i = 0; i < matchCount; i++) {
         Entity* other = (Entity*)matchData[i];
         if (entity == other) continue;
 
-        if (TAG_CAT & other->tags1) {
-          CatEntity* cat = (CatEntity*)other;
-          Action action = {.type = ACTION_USE, .actor = entity, .target = other};
-
-          // Action__PerformBuffered(other, &action);
-          if (NULL != cat->sg) {
-            CatEntity__callSGAction(cat->sg, &action);
-          }
+        if (NULL != other->engine && 0 != other->engine->action) {
+          Dispatcher__call2(
+              other->engine->action,
+              other,
+              &(Action){.type = ACTION_USE, .actor = entity, .target = other});
           break;
-        }
-
-        if (TAG_BRICK & other->tags1) {
-          BreakBlock* brick = (BreakBlock*)other;
-          Action action = {.type = ACTION_USE, .actor = entity, .target = other};
-
-          if (!(TAG_BROKEN & other->tags1)) {
-            if (NULL != brick->sg) {
-              BreakBlock__callSGAction(brick->sg, &action);
-              break;
-            }
-          }
         }
       }
     }

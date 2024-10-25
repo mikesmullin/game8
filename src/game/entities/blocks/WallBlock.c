@@ -10,10 +10,6 @@
 
 extern Engine__State* g_engine;
 
-WallBlock* WallBlock__alloc() {
-  return Arena__Push(g_engine->arena, sizeof(WallBlock));
-}
-
 void WallBlock__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;

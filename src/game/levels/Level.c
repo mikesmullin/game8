@@ -15,6 +15,7 @@
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
 #include "../entities/blocks/CatSpawnBlock.h"
+#include "../entities/blocks/RedWallBlock.h"
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
@@ -52,25 +53,25 @@ void Level__init(Level* level) {
 static Entity* Level__makeEntity(u32 col, f32 x, f32 y) {
   if (0xff000000 == col) {  // black; empty space
     return NULL;
-  }
-  if (0xffffffff == col) {  // white
-    WallBlock* block = WallBlock__alloc();
+  } else if (0xffffffff == col) {  // white
+    WallBlock* block = Arena__Push(g_engine->arena, sizeof(WallBlock));
     WallBlock__init((Entity*)block, x, y);
     return (Entity*)block;
-  }
-  if (0xff00f2ff == col) {  // yellow
-    SpawnBlock* block = SpawnBlock__alloc();
+  } else if (0xff00f2ff == col) {  // yellow
+    SpawnBlock* block = Arena__Push(g_engine->arena, sizeof(SpawnBlock));
     SpawnBlock__init((Entity*)block, x, y);
     return (Entity*)block;
-  }
-  if (0xff241ced == col) {  // red
-    Block* block = (Block*)CatSpawnBlock__alloc();
+  } else if (0xff4cb122 == col) {  // green
+    CatSpawnBlock* block = Arena__Push(g_engine->arena, sizeof(CatSpawnBlock));
     CatSpawnBlock__init((Entity*)block, x, y);
     return (Entity*)block;
-  }
-  if (0xff7f7f7f == col) {  // dark gray
-    Block* block = (Block*)BreakBlock__alloc();
+  } else if (0xff7f7f7f == col) {  // dark gray
+    BreakBlock* block = Arena__Push(g_engine->arena, sizeof(BreakBlock));
     BreakBlock__init((Entity*)block, x, y);
+    return (Entity*)block;
+  } else if (0xff241ced == col) {  // red
+    WallBlock* block = Arena__Push(g_engine->arena, sizeof(WallBlock));
+    RedWallBlock__init((Entity*)block, x, y);
     return (Entity*)block;
   }
 
@@ -111,6 +112,7 @@ s32 Level__zsort(void* a, void* b) {
   return alen < blen ? -1 : alen > blen ? +1 : 0;
 }
 
+// TODO: make a reusable level_walk() iterator fn
 static void Level__loaded(Level* level) {
   if (level->loaded) return;
   if (!level->bmp->loaded) return;
@@ -197,4 +199,17 @@ void Level__gui(Level* level) {
     Dispatcher__call1(entity->engine->gui, entity);
     node = node->next;
   }
+}
+
+Entity* Level__findEntity(Level* level, bool (*findCb)(Entity* e)) {
+  if (level->loaded) {
+    List__Node* node = level->entities->head;
+    for (u32 i = 0; i < level->entities->len; i++) {
+      Entity* entity = node->data;
+      node = node->next;
+
+      if (findCb(entity)) return entity;
+    }
+  }
+  return 0;
 }

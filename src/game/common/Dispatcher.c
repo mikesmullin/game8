@@ -6,6 +6,7 @@
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
 #include "../entities/blocks/CatSpawnBlock.h"
+#include "../entities/blocks/RedWallBlock.h"
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
@@ -53,7 +54,10 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
 static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
     Dispatch__None2,
 
-    CatEntity__collide,  //
+    CatEntity__collide,
+    CatEntity__action,
+    BreakBlock__action,
+    RedWallBlock__action,
 };
 
 // static / switch / tag / conditional dispatch
