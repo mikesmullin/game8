@@ -90,8 +90,11 @@ typedef struct Engine__State {
   int (*saudio_sample_rate)(void);
   int (*saudio_channels)(void);
   uint64_t (*stm_now)(void);
+  double (*stm_ns)(uint64_t ticks);
+  double (*stm_us)(uint64_t ticks);
   double (*stm_ms)(uint64_t ticks);
   double (*stm_sec)(uint64_t ticks);
+  uint64_t (*stm_laptime)(uint64_t* last_time);
   void (*sg_begin_pass)(const sg_pass* pass);
   void (*sg_apply_pipeline)(sg_pipeline pip);
   void (*sg_apply_bindings)(const sg_bindings* bindings);
@@ -116,6 +119,7 @@ typedef struct Engine__State {
 
   u64 now;
   f32 deltaTime;
+  u16 entity_count;
 
 } Engine__State;
 
@@ -266,6 +270,7 @@ typedef enum EntityTags1 : u64 {
 typedef struct Entity {
   u32 id;
   u64 tags1;
+  bool removed;
   EngineComponent* engine;
   TransformComponent* tform;
   EventEmitterComponent* event;
@@ -397,7 +402,6 @@ typedef struct WallBlock {
 typedef struct RubbleSprite {
   Sprite base;
   f32 xa, ya, za;
-  bool removed;
 } RubbleSprite;
 
 typedef struct BreakBlock {

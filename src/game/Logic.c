@@ -7,6 +7,7 @@
 #include "common/Arena.h"
 #include "common/Audio.h"
 #include "common/Log.h"
+#include "common/Profiler.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
@@ -223,6 +224,13 @@ LOGIC_DECL void logic_onfixedupdate(void) {
   g_engine->sfetch_dowork();
 
   Game__tick();
+
+  static f32 counter = 0, wait = 5.0f;
+  counter += g_engine->deltaTime;
+  if (counter > wait) {
+    counter -= wait;
+    PROFILE__PRINT();
+  }
 }
 
 // on draw

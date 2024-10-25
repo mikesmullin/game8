@@ -11,6 +11,7 @@
 #include "../common/List.h"
 #include "../common/Log.h"
 #include "../common/Math.h"
+#include "../common/Profiler.h"
 #include "../common/QuadTree.h"
 #include "../components/Rigidbody2D.h"
 #include "CatEntity.h"
@@ -54,6 +55,8 @@ void Player__init(Entity* entity) {
 }
 
 void Player__tick(Entity* entity) {
+  PROFILE__BEGIN(PLAYER_ENTITY__TICK);
+
   Logic__State* logic = g_engine->logic;
   Player* self = (Player*)entity;
 
@@ -215,11 +218,11 @@ void Player__tick(Entity* entity) {
 
       // find block immediately in front
       u32 matchCount = 0;
-      void* matchData[3];
+      void* matchData[40];
       forward = HMM_MulV3F(front, 1);
       pos = HMM_AddV3(p1, forward);
       Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
-      QuadTreeNode_query(logic->level->qt, range, 3, matchData, &matchCount);
+      QuadTreeNode_query(logic->level->qt, range, 40, matchData, &matchCount);
 
       for (u32 i = 0; i < matchCount; i++) {
         Entity* other = (Entity*)matchData[i];
@@ -240,4 +243,5 @@ void Player__tick(Entity* entity) {
     entity->health->hurtTime -= g_engine->deltaTime;
     if (entity->health->hurtTime < 0) entity->health->hurtTime = 0;
   }
+  PROFILE__END(PLAYER_ENTITY__TICK);
 }

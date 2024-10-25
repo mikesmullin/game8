@@ -25,38 +25,42 @@ static void Dispatch__None2(Entity* inst, void* params) {
 static void (*VTABLE_ENGINE1[])(Entity*) = {
     Dispatch__None1,
 
-    CatSpawnBlock__tick,  //
-    CatSpawnBlock__gui,
-    SpawnBlock__tick,  //
-    WallBlock__render,  //
-    BreakBlock__render,  //
+    BreakBlock__render,
     BreakBlock__tick,
-
-    Sprite__render,
-    CatEntity__tick,  //
-    CatEntity__render,  //
-    CatEntity__gui,  //
-    RubbleSprite__tick,
+    CatEntity__gui,
+    CatEntity__render,
+    CatEntity__tick,
+    CatSpawnBlock__gui,
+    CatSpawnBlock__tick,
+    Player__tick,
     RubbleSprite__render,
-    Player__tick,  //
+    RubbleSprite__tick,
+    SpawnBlock__tick,
+    Sprite__render,
+    WallBlock__render,
 
-    // AboutMenu__tick,  //
-    // AboutMenu__render,  //
-    // AboutMenu__gui,  //
-    // HelpMenu__tick,  //
-    // HelpMenu__render,  //
-    // HelpMenu__gui,  //
-    // TitleMenu__tick,  //
-    // TitleMenu__render,  //
-    // TitleMenu__gui,  //
+    // AboutMenu__gui,
+    // AboutMenu__render,
+    // AboutMenu__tick,
+    // HelpMenu__gui,
+    // HelpMenu__render,
+    // HelpMenu__tick,
+    // TitleMenu__gui,
+    // TitleMenu__render,
+    // TitleMenu__tick,
+
+    Dispatch__None1,  // LEVEL__TICK
+    Dispatch__None1,  // LEVEL__TICK__ARENA_RESET,
+    Dispatch__None1,  // LEVEL__TICK__QUADTREE_CREATE,
+
 };
 
 static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
     Dispatch__None2,
 
-    CatEntity__collide,
-    CatEntity__action,
     BreakBlock__action,
+    CatEntity__action,
+    CatEntity__collide,
     RedWallBlock__action,
 };
 

@@ -51,9 +51,11 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.saudio_sample_rate = saudio_sample_rate;
   engine.saudio_channels = saudio_channels;
   engine.stm_now = stm_now;
-  engine.stm_sec = stm_sec;
+  engine.stm_ns = stm_ns;
+  engine.stm_us = stm_us;
   engine.stm_ms = stm_ms;
   engine.stm_sec = stm_sec;
+  engine.stm_laptime = stm_laptime;
   engine.sg_begin_pass = sg_begin_pass;
   engine.sg_apply_pipeline = sg_apply_pipeline;
   engine.sg_apply_bindings = sg_apply_bindings;
@@ -152,7 +154,7 @@ static void frame(void) {
     static char title[100];
     sprintf(
         title,
-        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB",
+        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB E %u",
         engine.window_title,
         frames,  // FPS = measured/counted frames per second
         costPhysics,  // P = cost of last physics in ms
@@ -161,7 +163,8 @@ static void frame(void) {
         1000 / (costPhysics + costRender + 1),  // +1 avoids div/0
         // A = Arena memory used/capacity
         ((u64)(engine.arena->pos - engine.arena->buf)) / 1024 / 1024,
-        ((u64)(engine.arena->end - engine.arena->buf)) / 1024 / 1024);
+        ((u64)(engine.arena->end - engine.arena->buf)) / 1024 / 1024,
+        engine.entity_count);
     update_window_title(title);
     frames = 0;
 

@@ -9,6 +9,7 @@
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
 #include "../common/Preloader.h"
+#include "../common/Profiler.h"
 #include "../common/QuadTree.h"
 #include "../components/Collider.h"
 #include "../components/MeshRenderer.h"
@@ -111,6 +112,8 @@ void CatEntity__gui(Entity* entity) {
 }
 
 void CatEntity__tick(Entity* entity) {
+  PROFILE__BEGIN(CAT_ENTITY__TICK);
+
   Logic__State* logic = g_engine->logic;
   CatEntity* self = (CatEntity*)entity;
 
@@ -126,6 +129,7 @@ void CatEntity__tick(Entity* entity) {
   StateGraph__tick(self->sg);
 
   Rigidbody2D__move(entity);
+  PROFILE__END(CAT_ENTITY__TICK);
 }
 
 void CatEntity__collide(Entity* entity, void* _params) {

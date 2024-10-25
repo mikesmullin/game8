@@ -1,13 +1,11 @@
 #include "RubbleSprite.h"
 
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
 #include "../common/Log.h"
 #include "../common/Math.h"
-#include "../common/Preloader.h"
+#include "../common/Profiler.h"
 #include "../components/MeshRenderer.h"
 #include "Entity.h"
 #include "Sprite.h"
@@ -35,11 +33,10 @@ void RubbleSprite__init(Entity* entity) {
 }
 
 void RubbleSprite__tick(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Sprite* sprite = (Sprite*)entity;
-  RubbleSprite* self = (RubbleSprite*)sprite;
-  if (self->removed) return;
+  PROFILE__BEGIN(RUBBLE_SPRITE__TICK);
+  if (entity->removed) return;
 
+  RubbleSprite* self = (RubbleSprite*)entity;
   self->base.base.tform->pos.x += self->xa * 0.2f;
   self->base.base.tform->pos.y += self->ya * 0.2f;
   self->base.base.tform->pos.z += self->za * 0.2f;
@@ -49,16 +46,14 @@ void RubbleSprite__tick(Entity* entity) {
     self->xa *= 0.8f;
     self->za *= 0.8f;
     if (Math__random(0, 1) < 0.04f) {
-      self->removed = true;
+      entity->removed = true;
     }
   }
+  PROFILE__END(RUBBLE_SPRITE__TICK);
 }
 
 void RubbleSprite__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Sprite* sprite = (Sprite*)entity;
-  RubbleSprite* self = (RubbleSprite*)sprite;
-  if (self->removed) return;
+  if (entity->removed) return;
 
-  Sprite__render((Entity*)self);
+  Sprite__render(entity);
 }

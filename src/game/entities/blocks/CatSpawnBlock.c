@@ -7,6 +7,7 @@
 #include "../../common/Dispatcher.h"
 #include "../../common/List.h"
 #include "../../common/Math.h"
+#include "../../common/Profiler.h"
 #include "../../levels/Level.h"
 #include "../CatEntity.h"
 #include "Block.h"
@@ -50,6 +51,7 @@ void CatSpawnBlock__gui(Entity* entity) {
 }
 
 void CatSpawnBlock__tick(Entity* entity) {
+  PROFILE__BEGIN(CAT_SPAWN_BLOCK__TICK);
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
@@ -59,7 +61,7 @@ void CatSpawnBlock__tick(Entity* entity) {
   }
 
   self->animTime += g_engine->deltaTime;
-  while (self->animTime > self->spawnInterval) {
+  if (self->animTime > self->spawnInterval) {
     self->animTime -= self->spawnInterval;
 
     // spawn entities (like a particle emitter)
@@ -75,8 +77,8 @@ void CatSpawnBlock__tick(Entity* entity) {
           logic->level->entities,
           cat,
           Level__zsort);
-      // List__append(logic->level->frameScratch[logic->level->frame], logic->level->entities, cat);
       self->spawnedCount++;
     }
   }
+  PROFILE__END(CAT_SPAWN_BLOCK__TICK);
 }

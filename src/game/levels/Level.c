@@ -11,6 +11,7 @@
 #include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Preloader.h"
+#include "../common/Profiler.h"
 #include "../common/QuadTree.h"
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
@@ -131,12 +132,11 @@ static void Level__loaded(Level* level) {
 }
 
 void Level__tick(Level* level) {
+  PROFILE__BEGIN(LEVEL__TICK);
   if (NULL == level->entities || 0 == level->entities->len) return;
+  g_engine->entity_count = level->entities->len;
 
-  // build a QuadTree of all entities
-  f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
-  Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-
+  PROFILE__BEGIN(LEVEL__TICK__ARENA_RESET);
   // cpu-side swapchain for arena memory management
   level->frame = (level->frame + 1) % 2;
   Arena* scratch = level->frameScratch[level->frame];
@@ -150,31 +150,42 @@ void Level__tick(Level* level) {
     Entity* entity = node->data;
     node = node->next;
 
+    if (entity->removed) continue;
     List__insort(scratch, entities2, entity, Level__zsort);
   }
   Arena__Reset(lastScratch);
   level->entities = entities2;
+  PROFILE__END(LEVEL__TICK__ARENA_RESET);
 
-  // rebuild quadtree
+  PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
+  // rebuild a QuadTree of all entities
+  f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
+  Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
   level->qt = QuadTreeNode_create(scratch, boundary);
   node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
+
+    if (entity->removed) continue;
     QuadTreeNode_insert(
         scratch,
         level->qt,
         (Point){entity->tform->pos.x, entity->tform->pos.z},
         entity);
   }
+  PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
   node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     if (NULL == node) continue;  // TODO: how does len get > list?
     Entity* entity = node->data;
     node = node->next;
+
+    if (entity->removed) continue;
     Dispatcher__call1(entity->engine->tick, entity);
   }
+  PROFILE__END(LEVEL__TICK);
 }
 
 void Level__render(Level* level) {

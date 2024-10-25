@@ -7,6 +7,7 @@
 #include "../../common/Audio.h"
 #include "../../common/Dispatcher.h"
 #include "../../common/Preloader.h"
+#include "../../common/Profiler.h"
 #include "../../common/Wav.h"
 #include "Block.h"
 
@@ -32,6 +33,7 @@ void SpawnBlock__init(Entity* entity, f32 x, f32 z) {
 }
 
 void SpawnBlock__tick(Entity* entity) {
+  PROFILE__BEGIN(SPAWN_BLOCK__TICK);
   Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;
   Logic__State* logic = g_engine->logic;
@@ -47,4 +49,5 @@ void SpawnBlock__tick(Entity* entity) {
     logic->player->base.tform->rot.x = 0;
     logic->player->base.tform->rot.y = 0;
   }
+  PROFILE__END(SPAWN_BLOCK__TICK);
 }
