@@ -175,11 +175,19 @@ void MeshRenderer__render(Entity* entity) {
   // f32 r = g_engine->stm_ms(g_engine->stm_now()) / 40;
 
   // Model
-  HMM_Vec3 modelPos = HMM_V3(  //
-      -entity->tform->pos.x,  // move object to camera
-      -entity->tform->pos.y,
-      -entity->tform->pos.z);
-  // modelPos = HMM_V3(0.0f, 0.0f, 0.0f);
+  HMM_Vec3 modelPos;
+  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    // modelPos = HMM_V3(0, 0, 0);
+    modelPos = HMM_V3(  //
+        -entity->tform->pos.x,  // move object to camera
+        -entity->tform->pos.y,
+        -entity->tform->pos.z);
+  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
+    modelPos = HMM_V3(  //
+        -entity->tform->pos.x,  // move object to camera
+        -entity->tform->pos.y,
+        -entity->tform->pos.z);
+  }
   HMM_Vec3 modelRot;
   if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
     modelRot = HMM_V3(0, 0, 0);
@@ -205,17 +213,26 @@ void MeshRenderer__render(Entity* entity) {
           entity->tform->scale.z)));
 
   // View (Camera)
-  HMM_Vec3 viewPos = HMM_V3(  //
-      logic->player->base.tform->pos.x,
-      logic->player->base.tform->pos.y,
-      logic->player->base.tform->pos.z);
-  if (0 == viewPos.Y) {  //  grounded
-    viewPos.Y = Math__map(logic->player->bobPhase, -1, 1, 0, -1.0f / 8);
+  HMM_Vec3 viewPos;
+  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    // viewPos = HMM_V3(0, 0, 0);
+    viewPos = HMM_V3(  //
+        0,
+        0,
+        logic->camera->proj.nearZ);
+  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
+    viewPos = HMM_V3(  //
+        logic->player->base.tform->pos.x,
+        logic->player->base.tform->pos.y,
+        logic->player->base.tform->pos.z);
+    if (0 == viewPos.Y) {  //  grounded
+      viewPos.Y = Math__map(logic->player->bobPhase, -1, 1, 0, -1.0f / 8);
+    }
   }
-
   // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
   HMM_Vec3 viewRot;
   if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    // viewRot = HMM_V3(0, 0, 0);
     viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
   } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
     viewRot = HMM_V3(  // Yaw, Pitch, Roll
@@ -246,6 +263,7 @@ void MeshRenderer__render(Entity* entity) {
   HMM_Mat4 projection;
   if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
     f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
+    // f32 w = (f32)g_engine->window_width  / 4, h = (f32)g_engine->window_height  / 4;
     projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
         -hw,
         +hw,

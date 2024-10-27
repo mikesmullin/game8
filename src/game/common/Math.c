@@ -39,3 +39,11 @@ u32 Math__urandom() {
 u32 Math__urandom2(u32 a, u32 b) {
   return a + (Math__urandom() % (b - a + 1));
 }
+
+f32 Math__ceil(f32 a) {
+  return ceilf(a);
+}
+
+f32 Math__floor(f32 a) {
+  return floorf(a);
+}

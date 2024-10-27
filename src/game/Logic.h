@@ -404,6 +404,12 @@ typedef struct Sprite {
   bool billboard;
 } Sprite;
 
+typedef struct DebugText {
+  Entity base;
+  char* txt;
+  List* glyphs;
+} DebugText;
+
 typedef struct Block {
   Entity base;
   bool masked;
@@ -505,7 +511,7 @@ typedef struct Logic__State {
 
   // TODO: there should be an arena per game, frame, etc.
   Arena* frameArena;
-  Sprite* dt;
+  DebugText* dt;
 
 } Logic__State;
 

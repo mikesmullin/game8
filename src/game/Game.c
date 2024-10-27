@@ -5,8 +5,12 @@
 #include "Logic.h"
 #include "common/Arena.h"
 #include "common/Audio.h"
+#include "common/Color.h"
 #include "common/Dispatcher.h"
+#include "common/List.h"
+#include "common/Log.h"
 #include "common/Preloader.h"
+#include "common/Utils.h"
 #include "common/Wav.h"
 #include "entities/DebugText.h"
 #include "entities/Player.h"
@@ -29,6 +33,8 @@ void Game__init() {
 
 void Game__preload() {
   Logic__State* logic = g_engine->logic;
+
+  logic->ui_entities = List__alloc(g_engine->arena);
 
   // preload assets
   Preload__audio(
@@ -54,9 +60,10 @@ void Game__preload() {
   logic->level = level;
   Level__preload(logic->level);
 
-  logic->dt = Arena__Push(g_engine->arena, sizeof(Sprite));
-  // DebugText__init((Entity*)logic->dt, 29, 28);
-  DebugText__init((Entity*)logic->dt, 0, 0);
+  logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
+  char txt[40] = "Hello world!";
+  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, LIME);
+  List__append(g_engine->arena, logic->ui_entities, logic->dt);
 }
 
 void Game__reload() {
@@ -94,11 +101,39 @@ void Game__gui() {
   // switch current camera to ortho cam at player pos
   logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
 
-  logic->dt->base.tform->pos.x = 0;
-  logic->dt->base.tform->pos.y = 0;
-  logic->dt->base.tform->scale.x = 3 * 2;
-  logic->dt->base.tform->scale.y = 3 * 2;
-  DebugText__gui((Entity*)logic->dt);
+  char* c = logic->dt->txt;
+  mprintf(
+      &c,
+      "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
+      logic->dt->glyphs->len,
+      logic->player->base.tform->pos.x,
+      logic->player->base.tform->pos.y,
+      logic->player->base.tform->pos.z,
+      logic->player->base.tform->rot.y);
+  logic->dt->base.tform->pos.x = -55;
+  logic->dt->base.tform->pos.y = -70;
+  logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 5;
+  // DebugText__gui((Entity*)logic->dt);
+
+  List* zsorted = List__alloc(g_engine->logic->frameArena);
+  List__Node* node = logic->ui_entities->head;
+  for (u32 i = 0; i < logic->ui_entities->len; i++) {
+    Entity* entity = node->data;
+    node = node->next;
+
+    if (0 != entity->render && UI_ZSORT_RG == entity->render->rg) {
+      List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
+    }
+
+    Dispatcher__call1(entity->engine->gui, entity);
+  }
+  node = zsorted->head;
+  for (u32 i = 0; i < zsorted->len; i++) {
+    Entity* entity = node->data;
+    node = node->next;
+
+    Dispatcher__call1(entity->engine->render, entity);
+  }
 
   // switch current camera to perspective cam at player pos
   logic->camera->proj.type = PERSPECTIVE_PROJECTION;

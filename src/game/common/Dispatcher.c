@@ -1,6 +1,7 @@
 #include "Dispatcher.h"
 
 #include "../entities/CatEntity.h"
+#include "../entities/DebugText.h"
 #include "../entities/Player.h"
 #include "../entities/RubbleSprite.h"
 #include "../entities/Sprite.h"
@@ -9,6 +10,7 @@
 #include "../entities/blocks/RedWallBlock.h"
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
+
 
 // #include "../menus/AboutMenu.h"
 // #include "../menus/HelpMenu.h"
@@ -32,6 +34,7 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     CatEntity__tick,
     CatSpawnBlock__gui,
     CatSpawnBlock__tick,
+    DebugText__gui,
     Player__tick,
     RubbleSprite__render,
     RubbleSprite__tick,

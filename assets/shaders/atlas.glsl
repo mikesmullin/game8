@@ -65,7 +65,7 @@ vec4 alphaBlend(vec4 color1, vec4 color2) {
 void main() {
     // texture atlas
     // compute the normalized texture coordinates for the sub-rectangle
-    uint xt = ti*tw%aw, yt = (ti*tw/aw)*th;
+    float xt = ti*tw%aw, yt = (ti*tw/aw)*th;
     vec2 rectMin = vec2(float(xt) / float(aw), float(yt) / float(ah)); // Top-left of the rectangle
     vec2 rectMax = vec2(float(xt+tw) / float(aw), float(yt+th) / float(ah)); // Bottom-right of the rectangle
     // map TexCoord 0..1 where 0,0 is bl and 1,1 is tr
