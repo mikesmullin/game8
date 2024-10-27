@@ -27,8 +27,7 @@ void RubbleSprite__init(Entity* entity) {
   self->base.billboard = true;
   self->life = self->lifeSpan = easeInQuart(Math__random(0, 1)) * 3.0f;
 
-  entity->render->tx = 7;
-  entity->render->ty = 0;
+  entity->render->ti = 7;
   entity->render->useMask = true;
   entity->render->mask = BLACK;
   entity->render->color = logic->level->wallCol;

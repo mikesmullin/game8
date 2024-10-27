@@ -191,6 +191,13 @@ void MeshRenderer__render(Entity* entity) {
   model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
   model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
   model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+  // apply scale to model
+  model = HMM_MulM4(
+      model,
+      HMM_Scale(HMM_V3(  //
+          entity->tform->scale.x,
+          entity->tform->scale.y,
+          entity->tform->scale.z)));
 
   // View (Camera)
   HMM_Vec3 viewPos = HMM_V3(  //
@@ -240,11 +247,11 @@ void MeshRenderer__render(Entity* entity) {
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
 
   fs_params_t fs_params = {
-      .ts = entity->render->ts,
-      .tx = entity->render->tx,
-      .ty = entity->render->ty,
-      .tw = material->texture->w,
-      .th = material->texture->h,
+      .ti = entity->render->ti,
+      .tw = entity->render->tw,
+      .th = entity->render->th,
+      .aw = material->texture->w,
+      .ah = material->texture->h,
       .useMask = entity->render->useMask ? 1 : 0,
       .mask = entity->render->mask,
       .color = entity->render->color};

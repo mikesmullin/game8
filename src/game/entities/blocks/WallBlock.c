@@ -28,9 +28,9 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   entity->render->material->texture = Preload__texture(  //
       &logic->textures.atlas,
       "../assets/textures/atlas.bmp");
-  entity->render->ts = ATLAS_SPRITE_SZ;
-  entity->render->tx = logic->level->wallTex;
-  entity->render->ty = 0;
+  entity->render->ti = logic->level->wallTex;
+  entity->render->tw = entity->render->th = 8;
+  entity->render->aw = entity->render->ah = 64;
   entity->render->color = logic->level->wallCol;
 }
 

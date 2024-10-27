@@ -59,8 +59,7 @@ void CatEntity__init(Entity* entity) {
   // self->brain = (BTNode*)&BTroot;
   // self->brain->entity = entity;
 
-  entity->render->tx = Math__urandom2(0, 7);
-  entity->render->ty = 1;
+  entity->render->ti = 1 * 8 + Math__urandom2(0, 7);
   entity->render->useMask = true;
   entity->render->mask = BLACK;
   entity->render->color = TRANSPARENT;

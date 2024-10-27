@@ -29,7 +29,7 @@ uniform sampler texture1_smp;
 #define texture1 sampler2D(_texture1, texture1_smp)
 
 uniform fs_params {
-    int ts, tx, ty, tw, th, useMask, mask, color;
+    int ti, tw, th, aw, ah, useMask, mask, color;
 };
 
 uint vec4ToU32(vec4 color) {
@@ -63,11 +63,11 @@ vec4 alphaBlend(vec4 color1, vec4 color2) {
 }
 
 void main() {
-    // ts,tx,ty texture atlas {tw,th}
+    // texture atlas
     // compute the normalized texture coordinates for the sub-rectangle
-    uint xt = ts * tx, yt = ts * ty;
-    vec2 rectMin = vec2(float(xt) / float(tw), float(yt) / float(th)); // Top-left of the rectangle
-    vec2 rectMax = vec2(float(xt+ts) / float(tw), float(yt+ts) / float(th)); // Bottom-right of the rectangle
+    uint xt = ti*tw%aw, yt = (ti*tw/aw)*th;
+    vec2 rectMin = vec2(float(xt) / float(aw), float(yt) / float(ah)); // Top-left of the rectangle
+    vec2 rectMax = vec2(float(xt+tw) / float(aw), float(yt+th) / float(ah)); // Bottom-right of the rectangle
     // map TexCoord 0..1 where 0,0 is bl and 1,1 is tr
     // to the sub-rectangle within the atlas
     vec2 atlasCoord = mix(rectMin, rectMax, TexCoord);

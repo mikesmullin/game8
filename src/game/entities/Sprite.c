@@ -33,9 +33,9 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->render->material->texture = Preload__texture(  //
       &logic->textures.atlas,
       "../assets/textures/atlas.bmp");
-  entity->render->ts = ATLAS_SPRITE_SZ;
-  entity->render->tx = 0;
-  entity->render->ty = 1;
+  entity->render->ti = 1;
+  entity->render->tw = entity->render->th = 8;
+  entity->render->aw = entity->render->ah = 64;
   entity->render->useMask = true;
   entity->render->mask = BLACK;
   entity->render->color = TRANSPARENT;

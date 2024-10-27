@@ -31,23 +31,22 @@ static SGState SGidle = {
 
 static void tailOnEnter(StateGraph* sg) {
   // StateGraph__addTag(sg, SGST_BUSY);
-  sg->entity->render->ty = 2;
 }
 static void tailKF1(StateGraph* sg) {
   CatEntity* self = (CatEntity*)sg->entity;
-  sg->entity->render->tx = 2;
+  sg->entity->render->ti = 2 * 8 + 2;
 }
 static void tailKF2(StateGraph* sg) {
-  sg->entity->render->tx = 3;
+  sg->entity->render->ti = 2 * 8 + 3;
 }
 static void tailKF3(StateGraph* sg) {
-  sg->entity->render->tx = 4;
+  sg->entity->render->ti = 2 * 8 + 4;
 }
 static void tailKF4(StateGraph* sg) {
-  sg->entity->render->tx = 5;
+  sg->entity->render->ti = 2 * 8 + 5;
 }
 static void tailKF5(StateGraph* sg) {
-  sg->entity->render->tx = 6;
+  sg->entity->render->ti = 2 * 8 + 6;
 }
 static void tailKF6(StateGraph* sg) {
   if (Math__urandom2(0, 10) < 1) StateGraph__gotoState(sg, 2);  // blink
@@ -68,20 +67,16 @@ static SGState SGtail = {
 };
 
 static void blinkKF1(StateGraph* sg) {  // b eyes open
-  sg->entity->render->tx = 3;
-  sg->entity->render->ty = 2;
+  sg->entity->render->ti = 2 * 8 + 3;
 }
 // static void blinkKF2(StateGraph* sg) {  // l eye closed
-//   sg->entity->render->tx = 1;
-//   sg->entity->render->ty = 3;
+//   sg->entity->render->ti = 3 * 8 + 1;
 // }
 // static void blinkKF3(StateGraph* sg) {  // r eye closed
-//   sg->entity->render->tx = 2;
-//   sg->entity->render->ty = 3;
+//   sg->entity->render->ti = 3 * 8 + 2;
 // }
 static void blinkKF4(StateGraph* sg) {  // b eyes closed
-  sg->entity->render->tx = 3;
-  sg->entity->render->ty = 3;
+  sg->entity->render->ti = 3 * 8 + 3;
 }
 static void blinkKF5(StateGraph* sg) {
   StateGraph__gotoState(sg, Math__urandom2(0, 10) < 1 ? 3 : 0);  // meow or idle
@@ -101,17 +96,13 @@ static SGState SGblink = {
 };
 
 static void meowKF1(StateGraph* sg) {  // eyes open, mouth closed
-  sg->entity->render->tx = 3;
-  sg->entity->render->ty = 2;
+  sg->entity->render->ti = 2 * 8 + 3;
 }
 static void meowKF2(StateGraph* sg) {  // eyes open, mouth open
-  sg->entity->render->tx = 0;
-  sg->entity->render->ty = 4;
+  sg->entity->render->ti = 4 * 8 + 0;
 }
 static void meowKF3(StateGraph* sg) {  // eyes closed, mouth open
-
-  sg->entity->render->tx = 3;
-  sg->entity->render->ty = 4;
+  sg->entity->render->ti = 4 * 8 + 3;
   AudioSource__play(sg->entity, g_engine->logic->audio.meow);
 }
 static void meowKF4(StateGraph* sg) {

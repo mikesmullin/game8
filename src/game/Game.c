@@ -6,6 +6,7 @@
 #include "common/Dispatcher.h"
 #include "common/Preloader.h"
 #include "common/Wav.h"
+#include "entities/DebugText.h"
 #include "entities/Player.h"
 #include "levels/Level.h"
 
@@ -50,6 +51,9 @@ void Game__preload() {
   level->worldFile = "../assets/textures/sky.bmp";
   logic->level = level;
   Level__preload(logic->level);
+
+  logic->dt = Arena__Push(g_engine->arena, sizeof(Sprite));
+  DebugText__init((Entity*)logic->dt, 29, 28);
 }
 
 void Game__reload() {
@@ -83,6 +87,8 @@ void Game__render() {
 
 void Game__gui() {
   Logic__State* logic = g_engine->logic;
+
+  DebugText__render((Entity*)logic->dt);
 
   // // draw debug cursor
   // Bitmap__Set2DPixel(

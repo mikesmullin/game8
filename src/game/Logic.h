@@ -188,6 +188,7 @@ typedef struct EngineComponent {
 typedef struct TransformComponent {
   v3 pos;  // (x, y, z)
   v3 rot;  // (yaw, pitch, roll)
+  v3 scale;  // (sx, sy, sz)
 } TransformComponent;
 
 typedef enum ColliderType {
@@ -223,8 +224,6 @@ typedef struct Rigidbody2DComponent {
   f32 xa, za;  // movement deltas (pre-collision)
 } Rigidbody2DComponent;
 
-#define ATLAS_SPRITE_SZ (8)
-
 // TODO: kindof misnomer; contains mesh + texture + shader + bindings
 typedef struct Material {
   Wavefront* mesh;
@@ -243,7 +242,7 @@ typedef enum RenderGroup {
 typedef struct RendererComponent {
   RenderGroup rg;
   Material* material;
-  u32 tx, ty, ts;
+  u32 ti, tw, th, aw, ah;
   bool useMask;
   u32 mask, color;
 } RendererComponent;
@@ -481,7 +480,7 @@ typedef struct PreloadedTextures {
 } PreloadedTextures;
 
 typedef struct PreloadedMaterials {
-  Material *wall, *sprite;
+  Material *wall, *sprite, *glyph;
 } PreloadedMaterials;
 
 typedef struct Logic__State {
@@ -505,6 +504,7 @@ typedef struct Logic__State {
 
   // TODO: there should be an arena per game, frame, etc.
   Arena* frameArena;
+  Sprite* dt;
 
 } Logic__State;
 
