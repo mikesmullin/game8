@@ -306,7 +306,6 @@ const compile_reload = async (outname) => {
     if (target != target2) {
       await fs.cp(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, target2));
     }
-    return dst;
   } catch (e) {
     console.log('copy failed.', e);
   }
@@ -442,7 +441,6 @@ const run_web = async (basename) => {
     switch (cmd) {
       case 'all':
         const code = await all(false);
-        console.debug('code is ', code);
         if (0 != code) process.exit(code);
         break;
       case 'web':
