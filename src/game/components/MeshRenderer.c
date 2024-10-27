@@ -71,12 +71,14 @@ static void MeshRenderer__loaded(Entity* entity) {
       .depth =
           {
               .compare = SG_COMPAREFUNC_LESS_EQUAL,
-              .write_enabled = true,
+              // enable depth buffer only for non-transparent layers
+              .write_enabled = entity->render->rg == WORLD_UNSORT_RG,
           },
       .colors[0] =
           {
               .blend =
-                  {.enabled = true,  // Enable blending
+                  {// Enable blending only for transparency layers
+                   .enabled = entity->render->rg != WORLD_UNSORT_RG,
                    //  source color (the fragment's color) will be multiplied by its alpha.
                    .src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
                    .dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,

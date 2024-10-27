@@ -23,6 +23,7 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   self->billboard = true;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
+  entity->render->rg = WORLD_ZSORT_RG;
 
   // preload assets
   entity->render->material = Preload__material(&logic->materials.sprite);

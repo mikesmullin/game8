@@ -64,6 +64,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_commit = sg_commit;
   engine.sg_shutdown = sg_shutdown;
   engine.stream_cb1 = stream_cb;
+  engine.saudio_shutdown = saudio_shutdown;
   engine.sfetch_setup = sfetch_setup;
   engine.sfetch_dowork = sfetch_dowork;
   engine.sfetch_shutdown = sfetch_shutdown;
@@ -103,12 +104,6 @@ sapp_desc sokol_main(int argc, char* argv[]) {
 }
 
 static void init(void) {
-  // stm_setup();
-  // u64 started_at = stm_now();
-  // while (stm_ms(stm_diff(stm_now(), started_at)) < 4000) {
-  //   // allow time to attach debugger
-  // }
-
 #ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);
 #endif
@@ -162,7 +157,9 @@ static void frame(void) {
         // pFPS = potential frames per second (if it wasn't fixed)
         1000 / (costPhysics + costRender + 1),  // +1 avoids div/0
         // A = Arena memory used/capacity
-        ((u64)(engine.arena->pos - engine.arena->buf)) / 1024 / 1024,
+        ((u64)((engine.arena->pos - engine.arena->buf) -
+               (engine.logic->frameArena->end - engine.logic->frameArena->pos))) /
+            1024 / 1024,
         ((u64)(engine.arena->end - engine.arena->buf)) / 1024 / 1024,
         engine.entity_count);
     update_window_title(title);

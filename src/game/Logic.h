@@ -234,7 +234,14 @@ typedef struct Material {
   bool loaded;
 } Material;
 
+typedef enum RenderGroup {
+  WORLD_UNSORT_RG,  // ie. 3D (default)
+  WORLD_ZSORT_RG,  // ie. 3D transparent
+  UI_ZSORT_RG,  // ie. 2D transparent
+} RenderGroup;
+
 typedef struct RendererComponent {
+  RenderGroup rg;
   Material* material;
   u32 tx, ty, ts;
   bool useMask;
@@ -424,7 +431,6 @@ typedef struct SpawnBlock {
 
 typedef struct CatSpawnBlock {
   Block base;
-  bool firstTick;
   u32 spawnCount;
   f32 spawnInterval;
   f32 animTime;
@@ -440,12 +446,6 @@ typedef struct CatEntity {
 } CatEntity;
 
 // Game ----------------------------------------------
-
-typedef enum RenderGroup {
-  WORLD_UNSORT_RG,  // ie. 3D (default)
-  WORLD_ZSORT_RG,  // ie. 3D transparent
-  UI_ZSORT_RG,  // ie. 2D transparent
-} RenderGroup;
 
 typedef struct Level {
   BmpReader* bmp;
@@ -465,9 +465,6 @@ typedef struct Level {
   u32 depth;
   u32 height;
   SpawnBlock* spawner;
-  u8 frame;
-  u8 frames;
-  Arena* frameScratch[2];
   QuadTreeNode* qt;
 } Level;
 
@@ -505,6 +502,9 @@ typedef struct Logic__State {
   PointerInputState* mState;
 
   sg_pass_action* pass_action;
+
+  // TODO: there should be an arena per game, frame, etc.
+  Arena* frameArena;
 
 } Logic__State;
 

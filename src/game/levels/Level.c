@@ -26,16 +26,10 @@ Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = NULL;
   level->world = NULL;
+  level->entities = List__alloc(g_engine->arena);
 
-  level->frames = 2;
-
-  for (u8 i = 0; i < level->frames; i++) {
-    if (NULL == level->frameScratch[i]) {
-      // TODO: tune the size of this; it is large for load testing only
-      level->frameScratch[i] = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 5);  // MB
-    }
-  }
-  level->entities = List__alloc(level->frameScratch[level->frame]);
+  // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
+  g_engine->logic->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
 
   return level;
 }
@@ -125,7 +119,7 @@ static void Level__loaded(Level* level) {
       u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
       Entity* entity = Level__makeEntity(color, x, y);
       if (NULL != entity) {
-        List__insort(level->frameScratch[level->frame], level->entities, entity, Level__zsort);
+        List__append(g_engine->arena, level->entities, entity);
       }
     }
   }
@@ -134,56 +128,34 @@ static void Level__loaded(Level* level) {
 void Level__tick(Level* level) {
   PROFILE__BEGIN(LEVEL__TICK);
   if (NULL == level->entities || 0 == level->entities->len) return;
-  g_engine->entity_count = level->entities->len;
+  g_engine->entity_count = level->entities->len;  // for perf counters
+  Logic__State* logic = g_engine->logic;
 
-  PROFILE__BEGIN(LEVEL__TICK__ARENA_RESET);
-  // cpu-side swapchain for arena memory management
-  level->frame = (level->frame + 1) % 2;
-  Arena* scratch = level->frameScratch[level->frame];
-  Arena* lastScratch = level->frameScratch[(level->frame + 1) % 2];
-
-  // perform swap (and update z-order)
-  Arena__Reset(scratch);
-  List* entities2 = List__alloc(scratch);
-  List__Node* node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
-    Entity* entity = node->data;
-    node = node->next;
-
-    if (entity->removed) continue;
-    List__insort(scratch, entities2, entity, Level__zsort);
-  }
-  Arena__Reset(lastScratch);
-  level->entities = entities2;
-  PROFILE__END(LEVEL__TICK__ARENA_RESET);
-
-  PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-  // rebuild a QuadTree of all entities
+  // build a QuadTree of all entities
+  Arena__Reset(logic->frameArena);
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-  level->qt = QuadTreeNode_create(scratch, boundary);
-  node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
+  level->qt = QuadTreeNode_create(logic->frameArena, boundary);
+  List__Node* node = level->entities->head;
+  u32 len = level->entities->len;  // cache, because loop will modify length as it goes
+  for (u32 i = 0; i < len; i++) {
+    if (0 == node) continue;  // TODO: find out how this happens
     Entity* entity = node->data;
+    if (0 == entity) continue;  // TODO: find out how this happens
+    List__Node* entityNode = node;  // cache, because it may get removed
     node = node->next;
 
-    if (entity->removed) continue;
-    QuadTreeNode_insert(
-        scratch,
-        level->qt,
-        (Point){entity->tform->pos.x, entity->tform->pos.z},
-        entity);
-  }
-  PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
+    if (entity->removed) {  // gc
+      List__remove(level->entities, entityNode);
+    } else {
+      QuadTreeNode_insert(
+          logic->frameArena,
+          level->qt,
+          (Point){entity->tform->pos.x, entity->tform->pos.z},
+          entity);
 
-  node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
-    if (NULL == node) continue;  // TODO: how does len get > list?
-    Entity* entity = node->data;
-    node = node->next;
-
-    if (entity->removed) continue;
-    Dispatcher__call1(entity->engine->tick, entity);
+      Dispatcher__call1(entity->engine->tick, entity);
+    }
   }
   PROFILE__END(LEVEL__TICK);
 }
@@ -194,8 +166,20 @@ void Level__render(Level* level) {
 
   if (NULL == level->entities || 0 == level->entities->len) return;
 
+  List* zsorted = List__alloc(g_engine->logic->frameArena);
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
+    Entity* entity = node->data;
+    node = node->next;
+    if (0 != entity->render && WORLD_ZSORT_RG == entity->render->rg) {
+      List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
+      continue;
+    }
+
+    Dispatcher__call1(entity->engine->render, entity);
+  }
+  node = zsorted->head;
+  for (u32 i = 0; i < zsorted->len; i++) {
     Entity* entity = node->data;
     node = node->next;
 

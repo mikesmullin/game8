@@ -1,4 +1,4 @@
 @echo off
 :loop
-node build_scripts\\Makefile.mjs all
+node build_scripts\\Makefile.mjs loop
 goto loop

@@ -26,12 +26,11 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   block->base.collider = 0;
   entity->tags1 |= TAG_CATSPAWN;
 
-  self->firstTick = true;
   self->spawnCount = 1;  // instances
-  self->spawnInterval = 1.0f / 100;  // per sec
+  self->spawnInterval = 1.0f / 1000;  // per sec
   self->animTime = 0;  // counter
   self->spawnedCount = 0;
-  self->maxSpawnCount = 5;
+  self->maxSpawnCount = 5;  // 1000000;
 }
 
 void CatSpawnBlock__gui(Entity* entity) {
@@ -56,10 +55,6 @@ void CatSpawnBlock__tick(Entity* entity) {
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
 
-  if (self->firstTick) {
-    self->firstTick = false;
-  }
-
   self->animTime += g_engine->deltaTime;
   if (self->animTime > self->spawnInterval) {
     self->animTime -= self->spawnInterval;
@@ -72,11 +67,7 @@ void CatSpawnBlock__tick(Entity* entity) {
       cat->base.base.tform->pos.x = block->base.tform->pos.x + Math__random(-1, 1);
       cat->base.base.tform->pos.y = -0.25f;
       cat->base.base.tform->pos.z = block->base.tform->pos.z + Math__random(-1, 1);
-      List__insort(
-          logic->level->frameScratch[logic->level->frame],
-          logic->level->entities,
-          cat,
-          Level__zsort);
+      List__append(g_engine->arena, logic->level->entities, cat);
       self->spawnedCount++;
     }
   }

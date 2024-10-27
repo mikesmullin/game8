@@ -136,24 +136,32 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
   return code;
 };
 
-const all = async () => {
+const all = async (autorun) => {
   await clean();
   await copy_dlls();
-  await shaders('hlsl5:glsl430');
-  await compile('main');
-  await compile_reload("src/game/Logic.c.dll");
-  await run('main');
+  console.log('shaders');
+  const code1 = await shaders('hlsl5:glsl430');
+  if (0 != code1) return code1;
+  console.log('main');
+  const code2 = await compile('main');
+  if (0 != code2) return code2;
+  console.log('dll');
+  const code3 = await compile_reload("src/game/Logic.c.dll");
+  if (0 != code3) return code3;
+  if (autorun) await run('main');
 };
 
 const web = async () => {
   await clean();
   await copy_dlls();
-  await shaders('glsl300es');
+  const code1 = await shaders('glsl300es');
+  if (0 != code1) return code1;
   // for these to work,
   // you may need to enter the python emsdk env first (sets env vars)
   // $ cd vendor/emsdk
   // $ emsdk_env
-  await compile_web('main');
+  const code2 = await compile_web('main');
+  if (0 != code2) return code2;
   await run_web('main');
 };
 
@@ -169,11 +177,12 @@ const shaders = async (out_type) => {
   const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
   for (const shaderFile of shaderFiles) {
     const relPath = path.relative(path.join(workspaceFolder, BUILD_PATH), shaderFile);
-    await child_spawn(SDHC_PATH, ['-i',
+    const code = await child_spawn(SDHC_PATH, ['-i',
       relPath, '-o', `${relPath}.h`,
       '-l', out_type]);
+    if (0 !== code) return code;
   }
-
+  return 0;
 };
 
 const clean = async () => {
@@ -210,7 +219,9 @@ const compile = async (basename) => {
     '-o', rel(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);
 
-  console.log("done compiling.");
+  if (0 == code) console.log("done compiling.");
+  else console.log("compile failed.");
+  return code;
 };
 
 function generateRandomString(length) {
@@ -269,7 +280,7 @@ const compile_reload = async (outname) => {
   if (ANALYZE) await child_spawn(ANALYZER, ['--start', 'src/game']);
 
   const started = performance.now();
-  await child_spawn(C_COMPILER_PATH, [
+  const code = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
@@ -286,9 +297,10 @@ const compile_reload = async (outname) => {
   if (ANALYZE) await child_spawn(ANALYZER, ['--analyze', 'analysis.bin']);
 
   // swap lib
+  let target2;
   try {
     await fs.stat(path.join(workspaceFolder, BUILD_PATH, target));
-    const target2 = target.replace('.tmp', '');
+    target2 = target.replace('.tmp', '');
     // try {
     //   await fs.rename(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, 'tmp', target2));
     // } catch (e) {
@@ -297,11 +309,13 @@ const compile_reload = async (outname) => {
     if (target != target2) {
       await fs.cp(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, target2));
     }
-    console.log(`recompiled. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`);
     return dst;
   } catch (e) {
-    console.log('recompilation failed.', e);
+    console.log('copy failed.', e);
   }
+
+  console.log(`recompilation ${0 == code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`);
+  return code;
 };
 
 const watch = async () => {
@@ -316,6 +330,24 @@ const watch = async () => {
       timer = setTimeout(async () => {
         wait = true;
         await compile_reload(`src/game/${generateRandomString(16)}.dll.tmp`);
+        wait = false;
+      }, 250);
+    }
+  }
+};
+
+const all_loop = async () => {
+  console.log(`watching...`);
+  const watcher = fs.watch(path.join(workspaceFolder, 'src'), { recursive: true });
+  let timer;
+  let wait = false;
+  for await (const event of watcher) {
+    console.debug('event', event);
+    clearTimeout(timer);
+    if (!wait) {
+      timer = setTimeout(async () => {
+        wait = true;
+        await all(false);
         wait = false;
       }, 250);
     }
@@ -412,7 +444,8 @@ const run_web = async (basename) => {
   for (const cmd of cmds) {
     switch (cmd) {
       case 'all':
-        all();
+        const code = await all(false);
+        if (0 != code) process.exit(code);
         break;
       case 'web':
         web();
@@ -439,6 +472,9 @@ const run_web = async (basename) => {
       case 'watch':
         await watch();
         break;
+      case 'loop':
+        await all_loop();
+        break;
       case 'help':
       default:
         console.log(`
@@ -454,6 +490,8 @@ SUBCOMMANDS:
   copy_dlls  Copy dynamic libraries to build directory.
   shaders    Compile SPIRV shaders with GLSLC.
   clang      Generate the.json file needed for clangd for vscode extension.
+  watch      Watch for changes, recompile .dll.
+  loop       Watch for changes, recompile all.
   main       Compile and run the main app
   `);
         break loop;

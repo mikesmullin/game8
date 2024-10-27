@@ -70,6 +70,7 @@ void Game__tick() {
   // in-game
   Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
   Level__tick(logic->level);
+  // TODO: UI_Canvas__tick()
 }
 
 void Game__render() {

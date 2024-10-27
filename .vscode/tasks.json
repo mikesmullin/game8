@@ -28,6 +28,28 @@
       },
       "group": "build",
       "problemMatcher": "$gcc"
+    },
+    {
+      "label": "build",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "build_scripts/Makefile.mjs",
+        "all",
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+      },
+      "group": "build",
+      "problemMatcher": "$gcc",
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
     }
   ]
 }
