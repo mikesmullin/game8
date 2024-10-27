@@ -195,6 +195,10 @@ void MeshRenderer__render(Entity* entity) {
       logic->player->base.tform->pos.x,
       logic->player->base.tform->pos.y,
       logic->player->base.tform->pos.z);
+  if (0 == viewPos.Y) {  //  grounded
+    viewPos.Y = Math__map(logic->player->bobPhase, -1, 1, 0, -1.0f / 8);
+  }
+
   // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
   HMM_Vec3 viewRot = HMM_V3(  // Yaw, Pitch, Roll
       HMM_AngleDeg(logic->player->base.tform->rot.x),

@@ -3,6 +3,7 @@
 #include "../Logic.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
+#include "../common/Easing.h"
 #include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Profiler.h"
@@ -24,6 +25,7 @@ void RubbleSprite__init(Entity* entity) {
   self->ya = Math__random(0, 1);
   self->za = Math__random(0, 1) - 0.5;
   self->base.billboard = true;
+  self->life = self->lifeSpan = easeInQuart(Math__random(0, 1)) * 3.0f;
 
   entity->render->tx = 7;
   entity->render->ty = 0;
@@ -41,13 +43,20 @@ void RubbleSprite__tick(Entity* entity) {
   self->base.base.tform->pos.y += self->ya * 0.2f;
   self->base.base.tform->pos.z += self->za * 0.2f;
   self->ya -= 0.1f;
-  if (self->base.base.tform->pos.y < 0) {
-    self->base.base.tform->pos.y = 0;
+  self->life -= g_engine->deltaTime;
+  if (self->life < 0.0f) self->life = 0;
+  // f32 r = self->life / self->lifeSpan;
+  // self->base.base.render->color =
+  //     self->base.base.render->color &
+  //     (0xff000000 | (u8)(r * 255) << 16 | (u8)(r * 255) << 8 | (u8)(r * 255));
+  if (self->life <= 0) {
+    entity->removed = true;
+  }
+  static f32 floor = 0;
+  if (self->base.base.tform->pos.y < floor) {
+    self->base.base.tform->pos.y = floor;
     self->xa *= 0.8f;
     self->za *= 0.8f;
-    if (Math__random(0, 1) < 0.04f) {
-      entity->removed = true;
-    }
   }
   PROFILE__END(RUBBLE_SPRITE__TICK);
 }

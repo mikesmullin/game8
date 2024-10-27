@@ -327,6 +327,7 @@ typedef struct Player {
   Entity base;
   Camera camera;
   f32 bobPhase;
+  u32 lastInput;
   VirtualJoystick joy;
   PointerState ptr;
   InputState input;
@@ -402,6 +403,7 @@ typedef struct WallBlock {
 typedef struct RubbleSprite {
   Sprite base;
   f32 xa, ya, za;
+  f32 life, lifeSpan;
 } RubbleSprite;
 
 typedef struct BreakBlock {

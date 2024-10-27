@@ -14,8 +14,10 @@
 #include "../common/Profiler.h"
 #include "../common/QuadTree.h"
 #include "../components/Rigidbody2D.h"
+#include "../levels/Level.h"
 #include "CatEntity.h"
 #include "Entity.h"
+#include "RubbleSprite.h"
 #include "blocks/BreakBlock.h"
 
 extern Engine__State* g_engine;
@@ -124,6 +126,12 @@ void Player__tick(Entity* entity) {
       self->joy.xAxis = 0.0f;
     }
 
+    if (0 == self->joy.zAxis && 0 == self->joy.xAxis) {
+      logic->player->lastInput = 0;
+    } else {
+      if (0 == logic->player->lastInput) logic->player->lastInput = g_engine->now;
+    }
+
     // Q-E Up/Down axis
     if (logic->player->input.up) {
       self->joy.yAxis = +1.0f;  // +Y_UP
@@ -199,8 +207,11 @@ void Player__tick(Entity* entity) {
         // normalize diagonal movement, so it is not faster
         d /= SQRT_TWO;
       }
-      d *= PLAYER_WALK_SPEED * g_engine->deltaTime * 4.0f;
-      self->bobPhase += d;
+      // d *= PLAYER_WALK_SPEED * g_engine->deltaTime * 4.0f;
+      // d *=
+      self->bobPhase = HMM_SinF(
+          (g_engine->now - logic->player->lastInput) / 1000.0f * 2.0f * 3.0f *
+          (60 / 29.0f));  // 29bpm
     }
 
     // LOG_DEBUGF(
@@ -218,17 +229,33 @@ void Player__tick(Entity* entity) {
 
       // find block immediately in front
       u32 matchCount = 0;
-      void* matchData[40];
-      forward = HMM_MulV3F(front, 1);
+      void* matchData[100];
+      forward = HMM_MulV3F(front, 1.0f);
       pos = HMM_AddV3(p1, forward);
+
+      RubbleSprite* rs = Arena__Push(g_engine->arena, sizeof(RubbleSprite));
+      RubbleSprite__init((Entity*)rs);
+      rs->base.base.tform->pos.x = p1.X;
+      rs->base.base.tform->pos.y = p1.Y - 1.0f;
+      rs->base.base.tform->pos.z = p1.Z;
+      rs->xa += forward.X, rs->ya = 1, rs->za += forward.Z;
+      rs->base.base.render->color = 0x660000ff;
+      rs->life = rs->lifeSpan = 4.0f;
+      List__insort(
+          logic->level->frameScratch[logic->level->frame],
+          logic->level->entities,
+          rs,
+          Level__zsort);
+
       Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
-      QuadTreeNode_query(logic->level->qt, range, 40, matchData, &matchCount);
+      QuadTreeNode_query(logic->level->qt, range, 100, matchData, &matchCount);
 
       for (u32 i = 0; i < matchCount; i++) {
         Entity* other = (Entity*)matchData[i];
         if (entity == other) continue;
 
-        if (NULL != other->engine && 0 != other->engine->action) {
+        if (NULL != other->engine && 0 != other->engine->action &&
+            HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call2(
               other->engine->action,
               other,
