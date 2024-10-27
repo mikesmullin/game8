@@ -9,16 +9,17 @@ const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
 const isNix = process.platform === "linux";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SDHC_PATH = path.join('..', 'vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: multiplatform support
+const SDHC_PATH = path.join('vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: multiplatform support
 const BUILD_PATH = "build";
 const C_COMPILER_PATH = 'clang';
 const EMCC_COMPILER_PATH = 'emcc.bat';
 const EMRUN_PATH = 'emrun.bat';
 const OUT_FILE = "compile_commands.json";
-const abs = (...args) => path.join(...args);
-const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 const workspaceFolder = path.join(__dirname, '..');
-const rel = (...args) => path.relative(path.join(workspaceFolder, BUILD_PATH), path.join(...args));
+const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
+const absWs = (...args) => path.join(workspaceFolder, ...args);
+const relBuild = (...args) => path.relative(path.join(workspaceFolder, BUILD_PATH), path.join(...args));
+const relWs = (...args) => path.relative(path.join(workspaceFolder), path.join(...args));
 const DEBUG_COMPILER_ARGS = [
   '-O0',
   // export debug symbols (x86dbg understands both; turn these on when debugging, leave off for faster compile)
@@ -54,21 +55,21 @@ const ENGINE_ONLY = [
 const LINKER_LIBS = [];
 const LINKER_LIB_PATHS = [];
 const COMPILER_TRANSLATION_UNITS = [
-  rel(workspaceFolder, 'src', '*.c'),
-  rel(workspaceFolder, 'src', 'lib', '**', '*.c'),
+  relWs(workspaceFolder, 'src', '*.c'),
+  relWs(workspaceFolder, 'src', 'lib', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_DLL = [
-  rel(workspaceFolder, 'src', 'lib', '**', '*.c'),
-  rel(workspaceFolder, 'src', 'game', '**', '*.c'),
+  relWs(workspaceFolder, 'src', 'lib', '**', '*.c'),
+  relWs(workspaceFolder, 'src', 'game', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB = [
-  rel(workspaceFolder, 'src', '**', '*.c'),
+  relWs(workspaceFolder, 'src', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
-  rel(workspaceFolder, 'src', 'lib', 'HotReload.c'),
+  relWs(workspaceFolder, 'src', 'lib', 'HotReload.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
-  rel(workspaceFolder, 'assets', 'web', '*'),
+  relWs(workspaceFolder, 'assets', 'web', '*'),
 ];
 
 const nixPath = (p) =>
@@ -92,9 +93,9 @@ const generate_clangd_compile_commands = async () => {
         ...(is_dll ? C_DLL_COMPILER_FLAGS : C_ENGINE_COMPILER_FLAGS),
         '-c',
         '-o', `${unit_file}.o`,
-        rel(unit_file),
+        relBuild(unit_file),
       ],
-      file: rel(workspaceFolder, unit_file),
+      file: relBuild(workspaceFolder, unit_file),
     });
   }
 
@@ -105,8 +106,6 @@ const generate_clangd_compile_commands = async () => {
 };
 
 const child_spawn = async (cmd, args = [], opts = {}) => {
-  const cwd = path.relative(process.cwd(), path.join(workspaceFolder, BUILD_PATH));
-  // console.log(`cd ${cwd}`);
   console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
   let stdin, stdout;
   const stdio = ['inherit', 'inherit', 'inherit'];
@@ -118,7 +117,7 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
     stdio[1] = 'pipe';
     // stdout = await cbFs.createWriteStream(path.join(workspaceFolder, stdoutfile));
   }
-  const child = spawn(cmd, args, { cwd, stdio });
+  const child = spawn(cmd, args, { stdio });
   if (opts.stdin) {
     stdin.pipe(child.stdin);
   }
@@ -176,7 +175,7 @@ const copy_dlls = async () => {
 const shaders = async (out_type) => {
   const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
   for (const shaderFile of shaderFiles) {
-    const relPath = path.relative(path.join(workspaceFolder, BUILD_PATH), shaderFile);
+    const relPath = path.relative(path.join(workspaceFolder), shaderFile);
     const code = await child_spawn(SDHC_PATH, ['-i',
       relPath, '-o', `${relPath}.h`,
       '-l', out_type]);
@@ -200,7 +199,7 @@ const compile = async (basename) => {
 
   const unit_files = [];
   for (const u of COMPILER_TRANSLATION_UNITS) {
-    for (const file of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
       // if (ENGINE_ONLY.includes(nixPath(file))) {
       unit_files.push(file);
       // }
@@ -215,8 +214,8 @@ const compile = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
-    ...unit_files.map(unit => rel(workspaceFolder, unit)),
-    '-o', rel(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
+    ...unit_files.map(unit => relWs(workspaceFolder, unit)),
+    '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);
 
   if (0 == code) console.log("done compiling.");
@@ -241,20 +240,18 @@ const compile_reload = async (outname) => {
 
   const dsts = [];
   for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
-    for (const file of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
       if (!ENGINE_ONLY.includes(nixPath(file))) {
-        dsts.push(rel(workspaceFolder, file));
+        dsts.push(relWs(workspaceFolder, file));
       }
     }
   }
 
   const unit = 'src/game/Logic.c';
-  const dir = path.relative(process.cwd(), absBuild(path.dirname(unit)));
-  await fs.mkdir(dir, { recursive: true });
-
-  const src = rel(workspaceFolder, unit);
+  await fs.mkdir(absBuild(path.dirname(unit)), { recursive: true });
+  // const src = relWs(workspaceFolder, unit);
   const target = outname;
-  const dst = rel(workspaceFolder, BUILD_PATH, target);
+  const dst = relWs(workspaceFolder, BUILD_PATH, target);
 
   // for (const tu of dsts) {
   //   const started = performance.now();
@@ -402,8 +399,8 @@ const compile_web = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
-    ...unit_files.map(unit => rel(workspaceFolder, unit)),
-    '-o', rel(workspaceFolder, BUILD_PATH, `${basename}.html`),
+    ...unit_files.map(unit => relBuild(workspaceFolder, unit)),
+    '-o', relBuild(workspaceFolder, BUILD_PATH, `${basename}.html`),
   ]);
 
   // copy static assets
@@ -445,6 +442,7 @@ const run_web = async (basename) => {
     switch (cmd) {
       case 'all':
         const code = await all(false);
+        console.debug('code is ', code);
         if (0 != code) process.exit(code);
         break;
       case 'web':
