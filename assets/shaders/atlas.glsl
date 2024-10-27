@@ -10,11 +10,41 @@ uniform vs_params {
     mat4 model;
     mat4 view;
     mat4 projection;
+    int billboard;
+    vec3 camPos;
 };
 
 void main() {
-    // note that we read the multiplication from right to left
-    gl_Position = projection * view * model * vec4(aPos, 1.0);
+    vec3 position = aPos;
+
+    // Check if billboarding is enabled
+    if (billboard == 1) {
+        vec3 modelPos = vec3(-model[3].xyz);
+        // Compute direction from camera to the model's position
+        vec3 toCamera = normalize(camPos - modelPos);
+        
+        // Lock the Y-axis by zeroing out the Y component
+        toCamera.y = 0.0;
+        toCamera = normalize(toCamera);
+        
+        // Calculate right and up vectors for the billboard rotation matrix
+        vec3 right = normalize(cross(vec3(0.0, 1.0, 0.0), toCamera));
+        vec3 up = vec3(0.0, 1.0, 0.0);
+        
+        // Billboard rotation matrix aligned to camera's position
+        mat4 billboardRotation = mat4(
+            vec4(right, 0.0),
+            vec4(up, 0.0),
+            vec4(toCamera, 0.0),
+            vec4(0.0, 0.0, 0.0, 1.0)
+        );
+
+        // Apply billboard rotation to the position
+        position = (billboardRotation * vec4(position, 1.0)).xyz;
+    }
+
+    // Transform the position with model, view, and projection matrices
+    gl_Position = projection * view * model * vec4(position, 1.0);
     TexCoord = aTexCoord;
 }
 @end

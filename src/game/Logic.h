@@ -246,6 +246,7 @@ typedef struct RendererComponent {
   u32 ti, tw, th, aw, ah;
   bool useMask;
   u32 mask, color;
+  bool billboard;
 } RendererComponent;
 
 typedef struct HealthComponent_t {
@@ -401,7 +402,6 @@ typedef struct StateGraph {
 
 typedef struct Sprite {
   Entity base;
-  bool billboard;
 } Sprite;
 
 typedef struct DebugText {

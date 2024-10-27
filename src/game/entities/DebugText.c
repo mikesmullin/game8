@@ -33,10 +33,10 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.tform->pos.x = x;
     sprite->base.tform->pos.y = y;
     sprite->base.tform->pos.z = 0;
-    sprite->billboard = false;
 
     sprite->base.render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
     sprite->base.render->rg = WORLD_ZSORT_RG;
+    sprite->base.render->billboard = false;
 
     // preload assets
     sprite->base.render->material = Preload__material(&logic->materials.glyph);

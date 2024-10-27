@@ -9,6 +9,7 @@
 #include "../common/Bmp.h"
 #include "../common/Color.h"
 #include "../common/List.h"
+#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Wavefront.h"
 
@@ -222,11 +223,11 @@ void MeshRenderer__render(Entity* entity) {
         logic->camera->proj.nearZ);
   } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
     viewPos = HMM_V3(  //
-        logic->player->base.tform->pos.x,
-        logic->player->base.tform->pos.y,
-        logic->player->base.tform->pos.z);
+        logic->camera->base.tform->pos.x,
+        logic->camera->base.tform->pos.y,
+        logic->camera->base.tform->pos.z);
     if (0 == viewPos.Y) {  //  grounded
-      viewPos.Y = Math__map(logic->player->bobPhase, -1, 1, 0, -1.0f / 8);
+      viewPos.Y = Math__map(logic->camera->bobPhase, -1, 1, 0, -1.0f / 8);
     }
   }
   // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
@@ -236,10 +237,10 @@ void MeshRenderer__render(Entity* entity) {
     viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
   } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
     viewRot = HMM_V3(  // Yaw, Pitch, Roll
-        HMM_AngleDeg(logic->player->base.tform->rot.x),
-        HMM_AngleDeg(logic->player->base.tform->rot.y),
+        HMM_AngleDeg(logic->camera->base.tform->rot.x),
+        HMM_AngleDeg(logic->camera->base.tform->rot.y),
         // TODO: Why do I have to rotate cam Z?
-        HMM_AngleDeg(logic->player->base.tform->rot.z + 180));
+        HMM_AngleDeg(logic->camera->base.tform->rot.z + 180));
   }
   HMM_Mat4 view = I;
   // apply rotation to view
@@ -249,16 +250,16 @@ void MeshRenderer__render(Entity* entity) {
   // apply translation to view
   view = HMM_MulM4(view, HMM_Translate(viewPos));
 
-  // LOG_DEBUGF(
-  //     "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
-  //     modelPos.X,
-  //     modelPos.Y,
-  //     modelPos.Z,
-  //     entity->tform->rot.y,
-  //     viewPos.X,
-  //     viewPos.Y,
-  //     viewPos.Z,
-  //     logic->player->base.tform->rot.y);
+  //   LOG_DEBUGF(
+  //       "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
+  //       modelPos.X,
+  //       modelPos.Y,
+  //       modelPos.Z,
+  //       entity->tform->rot.y,
+  //       viewPos.X,
+  //       viewPos.Y,
+  //       viewPos.Z,
+  //       logic->player->base.tform->rot.y);
 
   HMM_Mat4 projection;
   if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
@@ -269,21 +270,29 @@ void MeshRenderer__render(Entity* entity) {
         +hw,
         -hh,
         +hh,
-        logic->player->proj.nearZ,
-        logic->player->proj.farZ);
+        logic->camera->proj.nearZ,
+        logic->camera->proj.farZ);
   } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
     f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
     projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-        logic->player->proj.fov,
+        logic->camera->proj.fov,
         aspect,
-        logic->player->proj.nearZ,
-        logic->player->proj.farZ);
+        logic->camera->proj.nearZ,
+        logic->camera->proj.farZ);
   }
 
   g_engine->sg_apply_pipeline(*material->pipe);
   g_engine->sg_apply_bindings(material->bind);
 
-  vs_params_t vs_params = {.model = model, .view = view, .projection = projection};
+  vs_params_t vs_params = {
+      .model = model,
+      .view = view,
+      .projection = projection,
+      .billboard = entity->render->billboard ? 1 : 0,
+      .camPos[0] = viewPos.X,
+      .camPos[1] = viewPos.Y,
+      .camPos[2] = viewPos.Z,
+  };
   g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
 
   fs_params_t fs_params = {

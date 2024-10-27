@@ -24,7 +24,6 @@ void RubbleSprite__init(Entity* entity) {
   self->xa = Math__random(0, 1) - 0.5;
   self->ya = Math__random(0, 1);
   self->za = Math__random(0, 1) - 0.5;
-  self->base.billboard = true;
   self->life = self->lifeSpan = easeInQuart(Math__random(0, 1)) * 3.0f;
 
   entity->render->ti = 7;

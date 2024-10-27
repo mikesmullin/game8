@@ -20,10 +20,10 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->tform->pos.x = x;
   entity->tform->pos.y = -(1.0f / 8);
   entity->tform->pos.z = z;
-  self->billboard = true;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
   entity->render->rg = WORLD_ZSORT_RG;
+  entity->render->billboard = true;
 
   // preload assets
   entity->render->material = Preload__material(&logic->materials.sprite);
@@ -45,22 +45,6 @@ void Sprite__render(Entity* entity) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   Sprite* self = (Sprite*)block;
-
-  if (self->billboard) {
-    HMM_Vec3 cPos = HMM_V3(  //
-        logic->player->base.tform->pos.x,
-        0,  // logic->player->base.tform->pos.y,
-        logic->player->base.tform->pos.z);
-    HMM_Vec3 mPos = HMM_V3(  //
-        self->base.tform->pos.x,
-        0,  // self->base.tform->pos.y,
-        self->base.tform->pos.z);
-    HMM_Vec3 U = HMM_V3(0, 1.0f, 0);  // +Y_UP
-    // direction from camera to model
-    HMM_Vec3 look = HMM_NormV3(HMM_SubV3(cPos, mPos));
-    // calculate angle (Y-axis aligned)
-    self->base.tform->rot.y = HMM_ToDeg(-atan2f(look.X, look.Z));
-  }
 
   MeshRenderer__render(entity);
 }
