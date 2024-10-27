@@ -13,7 +13,7 @@
 #include "../common/Wavefront.h"
 
 //
-#include "../../../assets/shaders/simple.glsl.h"
+#include "../../../assets/shaders/atlas.glsl.h"
 
 extern Engine__State* g_engine;
 
@@ -54,7 +54,7 @@ static void MeshRenderer__loaded(Entity* entity) {
   sg_alloc_image_smp(material->bind->fs, SLOT__texture1, SLOT_texture1_smp);
 
   // create shader from code-generated sg_shader_desc
-  sg_shader shd = g_engine->sg_make_shader(simple_shader_desc(g_engine->sg_query_backend()));
+  sg_shader shd = g_engine->sg_make_shader(atlas_shader_desc(g_engine->sg_query_backend()));
 
   // create a pipeline object (default render states are fine for triangle)
   (*material->pipe) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){

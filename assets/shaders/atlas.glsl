@@ -87,4 +87,4 @@ void main() {
 }
 @end
 
-@program simple vs fs
+@program atlas vs fs
