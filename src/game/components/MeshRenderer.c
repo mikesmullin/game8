@@ -180,10 +180,15 @@ void MeshRenderer__render(Entity* entity) {
       -entity->tform->pos.y,
       -entity->tform->pos.z);
   // modelPos = HMM_V3(0.0f, 0.0f, 0.0f);
-  HMM_Vec3 modelRot = HMM_V3(  // Yaw, Pitch, Roll
-      HMM_AngleDeg(entity->tform->rot.x),
-      HMM_AngleDeg(entity->tform->rot.y),
-      HMM_AngleDeg(entity->tform->rot.z));
+  HMM_Vec3 modelRot;
+  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    modelRot = HMM_V3(0, 0, 0);
+  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
+    modelRot = HMM_V3(  // Yaw, Pitch, Roll
+        HMM_AngleDeg(entity->tform->rot.x),
+        HMM_AngleDeg(entity->tform->rot.y),
+        HMM_AngleDeg(entity->tform->rot.z));
+  }
   HMM_Mat4 model = I;
   // apply translation to model
   model = HMM_MulM4(model, HMM_Translate(modelPos));
@@ -209,11 +214,16 @@ void MeshRenderer__render(Entity* entity) {
   }
 
   // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
-  HMM_Vec3 viewRot = HMM_V3(  // Yaw, Pitch, Roll
-      HMM_AngleDeg(logic->player->base.tform->rot.x),
-      HMM_AngleDeg(logic->player->base.tform->rot.y),
-      // TODO: Why do I have to rotate cam Z?
-      HMM_AngleDeg(logic->player->base.tform->rot.z + 180));
+  HMM_Vec3 viewRot;
+  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
+  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
+    viewRot = HMM_V3(  // Yaw, Pitch, Roll
+        HMM_AngleDeg(logic->player->base.tform->rot.x),
+        HMM_AngleDeg(logic->player->base.tform->rot.y),
+        // TODO: Why do I have to rotate cam Z?
+        HMM_AngleDeg(logic->player->base.tform->rot.z + 180));
+  }
   HMM_Mat4 view = I;
   // apply rotation to view
   view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
@@ -233,12 +243,24 @@ void MeshRenderer__render(Entity* entity) {
   //     viewPos.Z,
   //     logic->player->base.tform->rot.y);
 
-  f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
-  HMM_Mat4 projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-      logic->player->proj.fov,
-      aspect,
-      logic->player->proj.nearZ,
-      logic->player->proj.farZ);
+  HMM_Mat4 projection;
+  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
+    f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
+    projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+        -hw,
+        +hw,
+        -hh,
+        +hh,
+        logic->player->proj.nearZ,
+        logic->player->proj.farZ);
+  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
+    f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
+    projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+        logic->player->proj.fov,
+        aspect,
+        logic->player->proj.nearZ,
+        logic->player->proj.farZ);
+  }
 
   g_engine->sg_apply_pipeline(*material->pipe);
   g_engine->sg_apply_bindings(material->bind);

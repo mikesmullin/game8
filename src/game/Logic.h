@@ -62,7 +62,8 @@ typedef struct sapp_event sapp_event;
 typedef struct sg_image_data sg_image_data;
 
 typedef struct Engine__State {
-  char* window_title;
+  char window_title[255];
+
   u32 window_width, window_height;
   Arena* arena;
   Logic__State* logic;
@@ -487,7 +488,7 @@ typedef struct Logic__State {
   // Menu* menu;
   Level* level;
   Player* player;
-  Entity* camera;
+  Player* camera;
   List* ui_entities;
   u32 lastUid;
   PreloadedAudio audio;

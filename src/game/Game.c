@@ -1,5 +1,7 @@
 #include "Game.h"
 
+#include <string.h>
+
 #include "Logic.h"
 #include "common/Arena.h"
 #include "common/Audio.h"
@@ -15,7 +17,7 @@ extern Engine__State* g_engine;
 void Game__init() {
   Logic__State* logic = g_engine->logic;
 
-  g_engine->window_title = "Retro";
+  strcpy_s(g_engine->window_title, 6, "Retro");
   u16 dims = 640;
   g_engine->window_width = dims;
   g_engine->window_height = dims;
@@ -53,7 +55,8 @@ void Game__preload() {
   Level__preload(logic->level);
 
   logic->dt = Arena__Push(g_engine->arena, sizeof(Sprite));
-  DebugText__init((Entity*)logic->dt, 29, 28);
+  // DebugText__init((Entity*)logic->dt, 29, 28);
+  DebugText__init((Entity*)logic->dt, 0, 0);
 }
 
 void Game__reload() {
@@ -68,7 +71,7 @@ void Game__tick() {
   if (0 == logic->player) {
     logic->player = Arena__Push(g_engine->arena, sizeof(Player));
     Player__init((Entity*)logic->player);
-    logic->camera = (Entity*)logic->player;  // 1st player = main camera
+    logic->camera = logic->player;  // 1st player = main camera
   }
 
   // in-game
@@ -88,7 +91,17 @@ void Game__render() {
 void Game__gui() {
   Logic__State* logic = g_engine->logic;
 
-  DebugText__render((Entity*)logic->dt);
+  // switch current camera to ortho cam at player pos
+  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
+
+  logic->dt->base.tform->pos.x = 0;
+  logic->dt->base.tform->pos.y = 0;
+  logic->dt->base.tform->scale.x = 3 * 2;
+  logic->dt->base.tform->scale.y = 3 * 2;
+  DebugText__gui((Entity*)logic->dt);
+
+  // switch current camera to perspective cam at player pos
+  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
 
   // // draw debug cursor
   // Bitmap__Set2DPixel(
