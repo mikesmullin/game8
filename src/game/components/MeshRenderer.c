@@ -226,10 +226,10 @@ void MeshRenderer__render(Entity* entity) {
 
   f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
   HMM_Mat4 projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-      logic->player->camera.fov,
+      logic->player->proj.fov,
       aspect,
-      logic->player->camera.nearZ,
-      logic->player->camera.farZ);
+      logic->player->proj.nearZ,
+      logic->player->proj.farZ);
 
   g_engine->sg_apply_pipeline(*material->pipe);
   g_engine->sg_apply_bindings(material->bind);

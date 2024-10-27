@@ -64,6 +64,7 @@ void Game__tick() {
   if (0 == logic->player) {
     logic->player = Arena__Push(g_engine->arena, sizeof(Player));
     Player__init((Entity*)logic->player);
+    logic->camera = (Entity*)logic->player;  // 1st player = main camera
   }
 
   // in-game

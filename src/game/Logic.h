@@ -284,11 +284,17 @@ typedef struct Entity {
   EventEmitter* events;
 } Entity;
 
-typedef struct Camera {
+typedef enum ProjectionType {
+  PERSPECTIVE_PROJECTION,
+  ORTHOGRAPHIC_PROJECTION,
+} ProjectionType;
+
+typedef struct Projection {
+  ProjectionType type;
   f32 fov;  // field of view
   f32 nearZ;  // near plane
   f32 farZ;  // far plane
-} Camera;
+} Projection;
 
 typedef struct VirtualJoystick {
   f32 xAxis, yAxis, zAxis;
@@ -325,7 +331,7 @@ typedef struct InputState {
 
 typedef struct Player {
   Entity base;
-  Camera camera;
+  Projection proj;
   f32 bobPhase;
   u32 lastInput;
   VirtualJoystick joy;
@@ -435,6 +441,12 @@ typedef struct CatEntity {
 
 // Game ----------------------------------------------
 
+typedef enum RenderGroup {
+  WORLD_UNSORT_RG,  // ie. 3D (default)
+  WORLD_ZSORT_RG,  // ie. 3D transparent
+  UI_ZSORT_RG,  // ie. 2D transparent
+} RenderGroup;
+
 typedef struct Level {
   BmpReader* bmp;
   char* levelFile;
@@ -442,7 +454,7 @@ typedef struct Level {
   BmpReader* world;
   char* worldFile;
   bool loaded;
-  List* entities;  // RenderGroup1; entities sorted by z-depth (deepest first)
+  List* entities;  // world entities
   u32 wallTex;
   u32 ceilTex;
   u32 floorTex;
@@ -479,6 +491,8 @@ typedef struct Logic__State {
   // Menu* menu;
   Level* level;
   Player* player;
+  Entity* camera;
+  List* ui_entities;
   u32 lastUid;
   PreloadedAudio audio;
   PreloadedModels models;

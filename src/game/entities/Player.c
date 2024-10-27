@@ -39,9 +39,10 @@ void Player__init(Entity* entity) {
   self->joy.yAxis = 0.0f;
   self->joy.zAxis = 0.0f;
 
-  self->camera.fov = 45.0f;
-  self->camera.nearZ = 0.1f;
-  self->camera.farZ = 1000.0f;
+  self->proj.type = PERSPECTIVE_PROJECTION;
+  self->proj.fov = 45.0f;
+  self->proj.nearZ = 0.1f;
+  self->proj.farZ = 1000.0f;
 
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
