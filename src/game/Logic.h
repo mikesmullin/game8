@@ -249,10 +249,11 @@ typedef enum RenderGroup {
 typedef struct RendererComponent {
   RenderGroup rg;
   Material* material;
-  u32 ti, tw, th, aw, ah;
-  bool useMask;
+  u32 ti, pi, po,  // texture index, palette index, palette offset
+      tw, th,  // texture width x  height
+      aw, ah;  // atlas width x height
+  bool useMask, billboard, indexedPalette;
   u32 mask, color;
-  bool billboard;
 } RendererComponent;
 
 typedef struct HealthComponent_t {

@@ -8,6 +8,7 @@
 // #include "../behaviortrees/BTCat.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
+#include "../common/Log.h"
 #include "../common/Preloader.h"
 #include "../common/Profiler.h"
 #include "../common/QuadTree.h"
@@ -57,7 +58,10 @@ void CatEntity__init(Entity* entity) {
   // self->brain = (BTNode*)&BTroot;
   // self->brain->entity = entity;
 
-  entity->render->ti = 1 * 8 + Math__urandom2(0, 7);
+  entity->render->indexedPalette = true;
+  entity->render->pi = 0;
+  entity->render->po = Math__urandom2(0, 7);
+  entity->render->ti = 2 * 8 + 4;
   entity->render->useMask = true;
   entity->render->mask = BLACK;
   entity->render->color = TRANSPARENT;
@@ -94,6 +98,11 @@ void CatEntity__tick(Entity* entity) {
 
   // self->brain->tick(self->brain);
   StateGraph__tick(self->sg);
+  // static u32 last_ti = 0;
+  // if (last_ti != entity->render->ti) {
+  //   LOG_DEBUGF("ti %u", entity->render->ti);
+  // }
+  // last_ti = entity->render->ti;
 
   Rigidbody2D__move(entity);
   PROFILE__END(CAT_ENTITY__TICK);

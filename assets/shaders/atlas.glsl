@@ -67,7 +67,7 @@ uniform sampler texture1_smp;
 #define texture1 sampler2D(_texture1, texture1_smp)
 
 uniform fs_params {
-    int tw, th, aw, ah, useMask, mask;
+    int ip, pi, tw, th, aw, ah, useMask, mask;
 };
 
 uint vec4ToU32(vec4 color) {
@@ -100,17 +100,22 @@ vec4 alphaBlend(vec4 color1, vec4 color2) {
     );
 }
 
+vec4 getColor(uint i, vec2 coord) {
+    float xt = i*tw%aw, yt = (i*tw/aw)*th;
+    vec2 rectMin = vec2(float(xt) / float(aw), float(yt) / float(ah)); // Top-left of the rectangle
+    vec2 rectMax = vec2(float(xt+tw) / float(aw), float(yt+th) / float(ah)); // Bottom-right of the rectangle
+    // map TexCoord 0..1 where 0,0 is tl and 1,1 is br
+    // to the sub-rectangle within the atlas
+    vec2 atlasCoord = mix(rectMin, rectMax, coord*0.99f);
+    vec4 col = texture(texture1, atlasCoord);
+    return col;
+}
+
 void main() {
     // texture atlas
     // compute the normalized texture coordinates for the sub-rectangle
-    uint idx = inst.x, color = inst.y;
-    float xt = idx*tw%aw, yt = (idx*tw/aw)*th;
-    vec2 rectMin = vec2(float(xt) / float(aw), float(yt) / float(ah)); // Top-left of the rectangle
-    vec2 rectMax = vec2(float(xt+tw) / float(aw), float(yt+th) / float(ah)); // Bottom-right of the rectangle
-    // map TexCoord 0..1 where 0,0 is bl and 1,1 is tr
-    // to the sub-rectangle within the atlas
-    vec2 atlasCoord = mix(rectMin, rectMax, TexCoord);
-    vec4 col = texture(texture1, atlasCoord);
+    uint idx = inst.x, color = inst.y, po = inst.z;
+    vec4 col = getColor(idx, TexCoord);
     uint pixel = vec4ToU32(col);
     vec4 pixel2 = u32ToVec4(color);
 
@@ -118,8 +123,19 @@ void main() {
         col = vec4(0,0,0,0); // transparent
     }
     else {
-        // col = mix(col, pixel2, 0.2f); // apply alpha blending (for color tint effect)
-        col = alphaBlend(pixel2, col);
+        if (ip == 1u) {
+            // translate color via indexed palette
+            for (float x=0; x<8; x++) {
+                float fx = x/float(tw-1);
+                if (col == getColor(pi, vec2(fx, 0))) {
+                    float fy = float(po)/float(th-1);
+                    col = getColor(pi, vec2(fx,  fy));
+                    break;
+                }
+            }
+        }
+
+        col = alphaBlend(pixel2, col); // apply alpha blending (for color tint effect)
     }
 
     FragColor = col;

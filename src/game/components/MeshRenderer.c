@@ -243,7 +243,7 @@ void MeshRenderer__renderBatches(List* entities) {
       vs_params->models[b] = model;
       vs_params->batch[b][0] = entity->render->ti;
       vs_params->batch[b][1] = entity->render->color;
-      vs_params->batch[b][2] = 0;
+      vs_params->batch[b][2] = entity->render->po;
       vs_params->batch[b][3] = 0;
     }
 
@@ -326,6 +326,8 @@ void MeshRenderer__renderBatches(List* entities) {
     vs_params->camPos[1] = viewPos.Y;
     vs_params->camPos[2] = viewPos.Z;
 
+    fs_params.ip = entityZero->render->indexedPalette ? 1 : 0;
+    fs_params.pi = entityZero->render->pi;
     fs_params.tw = entityZero->render->tw;
     fs_params.th = entityZero->render->th;
     fs_params.aw = material->texture->w;
