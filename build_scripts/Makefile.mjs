@@ -375,11 +375,11 @@ const compile_web = async (basename) => {
   const unit_files = [];
   let candidates, noncandidates;
   for (const u of COMPILER_TRANSLATION_UNITS_WEB) {
-    candidates = await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'));
+    candidates = await glob(relWs(absWs(u)).replace(/\\/g, '/'));
     nextFile:
     for (const file of candidates) {
       for (const nu of COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE) {
-        noncandidates = await glob(path.relative(workspaceFolder, absBuild(nu)).replace(/\\/g, '/'));
+        noncandidates = await glob(relWs(absWs(nu)).replace(/\\/g, '/'));
         for (const nonFile of noncandidates) {
           if (file == nonFile) continue nextFile;
         }
@@ -398,19 +398,20 @@ const compile_web = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     //...LINKER_LIBS,
     //...LINKER_LIB_PATHS,
-    ...unit_files.map(unit => relBuild(workspaceFolder, unit)),
-    '-o', relBuild(workspaceFolder, BUILD_PATH, `${basename}.html`),
+    ...unit_files.map(unit => relWs(workspaceFolder, unit)),
+    '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}.html`),
   ]);
 
   // copy static assets
   const dest = path.join(workspaceFolder, BUILD_PATH);
   for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY) {
-    for (const src of await glob(path.relative(workspaceFolder, absBuild(u)).replace(/\\/g, '/'))) {
+    for (const src of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
       await fs.copyFile(src, path.join(dest, path.basename(src)));
     }
   }
 
   console.log("done compiling.");
+  return code;
 };
 
 const run_web = async (basename) => {
@@ -424,14 +425,16 @@ const run_web = async (basename) => {
     return;
   }
 
-  const serve_root = path.relative(path.join(workspaceFolder, BUILD_PATH), process.cwd());
+  // const serve_root = path.relative(path.join(workspaceFolder, BUILD_PATH), process.cwd());
+  // console.log(serve_root);
   console.log("http://localhost:9090/build/main.html");
-  await child_spawn(EMRUN_PATH, [
+  const code = await child_spawn(EMRUN_PATH, [
     '--port', 9090,
-    '--serve-root', serve_root,
+    // '--serve-root', serve_root,
     '--no-browser',
     html,
   ]);
+  return code;
 }
 
 (async () => {

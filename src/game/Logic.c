@@ -23,7 +23,7 @@ LOGIC_DECL void logic_oninit(Engine__State* state) {
 
   // NOTICE: logging won't work in here
 
-  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 11);  // MB (16mb is max for emscripten + firefox)
+  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 5);  // MB (16mb is max for emscripten + firefox)
   g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
 
   Audio__init();

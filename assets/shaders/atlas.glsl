@@ -4,7 +4,7 @@
 in vec3 aPos;
 in vec2 aTexCoord;
 
-out ivec4 inst;
+flat out ivec4 inst;
 out vec2 TexCoord;
 
 #define MAX_BATCH_ELEMENTS 128

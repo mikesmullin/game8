@@ -28,6 +28,7 @@ static void stream_cb(float* buffer, int num_frames, int num_channels);
 static void update_window_title(const char* title) {
 #ifdef __EMSCRIPTEN__
   EM_ASM({ document.title = UTF8ToString($0); }, title);
+  EM_ASM({ console.debug(UTF8ToString($0)); }, title);
 #else
   sapp_set_window_title(title);
 #endif

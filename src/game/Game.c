@@ -23,7 +23,7 @@ extern Engine__State* g_engine;
 void Game__init() {
   Logic__State* logic = g_engine->logic;
 
-  strcpy_s(g_engine->window_title, 6, "Retro");
+  memcpy(g_engine->window_title, "Retro", 6);
   u16 dims = 640;
   g_engine->window_width = dims;
   g_engine->window_height = dims;

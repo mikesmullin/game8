@@ -20,7 +20,7 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   BreakBlock* self = (BreakBlock*)block;
-  Block__init(block, x, y);
+  WallBlock__init(entity, x, y);
   entity->engine->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
 
