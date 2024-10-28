@@ -18,6 +18,8 @@
 
 extern Engine__State* g_engine;
 
+#define MAX_BATCH_ELEMENTS 128
+
 static const sg_sampler_desc global_sampler_desc = {
     .wrap_u = SG_WRAP_REPEAT,
     .wrap_v = SG_WRAP_REPEAT,
@@ -152,12 +154,18 @@ static void MeshRenderer__loaded(Entity* entity) {
   //           }});
 }
 
-void MeshRenderer__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
+void MeshRenderer__renderBatches(List* entities) {
+  if (0 == entities->len) return;
+  Entity* entityZero = entities->head->data;
+  // all entities in given list are expected to share the same material
+  MeshRenderer__loaded(entityZero);
+  if (!entityZero->render->material->loaded) return;  // no draw until all assets have loaded
+  Material* material = entityZero->render->material;
+  Player* camera = g_engine->logic->camera;
+  vs_params_t* vs_params = Arena__Push(g_engine->logic->frameArena, sizeof(vs_params_t));
+  fs_params_t fs_params;
 
-  MeshRenderer__loaded(entity);
-  if (!entity->render->material->loaded) return;  // no draw until assets load
-  Material* material = entity->render->material;
+  // TODO: move zsorting logic here?
 
   // TODO: move to OrbitalCameraComponent
   // f32 r = g_engine->stm_sec(g_engine->stm_now());
@@ -171,140 +179,164 @@ void MeshRenderer__render(Entity* entity) {
   // Identity
   HMM_Mat4 I = HMM_Translate(HMM_V3(0.0f, 0.0f, 0.0f));
 
-  // TODO: use Quaternions to avoid gimbal locking
+  // separate list into renderable batches
+  List *batches = List__alloc(g_engine->logic->frameArena), *batch;
+  List__Node *c = entities->head, *cc;
+  for (u32 i = 0, b = 0; i < entities->len; i++) {
+    Entity* entity = c->data;
+    c = c->next;
 
-  // f32 r = g_engine->stm_ms(g_engine->stm_now()) / 40;
-
-  // Model
-  HMM_Vec3 modelPos;
-  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
-    // modelPos = HMM_V3(0, 0, 0);
-    modelPos = HMM_V3(  //
-        -entity->tform->pos.x,  // move object to camera
-        -entity->tform->pos.y,
-        -entity->tform->pos.z);
-  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
-    modelPos = HMM_V3(  //
-        -entity->tform->pos.x,  // move object to camera
-        -entity->tform->pos.y,
-        -entity->tform->pos.z);
-  }
-  HMM_Vec3 modelRot;
-  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
-    modelRot = HMM_V3(0, 0, 0);
-  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
-    modelRot = HMM_V3(  // Yaw, Pitch, Roll
-        HMM_AngleDeg(entity->tform->rot.x),
-        HMM_AngleDeg(entity->tform->rot.y),
-        HMM_AngleDeg(entity->tform->rot.z));
-  }
-  HMM_Mat4 model = I;
-  // apply translation to model
-  model = HMM_MulM4(model, HMM_Translate(modelPos));
-  // apply rotation to model
-  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
-  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
-  model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
-  // apply scale to model
-  model = HMM_MulM4(
-      model,
-      HMM_Scale(HMM_V3(  //
-          entity->tform->scale.x,
-          entity->tform->scale.y,
-          entity->tform->scale.z)));
-
-  // View (Camera)
-  HMM_Vec3 viewPos;
-  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
-    // viewPos = HMM_V3(0, 0, 0);
-    viewPos = HMM_V3(  //
-        0,
-        0,
-        logic->camera->proj.nearZ);
-  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
-    viewPos = HMM_V3(  //
-        logic->camera->base.tform->pos.x,
-        logic->camera->base.tform->pos.y,
-        logic->camera->base.tform->pos.z);
-    if (0 == viewPos.Y) {  //  grounded
-      viewPos.Y = Math__map(logic->camera->bobPhase, -1, 1, 0, -1.0f / 8);
+    if (0 == i % MAX_BATCH_ELEMENTS) {
+      batch = List__alloc(g_engine->logic->frameArena);
+      List__append(g_engine->logic->frameArena, batches, batch);
     }
-  }
-  // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
-  HMM_Vec3 viewRot;
-  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
-    // viewRot = HMM_V3(0, 0, 0);
-    viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
-  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
-    viewRot = HMM_V3(  // Yaw, Pitch, Roll
-        HMM_AngleDeg(logic->camera->base.tform->rot.x),
-        HMM_AngleDeg(logic->camera->base.tform->rot.y),
-        // TODO: Why do I have to rotate cam Z?
-        HMM_AngleDeg(logic->camera->base.tform->rot.z + 180));
-  }
-  HMM_Mat4 view = I;
-  // apply rotation to view
-  view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
-  view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
-  view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
-  // apply translation to view
-  view = HMM_MulM4(view, HMM_Translate(viewPos));
-
-  //   LOG_DEBUGF(
-  //       "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
-  //       modelPos.X,
-  //       modelPos.Y,
-  //       modelPos.Z,
-  //       entity->tform->rot.y,
-  //       viewPos.X,
-  //       viewPos.Y,
-  //       viewPos.Z,
-  //       logic->player->base.tform->rot.y);
-
-  HMM_Mat4 projection;
-  if (ORTHOGRAPHIC_PROJECTION == logic->camera->proj.type) {
-    f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
-    // f32 w = (f32)g_engine->window_width  / 4, h = (f32)g_engine->window_height  / 4;
-    projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-        -hw,
-        +hw,
-        -hh,
-        +hh,
-        logic->camera->proj.nearZ,
-        logic->camera->proj.farZ);
-  } else if (PERSPECTIVE_PROJECTION == logic->camera->proj.type) {
-    f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
-    projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-        logic->camera->proj.fov,
-        aspect,
-        logic->camera->proj.nearZ,
-        logic->camera->proj.farZ);
+    List__append(g_engine->logic->frameArena, batch, entity);
   }
 
-  g_engine->sg_apply_pipeline(*material->pipe);
-  g_engine->sg_apply_bindings(material->bind);
+  c = batches->head;
+  for (u32 i = 0; i < batches->len; i++) {
+    List* batch = c->data;
+    c = c->next;
 
-  vs_params_t vs_params = {
-      .model = model,
-      .view = view,
-      .projection = projection,
-      .billboard = entity->render->billboard ? 1 : 0,
-      .camPos[0] = viewPos.X,
-      .camPos[1] = viewPos.Y,
-      .camPos[2] = viewPos.Z,
-  };
-  g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(vs_params));
+    cc = batch->head;
+    for (u32 b = 0; b < batch->len; b++) {
+      Entity* entity = cc->data;
+      cc = cc->next;
 
-  fs_params_t fs_params = {
-      .ti = entity->render->ti,
-      .tw = entity->render->tw,
-      .th = entity->render->th,
-      .aw = material->texture->w,
-      .ah = material->texture->h,
-      .useMask = entity->render->useMask ? 1 : 0,
-      .mask = entity->render->mask,
-      .color = entity->render->color};
-  g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));
+      // Model
+      HMM_Vec3 modelPos;
+      if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+        // modelPos = HMM_V3(0, 0, 0);
+        modelPos = HMM_V3(  //
+            -entity->tform->pos.x,  // move object to camera
+            -entity->tform->pos.y,
+            -entity->tform->pos.z);
+      } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+        modelPos = HMM_V3(  //
+            -entity->tform->pos.x,  // move object to camera
+            -entity->tform->pos.y,
+            -entity->tform->pos.z);
+      }
+      HMM_Vec3 modelRot;
+      if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+        modelRot = HMM_V3(0, 0, 0);
+      } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+        modelRot = HMM_V3(  // Yaw, Pitch, Roll
+            HMM_AngleDeg(entity->tform->rot.x),
+            HMM_AngleDeg(entity->tform->rot.y),
+            HMM_AngleDeg(entity->tform->rot.z));
+      }
+      HMM_Mat4 model = I;
+      // apply translation to model
+      model = HMM_MulM4(model, HMM_Translate(modelPos));
+      // apply rotation to model
+      model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
+      model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
+      model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+      // apply scale to model
+      model = HMM_MulM4(
+          model,
+          HMM_Scale(HMM_V3(  //
+              entity->tform->scale.x,
+              entity->tform->scale.y,
+              entity->tform->scale.z)));
 
-  g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, 1);
+      vs_params->models[b] = model;
+      vs_params->batch[b][0] = entity->render->ti;
+      vs_params->batch[b][1] = entity->render->color;
+      vs_params->batch[b][2] = 0;
+      vs_params->batch[b][3] = 0;
+    }
+
+    // View (Camera)
+    camera = g_engine->logic->camera;
+    HMM_Vec3 viewPos;
+    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+      // viewPos = HMM_V3(0, 0, 0);
+      viewPos = HMM_V3(  //
+          0,
+          0,
+          camera->proj.nearZ);
+    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+      viewPos = HMM_V3(  //
+          camera->base.tform->pos.x,
+          camera->base.tform->pos.y,
+          camera->base.tform->pos.z);
+      if (0 == viewPos.Y) {  //  grounded
+        viewPos.Y = Math__map(camera->bobPhase, -1, 1, 0, -1.0f / 8);
+      }
+    }
+    // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
+    HMM_Vec3 viewRot;
+    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+      // viewRot = HMM_V3(0, 0, 0);
+      viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
+    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+      viewRot = HMM_V3(  // Yaw, Pitch, Roll
+          HMM_AngleDeg(camera->base.tform->rot.x),
+          HMM_AngleDeg(camera->base.tform->rot.y),
+          // TODO: Why do I have to rotate cam Z?
+          HMM_AngleDeg(camera->base.tform->rot.z + 180));
+    }
+    HMM_Mat4 view = I;
+    // apply rotation to view
+    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
+    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
+    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+    // apply translation to view
+    view = HMM_MulM4(view, HMM_Translate(viewPos));
+
+    //   LOG_DEBUGF(
+    //       "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
+    //       modelPos.X,
+    //       modelPos.Y,
+    //       modelPos.Z,
+    //       entity->tform->rot.y,
+    //       viewPos.X,
+    //       viewPos.Y,
+    //       viewPos.Z,
+    //       logic->player->base.tform->rot.y);
+
+    HMM_Mat4 projection;
+    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+      f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
+      // f32 w = (f32)g_engine->window_width  / 4, h = (f32)g_engine->window_height  / 4;
+      projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+          -hw,
+          +hw,
+          -hh,
+          +hh,
+          camera->proj.nearZ,
+          camera->proj.farZ);
+    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+      f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
+      projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+          camera->proj.fov,
+          aspect,
+          camera->proj.nearZ,
+          camera->proj.farZ);
+    }
+
+    g_engine->sg_apply_pipeline(*material->pipe);
+    g_engine->sg_apply_bindings(material->bind);
+
+    vs_params->view = view;
+    vs_params->projection = projection;
+    vs_params->billboard = entityZero->render->billboard ? 1 : 0;
+    vs_params->camPos[0] = viewPos.X;
+    vs_params->camPos[1] = viewPos.Y;
+    vs_params->camPos[2] = viewPos.Z;
+
+    fs_params.tw = entityZero->render->tw;
+    fs_params.th = entityZero->render->th;
+    fs_params.aw = material->texture->w;
+    fs_params.ah = material->texture->h;
+    fs_params.useMask = entityZero->render->useMask ? 1 : 0;
+    fs_params.mask = entityZero->render->mask;
+
+    g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(*vs_params));
+    g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));
+
+    g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, batch->len);
+  }
 }

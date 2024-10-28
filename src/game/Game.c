@@ -12,6 +12,7 @@
 #include "common/Preloader.h"
 #include "common/Utils.h"
 #include "common/Wav.h"
+#include "components/MeshRenderer.h"
 #include "entities/DebugText.h"
 #include "entities/Player.h"
 #include "levels/Level.h"
@@ -84,7 +85,6 @@ void Game__tick() {
   // in-game
   Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
   Level__tick(logic->level);
-  // TODO: UI_Canvas__tick()
 }
 
 void Game__render() {
@@ -92,6 +92,7 @@ void Game__render() {
 
   // in-game
   Level__render(logic->level);
+
   // PostProcessing();
 }
 
@@ -113,7 +114,6 @@ void Game__gui() {
   logic->dt->base.tform->pos.x = -55;
   logic->dt->base.tform->pos.y = -70;
   logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 5;
-  // DebugText__gui((Entity*)logic->dt);
 
   List* zsorted = List__alloc(g_engine->logic->frameArena);
   List__Node* node = logic->ui_entities->head;
@@ -121,12 +121,16 @@ void Game__gui() {
     Entity* entity = node->data;
     node = node->next;
 
-    if (0 != entity->render && UI_ZSORT_RG == entity->render->rg) {
+    Dispatcher__call1(entity->engine->tick, entity);
+
+    if (0 == entity->render) continue;
+    if (UI_ZSORT_RG == entity->render->rg) {
       List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
     }
 
     Dispatcher__call1(entity->engine->gui, entity);
   }
+
   node = zsorted->head;
   for (u32 i = 0; i < zsorted->len; i++) {
     Entity* entity = node->data;
@@ -135,26 +139,15 @@ void Game__gui() {
     Dispatcher__call1(entity->engine->render, entity);
   }
 
+  MeshRenderer__renderBatches(zsorted);
+
   // switch current camera to perspective cam at player pos
   logic->camera->proj.type = PERSPECTIVE_PROJECTION;
 
-  // // draw debug cursor
+  // // TODO: draw debug cursor
   // Bitmap__Set2DPixel(
   //     &logic->screen,
   //     logic->CANVAS_DEBUG_X,
   //     logic->CANVAS_DEBUG_Y,
   //     Math__urandom() | 0xffff0000 + 0xff993399);
-
-  // Bitmap__DebugText(
-  //     &logic->screen,
-  //     &logic->glyphs0,
-  //     4,
-  //     6 * 29,
-  //     0xffffffff,
-  //     0,
-  //     "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-  //     logic->player.base->tform->pos.x,
-  //     logic->player.base->tform->pos.y,
-  //     logic->player.base->tform->pos.z,
-  //     logic->player.base->tform->rot.y);
 }

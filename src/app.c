@@ -76,6 +76,10 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_init_image = sg_init_image;
   engine.sg_update_buffer = sg_update_buffer;
   engine.sg_update_image = sg_update_image;
+  engine.sg_query_frame_stats = sg_query_frame_stats;
+  engine.sg_enable_frame_stats = sg_enable_frame_stats;
+  engine.sg_disable_frame_stats = sg_disable_frame_stats;
+  engine.sg_frame_stats_enabled = sg_frame_stats_enabled;
   engine.sapp_lock_mouse = sapp_lock_mouse;
   engine.sapp_mouse_locked = sapp_mouse_locked;
 
@@ -149,7 +153,7 @@ static void frame(void) {
     static char title[100];
     sprintf(
         title,
-        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB E %u",
+        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB E %u D %u",
         engine.window_title,
         frames,  // FPS = measured/counted frames per second
         costPhysics,  // P = cost of last physics in ms
@@ -161,7 +165,8 @@ static void frame(void) {
                (engine.logic->frameArena->end - engine.logic->frameArena->pos))) /
             1024 / 1024,
         ((u64)(engine.arena->end - engine.arena->buf)) / 1024 / 1024,
-        engine.entity_count);
+        engine.entity_count,
+        engine.draw_count);
     update_window_title(title);
     frames = 0;
 

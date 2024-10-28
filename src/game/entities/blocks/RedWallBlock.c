@@ -37,7 +37,7 @@ void RedWallBlock__action(Entity* entity, void* _action) {
 
   if (ACTION_USE == action->type) {
     CatSpawnBlock* csb = (CatSpawnBlock*)Level__findEntity(logic->level, findCatBlock);
-    csb->maxSpawnCount += 5;
+    csb->maxSpawnCount += 100;
 
     AudioSource__play(entity, g_engine->logic->audio.click);
   }

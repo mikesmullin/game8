@@ -4,17 +4,24 @@
 in vec3 aPos;
 in vec2 aTexCoord;
 
+out ivec4 inst;
 out vec2 TexCoord;
 
+#define MAX_BATCH_ELEMENTS 128
+
 uniform vs_params {
-    mat4 model;
     mat4 view;
     mat4 projection;
     int billboard;
     vec3 camPos;
+    
+    mat4 models[MAX_BATCH_ELEMENTS];
+    ivec4 batch[MAX_BATCH_ELEMENTS];
 };
 
 void main() {
+    mat4 model = models[gl_InstanceIndex];
+    inst = batch[gl_InstanceIndex];
     vec3 position = aPos;
 
     // Check if billboarding is enabled
@@ -52,6 +59,7 @@ void main() {
 @fs fs
 out vec4 FragColor;
 
+flat in ivec4 inst;
 in vec2 TexCoord;
 
 uniform texture2D _texture1;
@@ -59,7 +67,7 @@ uniform sampler texture1_smp;
 #define texture1 sampler2D(_texture1, texture1_smp)
 
 uniform fs_params {
-    int ti, tw, th, aw, ah, useMask, mask, color;
+    int tw, th, aw, ah, useMask, mask;
 };
 
 uint vec4ToU32(vec4 color) {
@@ -95,7 +103,8 @@ vec4 alphaBlend(vec4 color1, vec4 color2) {
 void main() {
     // texture atlas
     // compute the normalized texture coordinates for the sub-rectangle
-    float xt = ti*tw%aw, yt = (ti*tw/aw)*th;
+    uint idx = inst.x, color = inst.y;
+    float xt = idx*tw%aw, yt = (idx*tw/aw)*th;
     vec2 rectMin = vec2(float(xt) / float(aw), float(yt) / float(ah)); // Top-left of the rectangle
     vec2 rectMax = vec2(float(xt+tw) / float(aw), float(yt+th) / float(ah)); // Bottom-right of the rectangle
     // map TexCoord 0..1 where 0,0 is bl and 1,1 is tr

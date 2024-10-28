@@ -60,6 +60,7 @@ typedef struct sg_range sg_range;
 typedef struct sg_image_desc sg_image_desc;
 typedef struct sapp_event sapp_event;
 typedef struct sg_image_data sg_image_data;
+typedef struct sg_frame_stats sg_frame_stats;
 
 typedef struct Engine__State {
   char window_title[255];
@@ -115,12 +116,17 @@ typedef struct Engine__State {
   void (*sg_init_image)(sg_image img_id, const sg_image_desc* desc);
   void (*sg_update_buffer)(sg_buffer buf_id, const sg_range* data);
   void (*sg_update_image)(sg_image img_id, const sg_image_data* data);
+  sg_frame_stats (*sg_query_frame_stats)(void);
+  void (*sg_enable_frame_stats)(void);
+  void (*sg_disable_frame_stats)(void);
+  bool (*sg_frame_stats_enabled)(void);
   void (*sapp_lock_mouse)(bool lock);
   bool (*sapp_mouse_locked)(void);
 
   u64 now;
   f32 deltaTime;
   u16 entity_count;
+  u16 draw_count;
 
 } Engine__State;
 

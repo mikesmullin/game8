@@ -13,6 +13,7 @@
 #include "../common/Preloader.h"
 #include "../common/Profiler.h"
 #include "../common/QuadTree.h"
+#include "../components/MeshRenderer.h"
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
 #include "../entities/blocks/CatSpawnBlock.h"
@@ -166,16 +167,20 @@ void Level__render(Level* level) {
 
   if (NULL == level->entities || 0 == level->entities->len) return;
 
+  List* unsorted = List__alloc(g_engine->logic->frameArena);
   List* zsorted = List__alloc(g_engine->logic->frameArena);
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
-    if (0 != entity->render && WORLD_ZSORT_RG == entity->render->rg) {
+
+    if (0 == entity->render) continue;
+    if (WORLD_ZSORT_RG == entity->render->rg) {
       List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
       continue;
     }
 
+    List__append(g_engine->logic->frameArena, unsorted, entity);
     Dispatcher__call1(entity->engine->render, entity);
   }
   node = zsorted->head;
@@ -185,6 +190,9 @@ void Level__render(Level* level) {
 
     Dispatcher__call1(entity->engine->render, entity);
   }
+
+  MeshRenderer__renderBatches(unsorted);
+  MeshRenderer__renderBatches(zsorted);
 }
 
 void Level__gui(Level* level) {

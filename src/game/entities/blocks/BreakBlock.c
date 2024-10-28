@@ -11,6 +11,7 @@
 #include "../../levels/Level.h"
 #include "../RubbleSprite.h"
 #include "Block.h"
+#include "WallBlock.h"
 
 extern Engine__State* g_engine;
 
@@ -20,7 +21,6 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   BreakBlock* self = (BreakBlock*)block;
   Block__init(block, x, y);
   entity->engine->render = BREAK_BLOCK__RENDER;
-  entity->engine->tick = BREAK_BLOCK__TICK;
   entity->engine->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
 
@@ -54,15 +54,8 @@ void BreakBlock__render(Entity* entity) {
   BreakBlock* self = (BreakBlock*)block;
 
   if (TAG_BROKEN & entity->tags1) {
-  } else {
-    MeshRenderer__render(entity);
+    entity->removed = true;
   }
-}
-
-void BreakBlock__tick(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Block* block = (Block*)entity;
-  BreakBlock* self = (BreakBlock*)block;
 }
 
 void BreakBlock__action(Entity* entity, void* _action) {

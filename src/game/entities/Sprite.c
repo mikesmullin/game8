@@ -46,5 +46,5 @@ void Sprite__render(Entity* entity) {
   Block* block = (Block*)entity;
   Sprite* self = (Sprite*)block;
 
-  MeshRenderer__render(entity);
+  // MeshRenderer__render(entity);
 }

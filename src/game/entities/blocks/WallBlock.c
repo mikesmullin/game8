@@ -39,5 +39,5 @@ void WallBlock__render(Entity* entity) {
   Block* block = (Block*)entity;
   WallBlock* self = (WallBlock*)block;
 
-  MeshRenderer__render(entity);
+  // MeshRenderer__render(entity);
 }

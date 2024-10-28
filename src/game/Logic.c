@@ -48,6 +48,7 @@ LOGIC_DECL void logic_onpreload(void) {
       .environment = g_engine->sglue_environment(),  //
       .logger.func = g_engine->slog_func,  //
   });
+  g_engine->sg_enable_frame_stats();
 
   Audio__preload();
   Game__preload();
@@ -253,6 +254,9 @@ LOGIC_DECL void logic_onupdate(void) {
   g_engine->sg_end_pass();
 
   g_engine->sg_commit();
+
+  sg_frame_stats stats = g_engine->sg_query_frame_stats();
+  g_engine->draw_count = stats.num_draw;
 }
 
 LOGIC_DECL void logic_onshutdown(void) {

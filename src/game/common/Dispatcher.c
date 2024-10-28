@@ -11,7 +11,6 @@
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
-
 // #include "../menus/AboutMenu.h"
 // #include "../menus/HelpMenu.h"
 // #include "../menus/TitleMenu.h"
@@ -28,13 +27,12 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     Dispatch__None1,
 
     BreakBlock__render,
-    BreakBlock__tick,
     CatEntity__gui,
     CatEntity__render,
     CatEntity__tick,
     CatSpawnBlock__gui,
     CatSpawnBlock__tick,
-    DebugText__gui,
+    DebugText__tick,
     Player__tick,
     RubbleSprite__render,
     RubbleSprite__tick,

@@ -1,5 +1,5 @@
 #pragma once
 
-typedef struct Entity Entity;
+typedef struct List List;
 
-void MeshRenderer__render(Entity* entity);
+void MeshRenderer__renderBatches(List* entities);

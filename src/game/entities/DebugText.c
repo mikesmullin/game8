@@ -19,7 +19,7 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
   Logic__State* logic = g_engine->logic;
   DebugText* self = (DebugText*)entity;
   Entity__init(entity);
-  entity->engine->gui = DEBUG_TEXT__GUI;
+  entity->engine->tick = DEBUG_TEXT__TICK;
   entity->tform->pos.x = x;
   entity->tform->pos.y = y;
   entity->tform->pos.z = 0;
@@ -65,7 +65,7 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
   }
 }
 
-void DebugText__gui(Entity* entity) {
+void DebugText__tick(Entity* entity) {
   Logic__State* logic = g_engine->logic;
   DebugText* self = (DebugText*)entity;
 
@@ -81,7 +81,5 @@ void DebugText__gui(Entity* entity) {
     sprite->base.tform->scale.x = (4.0f / 6) * entity->tform->scale.x;
     sprite->base.tform->scale.y = (6.0f / 6) * entity->tform->scale.y;
     sprite->base.render->ti = i < slen ? self->txt[i] : ' ';
-
-    // Sprite__render((Entity*)sprite);
   }
 }
