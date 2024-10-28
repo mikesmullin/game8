@@ -6,6 +6,7 @@
 #include "../../common/Arena.h"
 #include "../../common/Dispatcher.h"
 #include "../../common/List.h"
+#include "../../common/Log.h"
 #include "../../common/Math.h"
 #include "../../common/Profiler.h"
 #include "../../levels/Level.h"
@@ -22,31 +23,14 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   CatSpawnBlock* self = (CatSpawnBlock*)block;
   Block__init(block, x, y);
   block->base.engine->tick = CAT_SPAWN_BLOCK__TICK;
-  block->base.engine->gui = CAT_SPAWN_BLOCK__GUI;
   block->base.collider = 0;
   entity->tags1 |= TAG_CATSPAWN;
 
-  self->spawnCount = 1;  // instances
-  self->spawnInterval = 1.0f / 1000;  // per sec
+  self->spawnCount = 100;  // spawn this many instances...
+  self->spawnInterval = 1.0f / 10;  // every (sec)
   self->animTime = 0;  // counter
   self->spawnedCount = 0;
   self->maxSpawnCount = 5;  // 1000000;
-}
-
-void CatSpawnBlock__gui(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Block* block = (Block*)entity;
-  CatSpawnBlock* self = (CatSpawnBlock*)block;
-
-  // Bitmap__DebugText(
-  //     &logic->screen,
-  //     &logic->glyphs0,
-  //     4,
-  //     6 * 20,
-  //     0xff00ff00,
-  //     0xff000000,
-  //     "cats %u",
-  //     self->spawnedCount);
 }
 
 void CatSpawnBlock__tick(Entity* entity) {
@@ -67,7 +51,7 @@ void CatSpawnBlock__tick(Entity* entity) {
       cat->base.base.tform->pos.x = block->base.tform->pos.x + Math__random(-1, 1);
       cat->base.base.tform->pos.y = -0.25f;
       cat->base.base.tform->pos.z = block->base.tform->pos.z + Math__random(-1, 1);
-      List__append(g_engine->arena, logic->level->entities, cat);
+      List__insort(g_engine->arena, logic->level->zentities, cat, Level__zsort);
       self->spawnedCount++;
     }
   }

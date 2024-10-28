@@ -165,8 +165,6 @@ void MeshRenderer__renderBatches(List* entities) {
   vs_params_t* vs_params = Arena__Push(g_engine->logic->frameArena, sizeof(vs_params_t));
   fs_params_t fs_params;
 
-  // TODO: move zsorting logic here?
-
   // TODO: move to OrbitalCameraComponent
   // f32 r = g_engine->stm_sec(g_engine->stm_now());
   // HMM_Mat4 model = HMM_Rotate_RH(HMM_AngleRad(r), HMM_V3(0.5f, 1.0f, 0.0f));
@@ -186,7 +184,8 @@ void MeshRenderer__renderBatches(List* entities) {
     Entity* entity = c->data;
     c = c->next;
 
-    if (0 == i % MAX_BATCH_ELEMENTS) {
+    if (0 == entity->render) continue;
+    if (0 == b++ % MAX_BATCH_ELEMENTS) {
       batch = List__alloc(g_engine->logic->frameArena);
       List__append(g_engine->logic->frameArena, batches, batch);
     }

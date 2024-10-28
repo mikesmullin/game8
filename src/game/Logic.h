@@ -467,6 +467,7 @@ typedef struct Level {
   char* worldFile;
   bool loaded;
   List* entities;  // world entities
+  List* zentities;  // zsort world entities (ie. transparent entities only)
   u32 wallTex;
   u32 ceilTex;
   u32 floorTex;

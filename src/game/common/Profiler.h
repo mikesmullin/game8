@@ -1,6 +1,6 @@
 #pragma once
 
-// #define PROFILER__INSTRUMENTED
+#define PROFILER__INSTRUMENTED
 #ifdef PROFILER__INSTRUMENTED
 #define PROFILE__BEGIN(id) Profiler__beginTrace(id)
 #define PROFILE__END(id) Profiler__endTrace(id)

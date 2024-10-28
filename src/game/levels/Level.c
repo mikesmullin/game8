@@ -28,6 +28,7 @@ Level* Level__alloc() {
   level->bmp = NULL;
   level->world = NULL;
   level->entities = List__alloc(g_engine->arena);
+  level->zentities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
   g_engine->logic->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
@@ -129,7 +130,10 @@ static void Level__loaded(Level* level) {
 void Level__tick(Level* level) {
   PROFILE__BEGIN(LEVEL__TICK);
   if (NULL == level->entities || 0 == level->entities->len) return;
-  g_engine->entity_count = level->entities->len;  // for perf counters
+  g_engine->entity_count =  // for perf counters
+      level->entities->len +  //
+      level->zentities->len +  //
+      g_engine->logic->ui_entities->len;
   Logic__State* logic = g_engine->logic;
 
   // build a QuadTree of all entities
@@ -149,59 +153,97 @@ void Level__tick(Level* level) {
     if (entity->removed) {  // gc
       List__remove(level->entities, entityNode);
     } else {
-      QuadTreeNode_insert(
-          logic->frameArena,
-          level->qt,
-          (Point){entity->tform->pos.x, entity->tform->pos.z},
-          entity);
+      PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
+      if (TAG_WALL & entity->tags1) {
+        QuadTreeNode_insert(
+            logic->frameArena,
+            level->qt,
+            (Point){entity->tform->pos.x, entity->tform->pos.z},
+            entity);
+      }
+      PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
       Dispatcher__call1(entity->engine->tick, entity);
     }
   }
+
+  node = level->zentities->head;
+  len = level->zentities->len;  // cache, because loop will modify length as it goes
+  for (u32 i = 0; i < len; i++) {
+    if (0 == node) continue;  // TODO: find out how this happens
+    Entity* entity = node->data;
+    if (0 == entity) continue;  // TODO: find out how this happens
+    List__Node* entityNode = node;  // cache, because it may get removed
+    node = node->next;
+
+    if (entity->removed) {  // gc
+      List__remove(level->zentities, entityNode);
+    } else {
+      PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
+      if (TAG_WALL & entity->tags1) {
+        QuadTreeNode_insert(
+            logic->frameArena,
+            level->qt,
+            (Point){entity->tform->pos.x, entity->tform->pos.z},
+            entity);
+      }
+      PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
+
+      Dispatcher__call1(entity->engine->tick, entity);
+    }
+  }
+
   PROFILE__END(LEVEL__TICK);
 }
 
 void Level__render(Level* level) {
+  PROFILE__BEGIN(LEVEL__RENDER);
+
   Level__loaded(level);
   if (!level->loaded) return;
 
   if (NULL == level->entities || 0 == level->entities->len) return;
 
-  List* unsorted = List__alloc(g_engine->logic->frameArena);
-  List* zsorted = List__alloc(g_engine->logic->frameArena);
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
 
     if (0 == entity->render) continue;
-    if (WORLD_ZSORT_RG == entity->render->rg) {
-      List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
-      continue;
-    }
-
-    List__append(g_engine->logic->frameArena, unsorted, entity);
     Dispatcher__call1(entity->engine->render, entity);
   }
-  node = zsorted->head;
-  for (u32 i = 0; i < zsorted->len; i++) {
+  node = level->zentities->head;
+  for (u32 i = 0; i < level->zentities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
 
+    if (0 == entity->render) continue;
     Dispatcher__call1(entity->engine->render, entity);
   }
 
-  MeshRenderer__renderBatches(unsorted);
-  MeshRenderer__renderBatches(zsorted);
+  MeshRenderer__renderBatches(level->entities);
+  MeshRenderer__renderBatches(level->zentities);
+
+  PROFILE__END(LEVEL__RENDER);
 }
 
 void Level__gui(Level* level) {
+  PROFILE__BEGIN(LEVEL__GUI);
+
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
     Dispatcher__call1(entity->engine->gui, entity);
     node = node->next;
   }
+  node = level->zentities->head;
+  for (u32 i = 0; i < level->zentities->len; i++) {
+    Entity* entity = node->data;
+    Dispatcher__call1(entity->engine->gui, entity);
+    node = node->next;
+  }
+
+  PROFILE__END(LEVEL__GUI);
 }
 
 Entity* Level__findEntity(Level* level, bool (*findCb)(Entity* e)) {

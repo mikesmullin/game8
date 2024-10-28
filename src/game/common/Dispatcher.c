@@ -26,19 +26,12 @@ static void Dispatch__None2(Entity* inst, void* params) {
 static void (*VTABLE_ENGINE1[])(Entity*) = {
     Dispatch__None1,
 
-    BreakBlock__render,
-    CatEntity__gui,
-    CatEntity__render,
     CatEntity__tick,
-    CatSpawnBlock__gui,
     CatSpawnBlock__tick,
     DebugText__tick,
     Player__tick,
-    RubbleSprite__render,
     RubbleSprite__tick,
     SpawnBlock__tick,
-    Sprite__render,
-    WallBlock__render,
 
     // AboutMenu__gui,
     // AboutMenu__render,
@@ -53,7 +46,9 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     Dispatch__None1,  // LEVEL__TICK
     Dispatch__None1,  // LEVEL__TICK__ARENA_RESET,
     Dispatch__None1,  // LEVEL__TICK__QUADTREE_CREATE,
-
+    Dispatch__None1,  // LEVEL__RENDER
+    Dispatch__None1,  // LEVEL__GUI
+    Dispatch__None1,  // GAME__GUI
 };
 
 static void (*VTABLE_ENGINE2[])(Entity*, void*) = {

@@ -6,6 +6,7 @@
 #include "../../common/List.h"
 #include "../../common/Log.h"
 #include "../../common/Preloader.h"
+#include "../../common/Profiler.h"
 #include "../../components/AudioSource.h"
 #include "../../components/MeshRenderer.h"
 #include "../../levels/Level.h"
@@ -20,7 +21,6 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   Block* block = (Block*)entity;
   BreakBlock* self = (BreakBlock*)block;
   Block__init(block, x, y);
-  entity->engine->render = BREAK_BLOCK__RENDER;
   entity->engine->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
 
@@ -48,16 +48,6 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
       "../assets/audio/sfx/bash.wav");
 }
 
-void BreakBlock__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Block* block = (Block*)entity;
-  BreakBlock* self = (BreakBlock*)block;
-
-  if (TAG_BROKEN & entity->tags1) {
-    entity->removed = true;
-  }
-}
-
 void BreakBlock__action(Entity* entity, void* _action) {
   Logic__State* logic = g_engine->logic;
   BreakBlock* self = (BreakBlock*)entity;
@@ -66,6 +56,7 @@ void BreakBlock__action(Entity* entity, void* _action) {
   if (ACTION_USE == action->type) {
     if (!(TAG_BROKEN & entity->tags1)) {
       entity->tags1 |= TAG_BROKEN;
+      entity->removed = true;
       AudioSource__play(entity, logic->audio.bash);
 
       for (u32 i = 0; i < 32; i++) {
@@ -74,7 +65,7 @@ void BreakBlock__action(Entity* entity, void* _action) {
         rs->base.base.tform->pos.x = entity->tform->pos.x;
         rs->base.base.tform->pos.y = entity->tform->pos.y;
         rs->base.base.tform->pos.z = entity->tform->pos.z;
-        List__append(g_engine->arena, logic->level->entities, rs);
+        List__insort(g_engine->arena, logic->level->zentities, rs, Level__zsort);
       }
     }
   }

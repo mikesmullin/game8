@@ -19,7 +19,6 @@ void RubbleSprite__init(Entity* entity) {
   RubbleSprite* self = (RubbleSprite*)sprite;
   Sprite__init(entity, 0, 0);
   entity->engine->tick = RUBBLE_SPRITE__TICK;
-  entity->engine->render = RUBBLE_SPRITE__RENDER;
 
   self->xa = Math__random(0, 1) - 0.5;
   self->ya = Math__random(0, 1);
@@ -57,10 +56,4 @@ void RubbleSprite__tick(Entity* entity) {
     self->za *= 0.8f;
   }
   PROFILE__END(RUBBLE_SPRITE__TICK);
-}
-
-void RubbleSprite__render(Entity* entity) {
-  if (entity->removed) return;
-
-  Sprite__render(entity);
 }

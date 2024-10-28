@@ -16,7 +16,6 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
   Sprite* self = (Sprite*)entity;
   Entity__init(entity);
-  entity->engine->render = SPRITE__RENDER;
   entity->tform->pos.x = x;
   entity->tform->pos.y = -(1.0f / 8);
   entity->tform->pos.z = z;
@@ -39,12 +38,4 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->render->useMask = true;
   entity->render->mask = BLACK;
   entity->render->color = TRANSPARENT;
-}
-
-void Sprite__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Block* block = (Block*)entity;
-  Sprite* self = (Sprite*)block;
-
-  // MeshRenderer__render(entity);
 }

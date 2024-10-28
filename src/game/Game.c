@@ -10,6 +10,7 @@
 #include "common/List.h"
 #include "common/Log.h"
 #include "common/Preloader.h"
+#include "common/Profiler.h"
 #include "common/Utils.h"
 #include "common/Wav.h"
 #include "components/MeshRenderer.h"
@@ -37,10 +38,9 @@ void Game__preload() {
 
   logic->ui_entities = List__alloc(g_engine->arena);
 
-  // preload assets
-  Preload__audio(
-      &logic->audio.pickupCoin,  //
-      "../assets/audio/sfx/pickupCoin.wav");
+  logic->player = Arena__Push(g_engine->arena, sizeof(Player));
+  Player__init((Entity*)logic->player);
+  logic->camera = logic->player;  // 1st player = main camera
 
   Level* level = Level__alloc();
   Level__init(level);
@@ -64,7 +64,12 @@ void Game__preload() {
   logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
   char txt[40] = "Hello world!";
   DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, LIME);
-  List__append(g_engine->arena, logic->ui_entities, logic->dt);
+  List__insort(g_engine->arena, logic->ui_entities, logic->dt, Level__zsort);
+
+  // preload assets
+  Preload__audio(
+      &logic->audio.pickupCoin,  //
+      "../assets/audio/sfx/pickupCoin.wav");
 }
 
 void Game__reload() {
@@ -75,12 +80,6 @@ void Game__reload() {
 
 void Game__tick() {
   Logic__State* logic = g_engine->logic;
-
-  if (0 == logic->player) {
-    logic->player = Arena__Push(g_engine->arena, sizeof(Player));
-    Player__init((Entity*)logic->player);
-    logic->camera = logic->player;  // 1st player = main camera
-  }
 
   // in-game
   Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
@@ -97,6 +96,8 @@ void Game__render() {
 }
 
 void Game__gui() {
+  PROFILE__BEGIN(GAME__GUI);
+
   Logic__State* logic = g_engine->logic;
 
   // switch current camera to ortho cam at player pos
@@ -115,7 +116,6 @@ void Game__gui() {
   logic->dt->base.tform->pos.y = -70;
   logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 5;
 
-  List* zsorted = List__alloc(g_engine->logic->frameArena);
   List__Node* node = logic->ui_entities->head;
   for (u32 i = 0; i < logic->ui_entities->len; i++) {
     Entity* entity = node->data;
@@ -124,22 +124,11 @@ void Game__gui() {
     Dispatcher__call1(entity->engine->tick, entity);
 
     if (0 == entity->render) continue;
-    if (UI_ZSORT_RG == entity->render->rg) {
-      List__insort(g_engine->logic->frameArena, zsorted, entity, Level__zsort);
-    }
-
     Dispatcher__call1(entity->engine->gui, entity);
-  }
-
-  node = zsorted->head;
-  for (u32 i = 0; i < zsorted->len; i++) {
-    Entity* entity = node->data;
-    node = node->next;
-
     Dispatcher__call1(entity->engine->render, entity);
   }
 
-  MeshRenderer__renderBatches(zsorted);
+  MeshRenderer__renderBatches(logic->ui_entities);
 
   // switch current camera to perspective cam at player pos
   logic->camera->proj.type = PERSPECTIVE_PROJECTION;
@@ -150,4 +139,6 @@ void Game__gui() {
   //     logic->CANVAS_DEBUG_X,
   //     logic->CANVAS_DEBUG_Y,
   //     Math__urandom() | 0xffff0000 + 0xff993399);
+
+  PROFILE__END(GAME__GUI);
 }

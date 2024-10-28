@@ -15,7 +15,6 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   Block* block = (Block*)entity;
   WallBlock* self = (WallBlock*)block;
   Block__init(block, x, z);
-  entity->engine->render = WALL_BLOCK__RENDER;
   entity->tags1 |= TAG_WALL;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
@@ -32,12 +31,4 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   entity->render->tw = entity->render->th = 8;
   entity->render->aw = entity->render->ah = 64;
   entity->render->color = logic->level->wallCol;
-}
-
-void WallBlock__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  Block* block = (Block*)entity;
-  WallBlock* self = (WallBlock*)block;
-
-  // MeshRenderer__render(entity);
 }

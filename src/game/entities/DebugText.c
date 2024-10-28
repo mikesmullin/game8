@@ -9,7 +9,9 @@
 #include "../common/List.h"
 #include "../common/Math.h"
 #include "../common/Preloader.h"
+#include "../common/Profiler.h"
 #include "../components/MeshRenderer.h"
+#include "../levels/Level.h"
 #include "Entity.h"
 #include "Sprite.h"
 
@@ -61,11 +63,13 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.tform->scale.z = 1;
 
     List__append(g_engine->arena, self->glyphs, sprite);
-    List__append(g_engine->arena, logic->ui_entities, sprite);
+    List__insort(g_engine->arena, logic->ui_entities, sprite, Level__zsort);
   }
 }
 
 void DebugText__tick(Entity* entity) {
+  PROFILE__BEGIN(DEBUG_TEXT__TICK);
+
   Logic__State* logic = g_engine->logic;
   DebugText* self = (DebugText*)entity;
 
@@ -82,4 +86,5 @@ void DebugText__tick(Entity* entity) {
     sprite->base.tform->scale.y = (6.0f / 6) * entity->tform->scale.y;
     sprite->base.render->ti = i < slen ? self->txt[i] : ' ';
   }
+  PROFILE__END(DEBUG_TEXT__TICK);
 }

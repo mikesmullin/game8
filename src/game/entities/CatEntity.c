@@ -30,8 +30,6 @@ void CatEntity__init(Entity* entity) {
   CatEntity* self = (CatEntity*)entity;
   Sprite__init(entity, 0, 0);
   entity->engine->tick = CAT_ENTITY__TICK;
-  entity->engine->render = CAT_ENTITY__RENDER;
-  entity->engine->gui = CAT_ENTITY__GUI;
   entity->engine->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
@@ -87,39 +85,9 @@ void CatEntity__action(Entity* entity, void* action) {
   subbedActions(self->sg, action);
 }
 
-void CatEntity__render(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  CatEntity* self = (CatEntity*)entity;
-
-  Sprite__render(entity);
-}
-
-void CatEntity__gui(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
-  CatEntity* self = (CatEntity*)entity;
-
-  // Bitmap__DebugText2(
-  //     state,
-  //     6,
-  //     6 * 8,
-  //     WHITE,
-  //     TRANSPARENT,
-  //     "frame %d tx %d ty %d",
-  //     self->sg->frame,
-  //     entity->render->tx,
-  //     entity->render->ty);
-}
-
 void CatEntity__tick(Entity* entity) {
   PROFILE__BEGIN(CAT_ENTITY__TICK);
-
-  Logic__State* logic = g_engine->logic;
   CatEntity* self = (CatEntity*)entity;
-
-  sinceLastTurn += g_engine->deltaTime;
-  if (sinceLastTurn > lastTurnWait) {
-    sinceLastTurn = 0;
-  }
 
   entity->rb->xa = self->xa * CAT_MOVE_SPEED;
   entity->rb->za = self->za * CAT_MOVE_SPEED;

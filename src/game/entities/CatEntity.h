@@ -9,8 +9,6 @@ typedef struct SGState SGState;
 typedef struct Action Action;
 
 void CatEntity__init(Entity* entity);
-void CatEntity__render(Entity* entity);
-void CatEntity__gui(Entity* entity);
 void CatEntity__tick(Entity* entity);
 void CatEntity__collide(Entity* entity, void* params);
 SGState* CatEntity__getSGState(u32 id);
