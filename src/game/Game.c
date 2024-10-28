@@ -16,6 +16,7 @@
 #include "components/MeshRenderer.h"
 #include "entities/DebugText.h"
 #include "entities/Player.h"
+#include "entities/SkyBox.h"
 #include "levels/Level.h"
 
 extern Engine__State* g_engine;
@@ -52,14 +53,15 @@ void Game__preload() {
   // level->wallCol = TRANSPARENT;
   level->wallTex = 5;
   level->wallCol = 0x66ff0000;
-  level->skybox = true;
   // level->ceilCol = 0x77000022;  // blood red
   level->ceilCol = 0xaa000000;  // darken
   // level->levelFile = "../assets/textures/level0.bmp";  // DEBUG: single block
   level->levelFile = "../assets/textures/level1.bmp";
-  level->worldFile = "../assets/textures/sky.bmp";
   logic->level = level;
   Level__preload(logic->level);
+
+  level->cubemap = Arena__Push(g_engine->arena, sizeof(Entity));
+  SkyBox__init(level->cubemap);
 
   logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
   char txt[40] = "Hello world!";

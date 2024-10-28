@@ -4,6 +4,7 @@
 #include "../entities/DebugText.h"
 #include "../entities/Player.h"
 #include "../entities/RubbleSprite.h"
+#include "../entities/SkyBox.h"
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
 #include "../entities/blocks/CatSpawnBlock.h"
@@ -31,6 +32,7 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     DebugText__tick,
     Player__tick,
     RubbleSprite__tick,
+    SkyBox__tick,
     SpawnBlock__tick,
 
     // AboutMenu__gui,

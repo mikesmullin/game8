@@ -11,6 +11,7 @@ typedef enum DispatchFnId1 : u32 {
   DEBUG_TEXT__TICK,
   PLAYER_ENTITY__TICK,
   RUBBLE_SPRITE__TICK,
+  SKY_BOX__TICK,
   SPAWN_BLOCK__TICK,
 
   // ABOUT_MENU__GUI,

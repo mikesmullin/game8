@@ -26,7 +26,6 @@ extern Engine__State* g_engine;
 Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = NULL;
-  level->world = NULL;
   level->entities = List__alloc(g_engine->arena);
   level->zentities = List__alloc(g_engine->arena);
 
@@ -37,7 +36,6 @@ Level* Level__alloc() {
 }
 
 void Level__init(Level* level) {
-  level->skybox = false;
   level->wallTex = 0;
   level->ceilTex = 1;
   level->floorTex = 2;
@@ -136,6 +134,8 @@ void Level__tick(Level* level) {
       g_engine->logic->ui_entities->len;
   Logic__State* logic = g_engine->logic;
 
+  Dispatcher__call1(level->cubemap->engine->tick, level->cubemap);
+
   // build a QuadTree of all entities
   Arena__Reset(logic->frameArena);
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
@@ -154,13 +154,13 @@ void Level__tick(Level* level) {
       List__remove(level->entities, entityNode);
     } else {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-      if (TAG_WALL & entity->tags1) {
-        QuadTreeNode_insert(
-            logic->frameArena,
-            level->qt,
-            (Point){entity->tform->pos.x, entity->tform->pos.z},
-            entity);
-      }
+      // if (TAG_WALL & entity->tags1) {
+      QuadTreeNode_insert(
+          logic->frameArena,
+          level->qt,
+          (Point){entity->tform->pos.x, entity->tform->pos.z},
+          entity);
+      // }
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
       Dispatcher__call1(entity->engine->tick, entity);
@@ -180,13 +180,13 @@ void Level__tick(Level* level) {
       List__remove(level->zentities, entityNode);
     } else {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-      if (TAG_WALL & entity->tags1) {
-        QuadTreeNode_insert(
-            logic->frameArena,
-            level->qt,
-            (Point){entity->tform->pos.x, entity->tform->pos.z},
-            entity);
-      }
+      // if (TAG_WALL & entity->tags1) {
+      QuadTreeNode_insert(
+          logic->frameArena,
+          level->qt,
+          (Point){entity->tform->pos.x, entity->tform->pos.z},
+          entity);
+      // }
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
       Dispatcher__call1(entity->engine->tick, entity);
@@ -203,6 +203,10 @@ void Level__render(Level* level) {
   if (!level->loaded) return;
 
   if (NULL == level->entities || 0 == level->entities->len) return;
+
+  List* sky = List__alloc(g_engine->logic->frameArena);
+  List__append(g_engine->logic->frameArena, sky, level->cubemap);
+  MeshRenderer__renderBatches(sky);
 
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {

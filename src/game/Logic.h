@@ -280,6 +280,7 @@ typedef enum EntityTags1 : u64 {
   TAG_CATSPAWN = 1 << 4,
   TAG_BRICK = 1 << 5,
   TAG_BROKEN = 1 << 6,
+  TAG_SKY = 1 << 7,
 } EntityTags1;
 
 typedef struct Entity {
@@ -463,12 +464,10 @@ typedef struct CatEntity {
 typedef struct Level {
   BmpReader* bmp;
   char* levelFile;
-  bool skybox;
-  BmpReader* world;
-  char* worldFile;
   bool loaded;
   List* entities;  // world entities
   List* zentities;  // zsort world entities (ie. transparent entities only)
+  Entity* cubemap;
   u32 wallTex;
   u32 ceilTex;
   u32 floorTex;
@@ -487,15 +486,15 @@ typedef struct PreloadedAudio {
 } PreloadedAudio;
 
 typedef struct PreloadedModels {
-  Wavefront *box, *plane2D;
+  Wavefront *box, *plane2D, *skybox;
 } PreloadedModels;
 
 typedef struct PreloadedTextures {
-  BmpReader *atlas, *glyphs0;
+  BmpReader *atlas, *glyphs0, *sky;
 } PreloadedTextures;
 
 typedef struct PreloadedMaterials {
-  Material *wall, *sprite, *glyph;
+  Material *wall, *sprite, *glyph, *cubemap;
 } PreloadedMaterials;
 
 typedef struct Logic__State {
