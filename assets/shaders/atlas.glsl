@@ -6,6 +6,8 @@ in vec2 aTexCoord;
 
 flat out ivec4 inst;
 out vec2 TexCoord;
+out vec4 FragPos;
+flat out mat4 proj;
 
 #define MAX_BATCH_ELEMENTS 128
 
@@ -53,21 +55,25 @@ void main() {
     // Transform the position with model, view, and projection matrices
     gl_Position = projection * view * model * vec4(position, 1.0);
     TexCoord = aTexCoord;
+    FragPos = gl_Position;
+    proj = projection;
 }
 @end
 
 @fs fs
-out vec4 FragColor;
-
 flat in ivec4 inst;
 in vec2 TexCoord;
+in vec4 FragPos;
+in mat4 proj;
+
+out vec4 FragColor;
 
 uniform texture2D _texture1;
 uniform sampler texture1_smp;
 #define texture1 sampler2D(_texture1, texture1_smp)
 
 uniform fs_params {
-    int ip, pi, tw, th, aw, ah, useMask, mask;
+    int ip, pi, tw, th, aw, ah, useMask, mask, fog;
 };
 
 uint vec4ToU32(vec4 color) {
@@ -138,7 +144,30 @@ void main() {
         col = alphaBlend(pixel2, col); // apply alpha blending (for color tint effect)
     }
 
-    FragColor = col;
+    if (fog == 1u) {
+        // apply fog
+        float depth = (proj * FragPos).z / FragPos.w;
+        depth = depth * 0.5f + 0.5f; // normalize
+        float fogFar = 0.9f;
+        float fogNear = 0.8f;
+        vec4 fogColor = vec4(0.0f,0.0f,0.0f,1.0f);
+
+        // cat eyes glow in the dark
+        pixel = vec4ToU32(col);
+        if (0xff1de6b5 == pixel) depth = 0.f;
+        if (0xff00f2f4 == pixel) depth = 0.f;
+
+        float fogFactor = clamp((fogFar - depth) / (fogFar - fogNear), 0.0f, 1.0f);
+
+        // Interpolate between the original color and fog color
+        FragColor = mix(fogColor, col, fogFactor);
+
+
+        FragColor.a = col.a;
+    }
+    else {
+        FragColor = col;
+    }
 }
 @end
 

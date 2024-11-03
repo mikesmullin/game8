@@ -252,7 +252,8 @@ typedef enum RenderGroup {
   WORLD_UNSORT_RG,  // ie. 3D (default)
   WORLD_ZSORT_RG,  // ie. 3D transparent
   UI_ZSORT_RG,  // ie. 2D transparent
-  SCREEN_RG,  // ie. post-processing
+  SKY_RG,  // skybox
+  SCREEN_RG,  // screen
 } RenderGroup;
 
 typedef struct RendererComponent {

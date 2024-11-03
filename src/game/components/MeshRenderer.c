@@ -341,6 +341,12 @@ void MeshRenderer__renderBatches(List* entities) {
     fs_params.ah = entityZero->render->ah;  // material->texture->h
     fs_params.useMask = entityZero->render->useMask ? 1 : 0;
     fs_params.mask = entityZero->render->mask;
+    fs_params.fog =  //
+        entityZero->render->rg != UI_ZSORT_RG &&  //
+                entityZero->render->rg != SKY_RG &&  //
+                entityZero->render->rg != SCREEN_RG
+            ? 1
+            : 0;
 
     g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(*vs_params));
     g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));

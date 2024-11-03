@@ -27,8 +27,8 @@ void SkyBox__init(Entity* entity) {
   entity->render->aw = 512;
   entity->render->ah = 64;
   //entity->render->color = 0x44000066;  // red
-  entity->render->color = 0x22666666;  // grey
-  entity->render->rg = WORLD_ZSORT_RG;
+  // entity->render->color = 0x22666666;  // grey
+  entity->render->rg = SKY_RG;
 
   f32 s = 0.25f;
   entity->tform->pos.y = 64.0f * s;
