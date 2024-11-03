@@ -30,6 +30,9 @@ typedef struct m4 {
   v4 a, b, c, d;
 } m4;
 
+#define WINDOW_SIZE (640)
+#define SCREEN_SIZE (WINDOW_SIZE / 4)
+
 // Engine ----------------------------------------------
 
 typedef struct Arena Arena;
@@ -61,6 +64,8 @@ typedef struct sg_image_desc sg_image_desc;
 typedef struct sapp_event sapp_event;
 typedef struct sg_image_data sg_image_data;
 typedef struct sg_frame_stats sg_frame_stats;
+typedef struct sg_attachments sg_attachments;
+typedef struct sg_attachments_desc sg_attachments_desc;
 
 typedef struct Engine__State {
   char window_title[255];
@@ -120,6 +125,8 @@ typedef struct Engine__State {
   void (*sg_enable_frame_stats)(void);
   void (*sg_disable_frame_stats)(void);
   bool (*sg_frame_stats_enabled)(void);
+  sg_image (*sg_make_image)(const sg_image_desc* desc);
+  sg_attachments (*sg_make_attachments)(const sg_attachments_desc* desc);
   void (*sapp_lock_mouse)(bool lock);
   bool (*sapp_mouse_locked)(void);
 
@@ -235,6 +242,7 @@ typedef struct Rigidbody2DComponent {
 typedef struct Material {
   Wavefront* mesh;
   BmpReader* texture;
+  u32 mpTexture;  // resource id for gpu texture (ie. multi-pass rendering)
   sg_pipeline* pipe;
   sg_bindings* bind;
   bool loaded;
@@ -244,6 +252,7 @@ typedef enum RenderGroup {
   WORLD_UNSORT_RG,  // ie. 3D (default)
   WORLD_ZSORT_RG,  // ie. 3D transparent
   UI_ZSORT_RG,  // ie. 2D transparent
+  SCREEN_RG,  // ie. post-processing
 } RenderGroup;
 
 typedef struct RendererComponent {
@@ -486,7 +495,7 @@ typedef struct PreloadedAudio {
 } PreloadedAudio;
 
 typedef struct PreloadedModels {
-  Wavefront *box, *plane2D, *skybox;
+  Wavefront *box, *plane2D, *skybox, *screen2D;
 } PreloadedModels;
 
 typedef struct PreloadedTextures {
@@ -494,7 +503,7 @@ typedef struct PreloadedTextures {
 } PreloadedTextures;
 
 typedef struct PreloadedMaterials {
-  Material *wall, *sprite, *glyph, *cubemap;
+  Material *wall, *sprite, *glyph, *cubemap, *screen;
 } PreloadedMaterials;
 
 typedef struct Logic__State {
@@ -514,7 +523,8 @@ typedef struct Logic__State {
   KbInputState* kbState;
   PointerInputState* mState;
 
-  sg_pass_action* pass_action;
+  sg_pass *pass1, *pass2;
+  List* screen;
 
   // TODO: there should be an arena per game, frame, etc.
   Arena* frameArena;

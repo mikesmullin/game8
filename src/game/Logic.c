@@ -6,8 +6,12 @@
 #include "Game.h"
 #include "common/Arena.h"
 #include "common/Audio.h"
+#include "common/List.h"
 #include "common/Log.h"
+#include "common/Math.h"
 #include "common/Profiler.h"
+#include "components/MeshRenderer.h"
+#include "entities/Screen.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
@@ -33,8 +37,6 @@ LOGIC_DECL void logic_oninit(Engine__State* state) {
 LOGIC_DECL void logic_onpreload(void) {
   Logic__State* logic = g_engine->logic;
 
-  logic->pass_action = Arena__Push(g_engine->arena, sizeof(sg_pass_action));
-
   // sokol_time.h
   g_engine->stm_setup();
 
@@ -48,10 +50,54 @@ LOGIC_DECL void logic_onpreload(void) {
       .environment = g_engine->sglue_environment(),  //
       .logger.func = g_engine->slog_func,  //
   });
+
   g_engine->sg_enable_frame_stats();
 
+  // multi-pass rendering
+  sg_pass_action clear = {
+      .colors[0] =
+          {
+              .load_action = SG_LOADACTION_CLEAR,  // always clear
+              .clear_value = {0.0f, 0.0f, 0.0f, 1.0f},  // black
+          },
+  };
+  sg_image_desc img_desc = {
+      .render_target = true,
+      .width = SCREEN_SIZE,
+      .height = SCREEN_SIZE,
+      .pixel_format = SG_PIXELFORMAT_RGBA8,
+      .sample_count = 1,
+      .label = "color-image"};
+  sg_image color_img = g_engine->sg_make_image(&img_desc);
+  img_desc.pixel_format = SG_PIXELFORMAT_DEPTH_STENCIL;
+  img_desc.label = "depth-image";
+  sg_image depth_img = g_engine->sg_make_image(&img_desc);
+
+  logic->pass1 = Arena__Push(g_engine->arena, sizeof(sg_pass));
+  (*logic->pass1) = (sg_pass){
+      .action = clear,  // copy
+      .attachments = g_engine->sg_make_attachments(&(sg_attachments_desc){
+          .colors[0].image = color_img,
+          .depth_stencil.image = depth_img,
+          .label = "pass1-attachments",
+      }),
+      .label = "pass1",
+  };
+
+  logic->pass2 = Arena__Push(g_engine->arena, sizeof(sg_pass));
+  (*logic->pass2) = (sg_pass){
+      .action = clear,  // copy
+      .label = "pass2",
+  };
+
+  // preload assets
   Audio__preload();
   Game__preload();
+
+  Entity* screen = Arena__Push(g_engine->arena, sizeof(Sprite));
+  Screen__init(screen, color_img.id);
+  logic->screen = List__alloc(g_engine->arena);
+  List__append(g_engine->arena, logic->screen, screen);
 }
 
 LOGIC_DECL void logic_onreload(Engine__State* state) {
@@ -238,19 +284,25 @@ LOGIC_DECL void logic_onfixedupdate(void) {
 LOGIC_DECL void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
-  // a pass action to clear framebuffer to black
-  (*logic->pass_action) = (sg_pass_action){
-      .colors[0] = {
-          .load_action = SG_LOADACTION_CLEAR,  //
-          .clear_value = {0.0f, 0.0f, 0.0f, 1.0f},  //
-      }};
-
-  g_engine->sg_begin_pass(
-      &(sg_pass){.action = *logic->pass_action, .swapchain = g_engine->sglue_swapchain()});
-
+  g_engine->sg_begin_pass(logic->pass1);
   Game__render();
   Game__gui();
+  g_engine->sg_end_pass();
 
+  // 2nd pass: apply pixelized post-processing effect
+  logic->pass2->swapchain = g_engine->sglue_swapchain();
+  g_engine->sg_begin_pass(logic->pass2);
+  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
+  Sprite* screen = (Sprite*)logic->screen->head->data;
+  // f32 w = g_engine->window_width, h = g_engine->window_height;
+  // f32 sw = w / SCREEN_SIZE, sh = h / SCREEN_SIZE;
+  // f32 u = Math__min(sw, sh);
+  screen->base.tform->scale.x = screen->base.tform->scale.y = SCREEN_SIZE * 0.95f;
+  screen->base.tform->rot.x = 0;
+  screen->base.tform->rot.y = 0;
+  screen->base.tform->rot.z = 180;
+  MeshRenderer__renderBatches(logic->screen);
+  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
   g_engine->sg_end_pass();
 
   g_engine->sg_commit();

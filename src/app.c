@@ -81,6 +81,8 @@ sapp_desc sokol_main(int argc, char* argv[]) {
   engine.sg_enable_frame_stats = sg_enable_frame_stats;
   engine.sg_disable_frame_stats = sg_disable_frame_stats;
   engine.sg_frame_stats_enabled = sg_frame_stats_enabled;
+  engine.sg_make_image = sg_make_image;
+  engine.sg_make_attachments = sg_make_attachments;
   engine.sapp_lock_mouse = sapp_lock_mouse;
   engine.sapp_mouse_locked = sapp_mouse_locked;
 

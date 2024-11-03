@@ -1,5 +1,6 @@
 #include "Game.h"
 
+#include <stdio.h>
 #include <string.h>
 
 #include "Logic.h"
@@ -25,9 +26,8 @@ void Game__init() {
   Logic__State* logic = g_engine->logic;
 
   memcpy(g_engine->window_title, "Retro", 6);
-  u16 dims = 640;
-  g_engine->window_width = dims;
-  g_engine->window_height = dims;
+  g_engine->window_width = WINDOW_SIZE;
+  g_engine->window_height = WINDOW_SIZE;
 
   logic->level = 0;
   logic->player = 0;
@@ -106,17 +106,28 @@ void Game__gui() {
   logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
 
   char* c = logic->dt->txt;
-  mprintf(
-      &c,
+  char c2[255];
+  sprintf(
+      c2,
       "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-      logic->dt->glyphs->len,
       logic->player->base.tform->pos.x,
       logic->player->base.tform->pos.y,
       logic->player->base.tform->pos.z,
       logic->player->base.tform->rot.y);
-  logic->dt->base.tform->pos.x = -55;
-  logic->dt->base.tform->pos.y = -70;
-  logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 5;
+  memcpy(c, c2, logic->dt->glyphs->len);
+  // TODO: fix this fn (somehow only works on mousedown titlebar)
+  // mprintf(
+  //     &c,
+  //     "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
+  //     logic->dt->glyphs->len,
+  //     logic->player->base.tform->pos.x,
+  //     logic->player->base.tform->pos.y,
+  //     logic->player->base.tform->pos.z,
+  //     logic->player->base.tform->rot.y);
+  logic->dt->base.tform->pos.x = -77;
+  logic->dt->base.tform->pos.y = -75;
+  // TODO: fix text scaling on window resize
+  logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 6;
 
   List__Node* node = logic->ui_entities->head;
   for (u32 i = 0; i < logic->ui_entities->len; i++) {

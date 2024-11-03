@@ -1,6 +1,7 @@
 #include "Utils.h"
 
 #include <ctype.h>
+#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -164,4 +165,8 @@ u64 msscanf(const char* input, const char* format, ...) {
 
   va_end(args);
   return matched_items;
+}
+
+f32 mwave(f32 ms, f32 a, f32 b) {
+  return Math__map(sinf(g_engine->now / ms), -1, 1, a, b);
 }

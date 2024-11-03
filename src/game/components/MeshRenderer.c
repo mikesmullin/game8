@@ -20,19 +20,6 @@ extern Engine__State* g_engine;
 
 #define MAX_BATCH_ELEMENTS 128
 
-static const sg_sampler_desc global_sampler_desc = {
-    .wrap_u = SG_WRAP_REPEAT,
-    .wrap_v = SG_WRAP_REPEAT,
-    .min_filter = SG_FILTER_NEAREST,
-    .mag_filter = SG_FILTER_NEAREST,
-    .compare = SG_COMPAREFUNC_NEVER,
-};
-
-#define sg_alloc_image_smp(bindings, image_index, smp_index)   \
-  bindings.images[image_index] = g_engine->sg_alloc_image();   \
-  bindings.samplers[smp_index] = g_engine->sg_alloc_sampler(); \
-  g_engine->sg_init_sampler(bindings.samplers[smp_index], &global_sampler_desc);
-
 static void MeshRenderer__loaded(Entity* entity) {
   if (NULL == entity->render) return;  // need component
   if (NULL == entity->render->material) return;  // need material
@@ -41,7 +28,7 @@ static void MeshRenderer__loaded(Entity* entity) {
   Wavefront* mesh = material->mesh;
   if (!mesh->loaded) return;  // need model
   BmpReader* texture = material->texture;
-  if (!texture->loaded) return;  // need texture
+  if (0 == material->mpTexture && !texture->loaded) return;  // need texture
   material->loaded = true;
 
   Logic__State* logic = g_engine->logic;
@@ -54,7 +41,21 @@ static void MeshRenderer__loaded(Entity* entity) {
   // this happens later when the asynchronous file load has finished.
   // Any draw calls containing such an incomplete image handle
   // will be silently dropped.
-  sg_alloc_image_smp(material->bind->fs, SLOT__texture1, SLOT_texture1_smp);
+  if (0 == material->mpTexture) {
+    material->bind->fs.images[SLOT__texture1] = g_engine->sg_alloc_image();
+  } else {
+    material->bind->fs.images[SLOT__texture1] = (sg_image){.id = material->mpTexture};
+  }
+  material->bind->fs.samplers[SLOT_texture1_smp] = g_engine->sg_alloc_sampler();
+  g_engine->sg_init_sampler(
+      material->bind->fs.samplers[SLOT_texture1_smp],
+      &(sg_sampler_desc){
+          .wrap_u = SG_WRAP_REPEAT,
+          .wrap_v = SG_WRAP_REPEAT,
+          .min_filter = SG_FILTER_NEAREST,
+          .mag_filter = SG_FILTER_NEAREST,
+          .compare = SG_COMPAREFUNC_NEVER,
+      });
 
   // create shader from code-generated sg_shader_desc
   sg_shader shd = g_engine->sg_make_shader(atlas_shader_desc(g_engine->sg_query_backend()));
@@ -96,6 +97,7 @@ static void MeshRenderer__loaded(Entity* entity) {
                    .op_alpha = SG_BLENDOP_ADD},
           },
       .cull_mode = SG_CULLMODE_BACK,
+      .sample_count = 1,  // because rendering to texture
       .label = "mesh-pipeline",
   });
 
@@ -123,26 +125,28 @@ static void MeshRenderer__loaded(Entity* entity) {
       .label = "mesh-vertices"  //
   });
 
-  u32 pixels[material->texture->w * material->texture->h];  // ABGR
-  u32 ii = 0, mask, color;
-  for (u32 y = 0; y < material->texture->h; y++) {
-    for (u32 x = 0; x < material->texture->w; x++) {
-      mask = entity->render->useMask ? entity->render->mask : PINK;
-      color = Bmp__Get2DPixel(texture, x, y, mask);
-      pixels[ii++] = color;
+  if (0 == material->mpTexture) {
+    u32 pixels[material->texture->w * material->texture->h];  // ABGR
+    u32 ii = 0, mask, color;
+    for (u32 y = 0; y < material->texture->h; y++) {
+      for (u32 x = 0; x < material->texture->w; x++) {
+        mask = entity->render->useMask ? entity->render->mask : PINK;
+        color = Bmp__Get2DPixel(texture, x, y, mask);
+        pixels[ii++] = color;
+      }
     }
-  }
 
-  g_engine->sg_init_image(
-      material->bind->fs.images[SLOT__texture1],
-      &(sg_image_desc){
-          .width = material->texture->w,
-          .height = material->texture->h,
-          .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
-          .data.subimage[0][0] = {
-              .ptr = pixels,
-              .size = material->texture->w * material->texture->h * 4,
-          }});
+    g_engine->sg_init_image(
+        material->bind->fs.images[SLOT__texture1],
+        &(sg_image_desc){
+            .width = material->texture->w,
+            .height = material->texture->h,
+            .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
+            .data.subimage[0][0] = {
+                .ptr = pixels,
+                .size = material->texture->w * material->texture->h * 4,
+            }});
+  }
 
   // g_engine->sg_update_buffer(logic->meshRenderer.bind->vertex_buffers[0], &SG_RANGE(vertices));
   //   g_engine->sg_update_image(
@@ -204,27 +208,15 @@ void MeshRenderer__renderBatches(List* entities) {
 
       // Model
       HMM_Vec3 modelPos;
-      if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
-        // modelPos = HMM_V3(0, 0, 0);
-        modelPos = HMM_V3(  //
-            -entity->tform->pos.x,  // move object to camera
-            -entity->tform->pos.y,
-            -entity->tform->pos.z);
-      } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
-        modelPos = HMM_V3(  //
-            -entity->tform->pos.x,  // move object to camera
-            -entity->tform->pos.y,
-            -entity->tform->pos.z);
-      }
+      modelPos = HMM_V3(  //
+          -entity->tform->pos.x,  // move object to camera
+          -entity->tform->pos.y,
+          -entity->tform->pos.z);
       HMM_Vec3 modelRot;
-      if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
-        modelRot = HMM_V3(0, 0, 0);
-      } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
-        modelRot = HMM_V3(  // Yaw, Pitch, Roll
-            HMM_AngleDeg(entity->tform->rot.x),
-            HMM_AngleDeg(entity->tform->rot.y),
-            HMM_AngleDeg(entity->tform->rot.z));
-      }
+      modelRot = HMM_V3(  // Yaw, Pitch, Roll
+          HMM_AngleDeg(entity->tform->rot.x),
+          HMM_AngleDeg(entity->tform->rot.y),
+          HMM_AngleDeg(entity->tform->rot.z));
       HMM_Mat4 model = I;
       // apply translation to model
       model = HMM_MulM4(model, HMM_Translate(modelPos));
@@ -298,8 +290,23 @@ void MeshRenderer__renderBatches(List* entities) {
 
     HMM_Mat4 projection;
     if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
-      f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
-      // f32 w = (f32)g_engine->window_width  / 4, h = (f32)g_engine->window_height  / 4;
+      f32 aspect = SCREEN_RG != entityZero->render->rg
+                       ? 1.0f
+                       : (f32)g_engine->window_width / g_engine->window_height;
+      f32 base_size = SCREEN_SIZE / 2.0f;  // Base size for both hw and hh
+      f32 hw, hh;
+      if (aspect >= 1.0f) {
+        // Wide window, expand horizontal bounds
+        hw = base_size * aspect;
+        hh = base_size;
+      } else {
+        // Tall window, expand vertical bounds
+        hw = base_size;
+        hh = base_size / aspect;
+      }
+
+      // f32 hw = SCREEN_SIZE / 2.0f, hh = SCREEN_SIZE / 2.0f;
+      // f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
       projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
           -hw,
           +hw,
@@ -308,7 +315,7 @@ void MeshRenderer__renderBatches(List* entities) {
           camera->proj.nearZ,
           camera->proj.farZ);
     } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
-      f32 aspect = (f32)(g_engine->window_width) / (f32)(g_engine->window_height);
+      f32 aspect = 1.0f;  // square
       projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
           camera->proj.fov,
           aspect,
@@ -330,8 +337,8 @@ void MeshRenderer__renderBatches(List* entities) {
     fs_params.pi = entityZero->render->pi;
     fs_params.tw = entityZero->render->tw;
     fs_params.th = entityZero->render->th;
-    fs_params.aw = material->texture->w;
-    fs_params.ah = material->texture->h;
+    fs_params.aw = entityZero->render->aw;  // material->texture->w
+    fs_params.ah = entityZero->render->ah;  // material->texture->h
     fs_params.useMask = entityZero->render->useMask ? 1 : 0;
     fs_params.mask = entityZero->render->mask;
 

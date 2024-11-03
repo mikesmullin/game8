@@ -34,19 +34,13 @@ void CatEntity__init(Entity* entity) {
   entity->engine->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
-  entity->tform->pos.x = 0.0f;
-  entity->tform->pos.y = 0.0f;
-  entity->tform->pos.z = 0.0f;
-  entity->tform->rot.x = 0.0f;
-  entity->tform->rot.y = 0.0f;
-  entity->tform->rot.z = 0.0f;
   self->xa = Math__random(-1, 1);
   self->za = Math__random(-1, 1);
 
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
   collider->base.type = CIRCLE_COLLIDER_2D;
-  collider->r = 0.5f;
+  collider->r = 1.0f;
   collider->base.collide = CAT_ENTITY__COLLIDE;
   entity->collider = (ColliderComponent*)collider;
 

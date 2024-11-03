@@ -17,7 +17,6 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   Sprite* self = (Sprite*)entity;
   Entity__init(entity);
   entity->tform->pos.x = x;
-  entity->tform->pos.y = -(1.0f / 8);
   entity->tform->pos.z = z;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));

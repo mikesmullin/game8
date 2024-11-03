@@ -7,9 +7,11 @@
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
 #include "../common/List.h"
+#include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Preloader.h"
 #include "../common/Profiler.h"
+#include "../common/Utils.h"
 #include "../components/MeshRenderer.h"
 #include "../levels/Level.h"
 #include "Entity.h"
@@ -35,9 +37,6 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.tform->pos.x = x;
     sprite->base.tform->pos.y = y;
     sprite->base.tform->pos.z = 0;
-
-    sprite->base.render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
-    sprite->base.render->rg = WORLD_ZSORT_RG;
     sprite->base.render->billboard = false;
 
     // preload assets
@@ -79,8 +78,9 @@ void DebugText__tick(Entity* entity) {
     Sprite* sprite = c->data;
     c = c->next;
 
-    static f32 kerning = 1.75;
-    sprite->base.tform->pos.x = (entity->tform->pos.x) + (i * (entity->tform->scale.x / kerning));
+    static f32 kerning = (f32)SCREEN_SIZE / (60 * 4);
+    //mwave(1000, 0.60f, 0.63f);
+    sprite->base.tform->pos.x = (entity->tform->pos.x) + (i * (entity->tform->scale.x * kerning));
     sprite->base.tform->pos.y = entity->tform->pos.y;
     sprite->base.tform->scale.x = (4.0f / 6) * entity->tform->scale.x;
     sprite->base.tform->scale.y = (6.0f / 6) * entity->tform->scale.y;
