@@ -65,7 +65,7 @@ void BreakBlock__action(Entity* entity, void* _action) {
         rs->base.base.tform->pos.x = entity->tform->pos.x;
         rs->base.base.tform->pos.y = entity->tform->pos.y;
         rs->base.base.tform->pos.z = entity->tform->pos.z;
-        List__insort(g_engine->arena, logic->level->zentities, rs, Level__zsort);
+        List__append(g_engine->arena, logic->level->entities, rs);
       }
     }
   }

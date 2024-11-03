@@ -27,7 +27,6 @@ Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = NULL;
   level->entities = List__alloc(g_engine->arena);
-  level->zentities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
   g_engine->logic->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
@@ -130,7 +129,7 @@ void Level__tick(Level* level) {
   if (NULL == level->entities || 0 == level->entities->len) return;
   g_engine->entity_count =  // for perf counters
       level->entities->len +  //
-      level->zentities->len +  //
+      (NULL == level->zentities ? 0 : level->zentities->len) +  //
       g_engine->logic->ui_entities->len;
   Logic__State* logic = g_engine->logic;
 
@@ -141,6 +140,8 @@ void Level__tick(Level* level) {
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
   level->qt = QuadTreeNode_create(logic->frameArena, boundary);
+  level->nzentities = List__alloc(logic->frameArena);
+  level->zentities = List__alloc(logic->frameArena);
   List__Node* node = level->entities->head;
   u32 len = level->entities->len;  // cache, because loop will modify length as it goes
   for (u32 i = 0; i < len; i++) {
@@ -164,32 +165,12 @@ void Level__tick(Level* level) {
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
       Dispatcher__call1(entity->engine->tick, entity);
-    }
-  }
 
-  node = level->zentities->head;
-  len = level->zentities->len;  // cache, because loop will modify length as it goes
-  for (u32 i = 0; i < len; i++) {
-    if (0 == node) continue;  // TODO: find out how this happens
-    Entity* entity = node->data;
-    if (0 == entity) continue;  // TODO: find out how this happens
-    List__Node* entityNode = node;  // cache, because it may get removed
-    node = node->next;
-
-    if (entity->removed) {  // gc
-      List__remove(level->zentities, entityNode);
-    } else {
-      PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-      // if (TAG_WALL & entity->tags1) {
-      QuadTreeNode_insert(
-          logic->frameArena,
-          level->qt,
-          (Point){entity->tform->pos.x, entity->tform->pos.z},
-          entity);
-      // }
-      PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
-
-      Dispatcher__call1(entity->engine->tick, entity);
+      if (NULL != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
+        List__insort(logic->frameArena, level->zentities, entity, Level__zsort);
+      } else {
+        List__append(logic->frameArena, level->nzentities, entity);
+      }
     }
   }
 
@@ -208,25 +189,28 @@ void Level__render(Level* level) {
   List__append(g_engine->logic->frameArena, sky, level->cubemap);
   MeshRenderer__renderBatches(sky);
 
-  List__Node* node = level->entities->head;
-  for (u32 i = 0; i < level->entities->len; i++) {
-    Entity* entity = node->data;
-    node = node->next;
+  if (NULL != level->nzentities) {
+    List__Node* node = level->nzentities->head;
+    for (u32 i = 0; i < level->nzentities->len; i++) {
+      Entity* entity = node->data;
+      node = node->next;
 
-    if (0 == entity->render) continue;
-    Dispatcher__call1(entity->engine->render, entity);
-  }
-  node = level->zentities->head;
-  for (u32 i = 0; i < level->zentities->len; i++) {
-    Entity* entity = node->data;
-    node = node->next;
-
-    if (0 == entity->render) continue;
-    Dispatcher__call1(entity->engine->render, entity);
+      if (0 == entity->render) continue;
+      Dispatcher__call1(entity->engine->render, entity);
+    }
+    MeshRenderer__renderBatches(level->nzentities);
   }
 
-  MeshRenderer__renderBatches(level->entities);
-  MeshRenderer__renderBatches(level->zentities);
+  if (NULL != level->zentities) {
+    List__Node* node = level->zentities->head;
+    for (u32 i = 0; i < level->zentities->len; i++) {
+      Entity* entity = node->data;
+      node = node->next;
+
+      Dispatcher__call1(entity->engine->render, entity);
+    }
+    MeshRenderer__renderBatches(level->zentities);
+  }
 
   PROFILE__END(LEVEL__RENDER);
 }

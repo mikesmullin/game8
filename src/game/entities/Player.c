@@ -242,7 +242,7 @@ void Player__tick(Entity* entity) {
       rs->xa += forward.X, rs->ya = 1, rs->za += forward.Z;
       rs->base.base.render->color = 0x660000ff;
       rs->life = rs->lifeSpan = 4.0f;
-      List__insort(g_engine->arena, logic->level->zentities, rs, Level__zsort);
+      List__append(g_engine->arena, logic->level->entities, rs);
 
       Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
       QuadTreeNode_query(logic->level->qt, range, 100, matchData, &matchCount);

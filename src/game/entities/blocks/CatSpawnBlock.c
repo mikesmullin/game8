@@ -51,7 +51,7 @@ void CatSpawnBlock__tick(Entity* entity) {
       cat->base.base.tform->pos.x = block->base.tform->pos.x + Math__random(-1, 1);
       cat->base.base.tform->pos.y = -(1.0f / 8);
       cat->base.base.tform->pos.z = block->base.tform->pos.z + Math__random(-1, 1);
-      List__insort(g_engine->arena, logic->level->zentities, cat, Level__zsort);
+      List__append(g_engine->arena, logic->level->entities, cat);
       self->spawnedCount++;
     }
   }
