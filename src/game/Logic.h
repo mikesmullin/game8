@@ -37,6 +37,7 @@ typedef struct m4 {
 
 typedef struct Arena Arena;
 typedef struct Logic__State Logic__State;
+typedef struct Socket Socket;
 typedef struct sg_environment sg_environment;
 typedef struct sg_swapchain sg_swapchain;
 typedef struct sg_buffer sg_buffer;
@@ -69,6 +70,7 @@ typedef struct sg_attachments_desc sg_attachments_desc;
 
 typedef struct Engine__State {
   char window_title[255];
+  bool isMaster;
 
   u32 window_width, window_height;
   Arena* arena;
@@ -508,6 +510,18 @@ typedef struct PreloadedMaterials {
   Material *wall, *sprite, *glyph, *cubemap, *screen;
 } PreloadedMaterials;
 
+#define LISTEN_ADDR "0.0.0.0"
+#define LISTEN_PORT "9000"
+#define CONNECT_ADDR "127.0.0.1"
+#define MAX_CLIENTS (1)
+
+typedef struct NetMgr {
+  Socket* listener;
+  Socket* clients[MAX_CLIENTS];
+  u32 client_count;
+  Socket* client;
+} NetMgr;
+
 typedef struct Logic__State {
   // Menu* menu;
   Level* level;
@@ -531,6 +545,8 @@ typedef struct Logic__State {
   // TODO: there should be an arena per game, frame, etc.
   Arena* frameArena;
   DebugText* dt;
+
+  NetMgr net;
 
 } Logic__State;
 

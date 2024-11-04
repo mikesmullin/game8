@@ -16,6 +16,7 @@
 #include "common/Wav.h"
 #include "components/MeshRenderer.h"
 #include "entities/DebugText.h"
+#include "entities/NetMgr.h"
 #include "entities/Player.h"
 #include "entities/SkyBox.h"
 #include "levels/Level.h"
@@ -65,13 +66,16 @@ void Game__preload() {
 
   logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
   char txt[40] = "Hello world!";
-  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, LIME);
+  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, WHITE);
   List__insort(g_engine->arena, logic->ui_entities, logic->dt, Level__zsort);
 
   // preload assets
   Preload__audio(
       &logic->audio.pickupCoin,  //
       "../assets/audio/sfx/pickupCoin.wav");
+
+  // init network
+  NetMgr__init();
 }
 
 void Game__reload() {
@@ -84,6 +88,7 @@ void Game__tick() {
   Logic__State* logic = g_engine->logic;
 
   // in-game
+  NetMgr__tick();
   Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
   Level__tick(logic->level);
 }
@@ -154,4 +159,8 @@ void Game__gui() {
   //     Math__urandom() | 0xffff0000 + 0xff993399);
 
   PROFILE__END(GAME__GUI);
+}
+
+void Game__shutdown() {
+  NetMgr__shutdown();
 }

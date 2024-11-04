@@ -35,9 +35,11 @@ static void update_window_title(const char* title) {
 }
 
 sapp_desc sokol_main(int argc, char* argv[]) {
-  (void)argc;
-  (void)argv;
-
+  for (u32 i = 0; i < argc; i++) {
+    if (strcmp("-server", argv[i]) == 0) {
+      engine.isMaster = true;
+    }
+  }
   engine.log = logit;
   engine.stm_setup = stm_setup;
   engine.sg_setup = sg_setup;
@@ -114,6 +116,7 @@ static void init(void) {
 #ifndef __EMSCRIPTEN__
   File__StartMonitor(&fm);
 #endif
+
   logic_onpreload();
 }
 

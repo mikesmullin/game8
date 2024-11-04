@@ -6,3 +6,4 @@ void Game__preload();
 void Game__tick();
 void Game__render();
 void Game__gui();
+void Game__shutdown();

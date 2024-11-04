@@ -53,6 +53,9 @@ const ENGINE_ONLY = [
   'src/lib/HotReload.c',
 ];
 const LINKER_LIBS = [];
+// if (isWin) {
+//   LINKER_LIBS.push('-l', 'Ws2_32.lib');
+// }
 const LINKER_LIB_PATHS = [];
 const COMPILER_TRANSLATION_UNITS = [
   relWs(workspaceFolder, 'src', '*.c'),
@@ -212,8 +215,8 @@ const compile = async (basename) => {
     ...C_COMPILER_ARGS,
     ...C_ENGINE_COMPILER_FLAGS,
     // ...C_COMPILER_INCLUDES,
-    //...LINKER_LIBS,
-    //...LINKER_LIB_PATHS,
+    ...LINKER_LIBS,
+    ...LINKER_LIB_PATHS,
     ...unit_files.map(unit => relWs(workspaceFolder, unit)),
     '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);

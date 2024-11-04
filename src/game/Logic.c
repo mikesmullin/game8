@@ -312,6 +312,7 @@ LOGIC_DECL void logic_onupdate(void) {
 }
 
 LOGIC_DECL void logic_onshutdown(void) {
+  Game__shutdown();
   g_engine->sg_shutdown();
   Audio__shutdown();
   g_engine->sfetch_shutdown();
