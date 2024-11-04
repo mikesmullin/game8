@@ -64,7 +64,7 @@ void main() {
 flat in ivec4 inst;
 in vec2 TexCoord;
 in vec4 FragPos;
-in mat4 proj;
+flat in mat4 proj;
 
 out vec4 FragColor;
 

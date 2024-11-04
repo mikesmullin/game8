@@ -45,7 +45,11 @@ const C_DLL_COMPILER_FLAGS = [
 ];
 const C_WEB_COMPILER_FLAGS = [
   '-DSOKOL_GLES3', // use GLES3 backend
-  '-sUSE_WEBGL2' // use WebGL2
+  '-sUSE_WEBGL2', // use WebGL2
+  // see: https://emscripten.org/docs/tools_reference/settings_reference.html?highlight=environment
+  '-sTOTAL_MEMORY=512MB', // allow larger memory pool (16MB is default)
+  '-sSTACK_OVERFLOW_CHECK=2', // check for stack overflow
+  '-sSTACK_SIZE=5MB',
 ];
 
 const ENGINE_ONLY = [

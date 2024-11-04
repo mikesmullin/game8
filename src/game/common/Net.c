@@ -94,6 +94,8 @@ void Net__listen(Socket* socket) {
 }
 
 void Net__accept(Socket* socket, void (*acceptCb)(Socket*, Socket*)) {
+  Socket* csocket;
+
 #ifdef _WIN32
   // Initialize the file descriptor set
   fd_set readfds;
@@ -107,38 +109,36 @@ void Net__accept(Socket* socket, void (*acceptCb)(Socket*, Socket*)) {
 
   // Check if there's a new incoming connection
   int r = select(0, &readfds, NULL, NULL, &timeout);
-  if (r > 0 && FD_ISSET(socket->_win_socket, &readfds)) {
-    // Accept a connection from a new client socket
-    struct sockaddr_in clientAddr;
-    int clientAddrLen = sizeof(clientAddr);
-    Socket* csocket = Net__Socket__alloc();
-    csocket->_win_socket =
-        accept(socket->_win_socket, (struct sockaddr*)&clientAddr, &clientAddrLen);
-    ASSERT_CONTEXT(
-        socket->_win_socket != INVALID_SOCKET,
-        "socket accept failed. error: %d",
-        WSAGetLastError());
+  if (!(r > 0 && FD_ISSET(socket->_win_socket, &readfds))) return;
+  // Accept a connection from a new client socket
+  struct sockaddr_in clientAddr;
+  int clientAddrLen = sizeof(clientAddr);
+  csocket = Net__Socket__alloc();
+  csocket->_win_socket = accept(socket->_win_socket, (struct sockaddr*)&clientAddr, &clientAddrLen);
+  ASSERT_CONTEXT(
+      socket->_win_socket != INVALID_SOCKET,
+      "socket accept failed. error: %d",
+      WSAGetLastError());
 
-    // Convert the IP address and port to C strings
-    char ipStr[INET_ADDRSTRLEN], portStr[6];
-    inet_ntop(AF_INET, &(clientAddr.sin_addr), ipStr, sizeof(ipStr));
-    snprintf(portStr, sizeof(portStr), "%d", ntohs(clientAddr.sin_port));
-    u32 len = strlen(ipStr) + 1;
-    csocket->addr = malloc(len);
-    memcpy(csocket->addr, ipStr, len);
-    len = strlen(portStr) + 1;
-    csocket->port = malloc(len);
-    memcpy(csocket->port, portStr, len);
+  // Convert the IP address and port to C strings
+  char ipStr[INET_ADDRSTRLEN], portStr[6];
+  inet_ntop(AF_INET, &(clientAddr.sin_addr), ipStr, sizeof(ipStr));
+  snprintf(portStr, sizeof(portStr), "%d", ntohs(clientAddr.sin_port));
+  u32 len = strlen(ipStr) + 1;
+  csocket->addr = malloc(len);
+  memcpy(csocket->addr, ipStr, len);
+  len = strlen(portStr) + 1;
+  csocket->port = malloc(len);
+  memcpy(csocket->port, portStr, len);
 
-    // csocket->_win_addr = clientAddr; // TODO: must convert the type manually
+  // csocket->_win_addr = clientAddr; // TODO: must convert the type manually
 
-    // Set the incoming socket to non-blocking
-    u_long mode = 1;  // 1 to enable non-blocking
-    ioctlsocket(csocket->_win_socket, FIONBIO, &mode);
-
-    acceptCb(socket, csocket);
-  }
+  // Set the incoming socket to non-blocking
+  u_long mode = 1;  // 1 to enable non-blocking
+  ioctlsocket(csocket->_win_socket, FIONBIO, &mode);
 #endif
+
+  acceptCb(socket, csocket);
 }
 
 void Net__connect(Socket* socket, void (*connectCb)(Socket*)) {
@@ -155,9 +155,9 @@ void Net__connect(Socket* socket, void (*connectCb)(Socket*)) {
   // Set the incoming socket to non-blocking
   u_long mode = 1;  // 1 to enable non-blocking
   ioctlsocket(socket->_win_socket, FIONBIO, &mode);
+#endif
 
   connectCb(socket);
-#endif
 }
 
 void Net__read(Socket* socket) {
