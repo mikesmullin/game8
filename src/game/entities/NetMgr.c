@@ -3,8 +3,14 @@
 #include <string.h>
 
 #include "../Logic.h"
+#include "../common/Arena.h"
 #include "../common/Log.h"
 #include "../common/Net.h"
+#include "../common/Utils.h"
+#include "../common/Websocket.h"
+#include "../messages/Messages.h"
+
+#define DEBUG_STR_LEN (2046)
 
 extern Engine__State* g_engine;
 
@@ -53,60 +59,90 @@ static void onAccept(Socket* server, Socket* client) {
   Logic__State* logic = g_engine->logic;
   NetMgr* self = &logic->net;
 
+  client->state = SOCKET_CONNECTED;
+  client->sessionState = SESSION_SERVER_HANDSHAKE_AWAIT;
   LOG_DEBUGF("Server %s:%s accept %s:%s", server->addr, server->port, client->addr, client->port);
 
   // remember all incoming connections
   self->clients[self->client_count++] = client;
-
-  // Send response to client
-  char* data = "shello";
-  u32 len = strlen(data);
-  Net__write(client, len, data);
-  LOG_DEBUGF("Server send. len: %u, data: %s", len, data);
 }
 
 static void onConnect(Socket* client) {
   Logic__State* logic = g_engine->logic;
   NetMgr* self = &logic->net;
 
+  client->state = SOCKET_CONNECTED;
   LOG_DEBUGF("Client connected to %s:%s", client->addr, client->port);
-
-  // Send response to server
-  char* data = "chello";
-  u32 len = strlen(data);
-  Net__write(client, len, data);
-  LOG_DEBUGF("Client send. len: %u, data: %s", len, data);
 }
 
 static void ServerPump(Socket* client) {
+  if (SOCKET_CONNECTED != client->state) return;
+
   Logic__State* logic = g_engine->logic;
   NetMgr* self = &logic->net;
 
   // Read data from client
   Net__read(client);
   if (client->buf.len > 0) {
-    LOG_DEBUGF("Server recv. len: %u, data: %s", client->buf.len, client->buf.data);
+    char* debug = Arena__Push(g_engine->logic->frameArena, DEBUG_STR_LEN);
+    hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
+    LOG_DEBUGF("Server recv. len: %u, data:\n%s", client->buf.len, debug);
 
-    char* expected = "chello";
-    if (strcmp(client->buf.data, expected) == 0) {
-      LOG_DEBUGF("server satisfied");
+    if (SESSION_SERVER_HANDSHAKE_AWAIT == client->sessionState) {
+      char key[256];
+      Websocket__ParseHandshake(client->buf.data, key);
+      char response[512];
+      WebSocket__RespondHandshake(g_engine->logic->frameArena, key, response);
+
+      // Send response to client
+      u32 len = strlen(response);
+      Net__write(client, len, (const u8*)response);
+      hexdump(response, len, debug, DEBUG_STR_LEN);
+      LOG_DEBUGF("Server send. len: %u, data:\n%s", len, debug);
+      client->sessionState = SESSION_SERVER_HANDSHAKE_SENT;
+    } else if (SESSION_SERVER_HANDSHAKE_SENT == client->sessionState) {
+      u8* payload = NULL;
+      u64 payload_length = 0;
+      int r = WebSocket__ParseFrame(
+          g_engine->logic->frameArena,
+          (const u8*)client->buf.data,
+          client->buf.len,
+          &payload,
+          &payload_length);
+      if (r == 0) {
+        hexdump(payload, payload_length, debug, DEBUG_STR_LEN);
+        LOG_DEBUGF("Websocket frame. len: %u, data:\n%s", payload_length, debug);
+
+        u8* ptr = payload;
+        Message__Parse(payload_length, &ptr);
+        // TODO: replace client->buf with ring buffer, and advance start/end cursors
+      }
     }
   }
 }
 
 static void ClientPump(Socket* client) {
+  if (SOCKET_CONNECTED != client->state) return;
+
   Logic__State* logic = g_engine->logic;
   NetMgr* self = &logic->net;
+  char* debug = Arena__Push(g_engine->logic->frameArena, DEBUG_STR_LEN);
+
+  if (SESSION_NONE == client->sessionState) {
+    // Send request to server
+    MoveRequest msg = {.base.id = MSG_MOVE_REQ, .x = 1.0f, .y = 2.0f, .z = 3.0f};
+    u32 len = sizeof(MoveRequest);
+    Net__write(client, len, (const u8*)&msg);
+    hexdump(&msg, len, debug, DEBUG_STR_LEN);
+    LOG_DEBUGF("Client send. len: %u, data:\n%s", len, debug);
+    client->sessionState = SESSION_CLIENT_HELLO_SENT;
+  }
 
   // Read data from server
   Net__read(client);
   if (client->buf.len > 0) {
-    LOG_DEBUGF("Client recv. len: %u, data: %s", client->buf.len, client->buf.data);
-
-    char* expected = "shello";
-    if (strcmp(client->buf.data, expected) == 0) {
-      LOG_DEBUGF("client satisfied");
-    }
+    hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
+    LOG_DEBUGF("Client recv. len: %u, data:\n%s", client->buf.len, debug);
   }
 }
 

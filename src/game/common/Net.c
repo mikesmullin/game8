@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "../Logic.h"
+#include "Arena.h"
 #include "Log.h"
 
 #ifdef _WIN32
@@ -22,6 +23,18 @@
 #include <unistd.h>
 #endif
 
+#ifdef __EMSCRIPTEN__
+#include <emscripten/emscripten.h>
+
+typedef enum WebsocketFnId : u32 {
+  WS_CLIENT_CONNECTION_ERROR = 1,
+  WS_CLIENT_ESTABLISHED = 2,
+  WS_CLOSED = 3,
+  WS_CLIENT_RECEIVE = 4,
+  WS_WSI_DESTROY = 5,
+} WebsocketFnId;
+#endif
+
 extern Engine__State* g_engine;
 
 void Net__init() {
@@ -30,10 +43,84 @@ void Net__init() {
   int r = WSAStartup(MAKEWORD(2, 2), &wsaData);
   ASSERT_CONTEXT(0 == r, "WSAStartup failed with error: %d", r);
 #endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM_({
+    var libwebsocket = {};
+    var ctx = 0;
+
+    libwebsocket.sockets = new Map();
+    libwebsocket.on_event = Module.cwrap(
+        'libwebsocket_cb',
+        'number',
+        [ 'number', 'number', 'number', 'number', 'number', 'number', 'number' ]);
+    libwebsocket.connect = function(url, user_data) {
+      try {
+        var socket = new WebSocket(url);
+        socket.binaryType = "arraybuffer";
+        socket.user_data = user_data;
+
+        socket.onopen = this.on_connect;
+        socket.onmessage = this.on_message;
+        socket.onclose = this.on_close;
+        socket.onerror = this.on_error;
+        socket.destroy = this.destroy;
+
+        socket.id = this.sockets.size + 1;
+        this.sockets.set(socket.id, socket);
+        return socket;
+      } catch (e) {
+        console.error("Socket creation failed:" + e);
+        return 0;
+      }
+    };
+    libwebsocket.on_connect = function() {
+      var stack = stackSave();
+      // WS_CLIENT_ESTABLISHED = 2
+      ret = libwebsocket.on_event(this.protocol_id, ctx, this.id, 2, this.user_data, 0, 0);
+      stackRestore(stack);
+    };
+    libwebsocket.on_message = function(event) {
+      var stack = stackSave();
+      var len = event.data.byteLength;
+      var ptr = allocate(len, 'i8', ALLOC_STACK);
+
+      var data = new Uint8Array(event.data);
+
+      for (var i = 0, buf = ptr; i < len; ++i) {
+        setValue(buf, data[i], 'i8');
+        buf++;
+      }
+
+      // WS_CLIENT_RECEIVE = 4
+      if (libwebsocket.on_event(this.protocol_id, ctx, this.id, 4, this.user_data, ptr, len)) {
+        this.close();
+      }
+      stackRestore(stack);
+    };
+    libwebsocket.on_close = function() {
+      // WS_CLOSED = 3
+      libwebsocket.on_event(this.protocol_id, ctx, this.id, 3, this.user_data, 0, 0);
+      this.destroy();
+    };
+    libwebsocket.on_error = function() {
+      // WS_CLIENT_CONNECTION_ERROR = 1
+      libwebsocket.on_event(this.protocol_id, ctx, this.id, 1, this.user_data, 0, 0);
+      this.destroy();
+    };
+    libwebsocket.destroy = function() {
+      libwebsocket.sockets.set(this.id, undefined);
+      // WS_WSI_DESTROY = 5
+      libwebsocket.on_event(this.protocol_id, ctx, this.id, 5, this.user_data, 0, 0);
+    };
+
+    Module.__libwebsocket = libwebsocket;
+  });
+#endif
 }
 
 Socket* Net__Socket__alloc() {
-  Socket* socket = malloc(sizeof(Socket));
+  Socket* socket = Arena__Push(g_engine->arena, sizeof(Socket));
   socket->buf.data[0] = '\0';  // null-terminated string
   return socket;
 }
@@ -91,6 +178,12 @@ void Net__listen(Socket* socket) {
   u_long mode = 1;  // 1 to enable non-blocking
   ioctlsocket(socket->_win_socket, FIONBIO, &mode);
 #endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
+#endif
 }
 
 void Net__accept(Socket* socket, void (*acceptCb)(Socket*, Socket*)) {
@@ -138,10 +231,18 @@ void Net__accept(Socket* socket, void (*acceptCb)(Socket*, Socket*)) {
   ioctlsocket(csocket->_win_socket, FIONBIO, &mode);
 #endif
 
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
+#endif
+
   acceptCb(socket, csocket);
 }
 
 void Net__connect(Socket* socket, void (*connectCb)(Socket*)) {
+  socket->connectCb = connectCb;
+
 #ifdef _WIN32
   // Connect to a server
   int r =
@@ -155,9 +256,28 @@ void Net__connect(Socket* socket, void (*connectCb)(Socket*)) {
   // Set the incoming socket to non-blocking
   u_long mode = 1;  // 1 to enable non-blocking
   ioctlsocket(socket->_win_socket, FIONBIO, &mode);
+
+  // TODO: wait for connection async
+  socket->connectCb(socket);
 #endif
 
-  connectCb(socket);
+#ifdef __EMSCRIPTEN__
+  int r2 = EM_ASM_INT(
+      {
+        var url = "ws://" + UTF8ToString($0) + ":" + UTF8ToString($1);
+        var socket = Module.__libwebsocket.connect(url, $2);
+        if (!socket) {
+          return 0;
+        }
+
+        return socket.id;
+      },
+      socket->addr,
+      socket->port,
+      socket);
+  ASSERT_CONTEXT(0 != r2, "socket connect failed.");
+  socket->_web_socket = r2;
+#endif
 }
 
 void Net__read(Socket* socket) {
@@ -188,12 +308,43 @@ void Net__read(Socket* socket) {
     }
   }
 #endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
+#endif
 }
 
-void Net__write(Socket* socket, u32 len, char* data) {
+void Net__write(Socket* socket, u32 len, const u8* data) {
 #ifdef _WIN32
-  int r = send(socket->_win_socket, data, len, 0);
+  int r = send(socket->_win_socket, (const char*)data, len, 0);
   ASSERT_CONTEXT(r != SOCKET_ERROR, "socket send failed with error: %d", WSAGetLastError());
+#endif
+
+#ifdef __EMSCRIPTEN__
+  int r2 = EM_ASM_INT(
+      {
+        var socket = Module.__libwebsocket.sockets.get($0);
+        if (!socket) {
+          return -1;
+        }
+
+        // alloc a Uint8Array backed by the incoming data.
+        var data_in = new Uint8Array(Module.HEAPU8.buffer, $1, $2);
+        // allow the dest array
+        var data = new Uint8Array($2);
+        // set the dest from the src
+        data.set(data_in);
+
+        socket.send(data);
+
+        return $2;
+      },
+      socket->_web_socket,
+      data,
+      len);
+  ASSERT_CONTEXT(-1 != r2, "socket send failed.");
 #endif
 }
 
@@ -203,6 +354,12 @@ void Net__shutdown(Socket* socket) {
   int r = shutdown(socket->_win_socket, SD_BOTH);  // stop sending and receiving
   ASSERT_CONTEXT(r != SOCKET_ERROR, "socket shutdown failed with error: %d", WSAGetLastError());
 #endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
+#endif
 }
 
 // for all sockets
@@ -210,6 +367,12 @@ void Net__close(Socket* socket) {
 #ifdef _WIN32
   closesocket(socket->_win_socket);
   socket->_win_socket = INVALID_SOCKET;
+#endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
 #endif
 }
 
@@ -219,6 +382,12 @@ void Net__free(Socket* socket) {
   freeaddrinfo(socket->_win_addr);
 #endif
   free(socket);
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM(
+      // TODO: implement javascript equivalent code here
+  );
+#endif
 }
 
 // once for all
@@ -226,4 +395,55 @@ void Net__destroy() {
 #ifdef _WIN32
   WSACleanup();
 #endif
+
+#ifdef __EMSCRIPTEN__
+  EM_ASM({
+      // TODO: implement javascript equivalent code here
+  });
+#endif
 }
+
+// -- Websockets --
+#ifdef __EMSCRIPTEN__
+
+int EMSCRIPTEN_KEEPALIVE libwebsocket_cb(
+    int protocol,
+    Socket* context,
+    int socketId,
+    int callbackFnId,
+    Socket* socket,
+    void* in,
+    size_t len) {
+  LOG_DEBUGF(
+      "libwebsocket_cb() "
+      "protocol %d, "
+      "context %p, "
+      "socketId %d, "
+      "callbackFnId %d, "
+      "socket %p, "
+      "in %p, "
+      "len %d",
+      protocol,
+      context,
+      socketId,
+      callbackFnId,
+      socket,
+      in,
+      len);
+
+  if (WS_CLIENT_ESTABLISHED == callbackFnId) {
+    socket->connectCb(socket);
+  }
+
+  // if (reason == WS_WSI_DESTROY) {
+  //   context->protocols[protocol].callback(context, wsi, reason, user, in, len);
+  //   // TODO See if we need to destroy the user_data..currently we dont allocate it, so we never would need to free it.
+  //   return 0;
+  // } else {
+  //   return context->protocols[protocol].callback(context, wsi, reason, user, in, len);
+  // }
+
+  return 0;
+}
+
+#endif

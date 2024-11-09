@@ -2,6 +2,7 @@
 
 #include <stdint.h>
 typedef uint8_t u8;
+typedef uint32_t u32;
 typedef uint64_t u64;
 typedef int64_t s64;
 typedef float f32;
@@ -11,3 +12,4 @@ u64 mread(void* dst, s64 readlen, u8** srcCursor, s64 smaxlen);
 u64 msscanf(const char* input, const char* format, ...);
 void mprintf(char** dstCursor, const char* format, s64 maxLen, ...);
 f32 mwave(f32 ms, f32 a, f32 b);
+void hexdump(const void* data, u32 len, char* out, u32 maxLen);

@@ -170,3 +170,31 @@ u64 msscanf(const char* input, const char* format, ...) {
 f32 mwave(f32 ms, f32 a, f32 b) {
   return Math__map(sinf(g_engine->now / ms), -1, 1, a, b);
 }
+
+void hexdump(const void* data, u32 len, char* out, u32 maxLen) {
+  const u8* byte = (const u8*)data;
+  for (u32 i = 0; i < len; i += 16) {
+    // Print the offset
+    mprintf(&out, "%08x  ", maxLen, i);
+
+    // Print the hexadecimal representation
+    for (u32 j = 0; j < 16; j++) {
+      if (i + j < len)
+        mprintf(&out, "%02x ", maxLen, byte[i + j]);
+      else
+        mprintf(&out, "   ", maxLen);  // for padding
+    }
+
+    // Print the ASCII representation
+    mprintf(&out, " |", maxLen);
+    for (u32 j = 0; j < 16; j++) {
+      if (i + j < len) {
+        char c = byte[i + j];
+        mprintf(&out, "%c", maxLen, isprint(c) ? c : '.');
+      } else {
+        mprintf(&out, " ", maxLen);
+      }
+    }
+    mprintf(&out, "|\n", maxLen);
+  }
+}

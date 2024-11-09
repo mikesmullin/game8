@@ -50,6 +50,9 @@ const C_WEB_COMPILER_FLAGS = [
   '-sTOTAL_MEMORY=512MB', // allow larger memory pool (16MB is default)
   '-sSTACK_OVERFLOW_CHECK=2', // check for stack overflow
   '-sSTACK_SIZE=5MB',
+  // see: https://emscripten.org/docs/porting/connecting_cpp_and_javascript/Interacting-with-code.html
+  '-sEXPORTED_FUNCTIONS=_main,_libwebsocket_cb',
+  '-sEXPORTED_RUNTIME_METHODS=cwrap', // ,ccall
 ];
 
 const ENGINE_ONLY = [
@@ -79,6 +82,10 @@ const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   relWs(workspaceFolder, 'assets', 'web', '*'),
 ];
 
+const EDITOR_INCLUDES = [
+  `-I${relBuild(workspaceFolder, 'vendor', 'emsdk', 'upstream', 'emscripten', 'cache', 'sysroot', 'include')}`,
+];
+
 const nixPath = (p) =>
   path.posix.normalize(p.replace(/\\/g, '/'));
 
@@ -98,6 +105,7 @@ const generate_clangd_compile_commands = async () => {
         ...C_COMPILER_ARGS,
         // ...C_COMPILER_INCLUDES,
         ...(is_dll ? C_DLL_COMPILER_FLAGS : C_ENGINE_COMPILER_FLAGS),
+        ...EDITOR_INCLUDES,
         '-c',
         '-o', `${unit_file}.o`,
         relBuild(unit_file),
@@ -143,7 +151,7 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
 };
 
 const all = async (autorun) => {
-  await clean();
+  // await clean();
   await copy_dlls();
   console.log('shaders');
   const code1 = await shaders('hlsl5:glsl430');
@@ -158,7 +166,7 @@ const all = async (autorun) => {
 };
 
 const web = async () => {
-  await clean();
+  // await clean();
   await copy_dlls();
   const code1 = await shaders('glsl300es');
   if (0 != code1) return code1;
