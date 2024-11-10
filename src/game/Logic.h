@@ -79,6 +79,7 @@ typedef struct Engine__State {
   void (*stream_cb2)(float* buffer, int num_frames, int num_channels);
 
   void (*log)(const char* line, ...);
+  void (*abort)(const char* line, ...);
   void (*stm_setup)(void);
   void (*sg_setup)(const sg_desc* desc);
   sg_environment (*sglue_environment)(void);

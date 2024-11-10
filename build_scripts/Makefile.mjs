@@ -125,27 +125,30 @@ const generate_clangd_compile_commands = async () => {
 };
 
 const child_spawn = async (cmd, args = [], opts = {}) => {
+  const invocation = `${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`;
   if (!opts.buffer) {
-    console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
+    console.log(invocation);
   }
   let stdio = ['inherit', 'inherit', 'inherit'];
   let buf = false, outBuf = '', errBuf = '';
   if (opts.buffer) {
     buf = true;
     delete opts.buffer;
-    stdio = ['inherit', 'pipe', 'pipe'];
+    stdio = ['ignore', 'pipe', 'pipe'];
   }
   const child = spawn(cmd, args, { stdio });
   if (buf) {
+    child.stdout.setEncoding('utf8');
     child.stdout.on('data', (data) => {
       outBuf += data.toString();
     });
+    child.stderr.setEncoding('utf8');
     child.stderr.on('data', (data) => {
       errBuf += data.toString();
     });
   }
   const code = await new Promise((ok) => {
-    child.on('close', async (code) => {
+    child.on('close', (code) => {
       if (code !== 0) {
         if (!buf) {
           console.log(`process exited with code ${code}`);
@@ -154,7 +157,7 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
       ok(code);
     });
   });
-  return { code, stdout: outBuf, stderr: errBuf };
+  return { cmd: invocation, code, stdout: outBuf, stderr: errBuf };
 };
 
 const all = async (autorun) => {
@@ -296,11 +299,14 @@ const compile_reload = async (outname) => {
 
   const ANALYZE = false;
   const ANALYZER = path.join(process.cwd(), 'ClangBuildAnalyzer.exe');
-  if (ANALYZE) await child_spawn(ANALYZER, ['--start', 'src/game']);
+  const analyzer_out_path = path.join('build', 'src', 'game');
+  const analyzer_bin = path.join('build', 'analysis.bin');
+  if (ANALYZE) await child_spawn(ANALYZER, ['--start', analyzer_out_path]);
 
   const started = performance.now();
   const r1 = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
+    // '-ftime-report', // display compile time stats
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
     ...C_DLL_COMPILER_FLAGS,
@@ -312,8 +318,8 @@ const compile_reload = async (outname) => {
   ]);
   const ended = performance.now();
 
-  if (ANALYZE) await child_spawn(ANALYZER, ['--stop', 'src/game', 'analysis.bin']);
-  if (ANALYZE) await child_spawn(ANALYZER, ['--analyze', 'analysis.bin']);
+  if (ANALYZE) await child_spawn(ANALYZER, ['--stop', analyzer_out_path, analyzer_bin]);
+  if (ANALYZE) await child_spawn(ANALYZER, ['--analyze', analyzer_bin]);
 
   // swap lib
   let target2;
@@ -482,6 +488,20 @@ const test = async () => {
     }
   }
 
+  const unit_files = [];
+  // for (const u of COMPILER_TRANSLATION_UNITS) {
+  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+  //     unit_files.push(file);
+  //   }
+  // }
+  for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
+    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+      if (!ENGINE_ONLY.includes(nixPath(file))) {
+        unit_files.push(relWs(workspaceFolder, file));
+      }
+    }
+  }
+
   for (const u of COMPILER_TRANSLATION_UNITS_TESTS) {
     for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
       const result = {};
@@ -489,14 +509,15 @@ const test = async () => {
 
       // read file metadata
       const c = await fs.readFile(unit, { encoding: 'utf8' });
-      const RX_META = /^\/\/ @(\w+) (.+)$/gm;
+      const RX_META = /^\/\/ @(\w+)(?: (.+))?$/gm;
       let m;
       while (null != (m = RX_META.exec(c))) {
         const [, k, v] = m;
         if ('describe' == k) result.description = v;
-        if ('tag' == k) !result.tags && (result.tags = ''), result.tags += ',' + v;
+        else if ('tag' == k) !result.tags && (result.tags = ''), result.tags += ',' + v;
+        else if ('skip' == k) result.skip = true;
       }
-      if (result.tags && !overall.filters.some(t => result.tags.includes(t))) {
+      if (result.skip || (result.tags && overall.filters.length > 0 && !overall.filters.some(t => result.tags.includes(t)))) {
         result.pass = false, result.fail = false, result.skip = true;
         results.push(result);
         overall.skips++;
@@ -508,19 +529,21 @@ const test = async () => {
       const started1 = performance.now();
       const basename = path.basename(unit, '.c');
       result.basename = basename;
-      const test_out_path = path.join(workspaceFolder, BUILD_PATH, 'test');
+      const test_out_path = path.join(workspaceFolder, BUILD_PATH, relWs(unit).replace(/\.c$/, ''));
       const executable = relWs(path.join(test_out_path, `${basename}${isWin ? '.exe' : ''}`));
       await fs.mkdir(test_out_path, { recursive: true });
       const r1 = await child_spawn(C_COMPILER_PATH, [
         ...DEBUG_COMPILER_ARGS,
         ...C_COMPILER_ARGS,
-        // ...C_ENGINE_COMPILER_FLAGS,
+        ...C_ENGINE_COMPILER_FLAGS,
         // ...C_COMPILER_INCLUDES,
         // ...LINKER_LIBS,
         // ...LINKER_LIB_PATHS,
+        ...unit_files.map(unit => relWs(workspaceFolder, unit)),
         unit,
         '-o', executable,
       ], { buffer: true });
+      result.compileCmd = r1.cmd;
       result.compileCode = r1.code, result.compileOut = r1.stdout, result.compileErr = r1.stderr;
       const ended1 = performance.now();
       result.compileLap = ended1 - started1; // ms
@@ -531,6 +554,7 @@ const test = async () => {
           await fs.chmod(executable, 0o755); // chmod +x
         }
         const r2 = await child_spawn(executable, [], { buffer: true });
+        result.execCmd = r2.cmd;
         result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
         const ended2 = performance.now();
         result.execLap = ended2 - started2; // ms
@@ -549,6 +573,14 @@ const test = async () => {
       }
       else {
         console.log(`\n${overall.ran}) ${result.basename}`);
+      }
+
+      if (0 != result.compileLap > 1000) {
+        console.log(chalk.yellow(indent(1, `Compilation took ${result.compileLap.toFixed(2)}ms!`)));
+        console.log(chalk.grey(indent(1, result.compileCmd)));
+      }
+      else if (0 != result.compileCode) {
+        console.error(chalk.grey(indent(1, result.compileCmd)));
       }
 
       if (0 != result.compileCode) {

@@ -41,6 +41,7 @@ sapp_desc sokol_main(int argc, char* argv[]) {
     }
   }
   engine.log = logit;
+  engine.abort = logabort;
   engine.stm_setup = stm_setup;
   engine.sg_setup = sg_setup;
   engine.sglue_environment = sglue_environment;
