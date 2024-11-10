@@ -1,21 +1,20 @@
 #include "Dispatcher.h"
 
-#include "../entities/CatEntity.h"
-#include "../entities/DebugText.h"
-#include "../entities/Player.h"
-#include "../entities/RubbleSprite.h"
-#include "../entities/SkyBox.h"
-#include "../entities/Sprite.h"
-#include "../entities/blocks/BreakBlock.h"
-#include "../entities/blocks/CatSpawnBlock.h"
-#include "../entities/blocks/RedWallBlock.h"
-#include "../entities/blocks/SpawnBlock.h"
-#include "../entities/blocks/WallBlock.h"
-
-// #include "../menus/AboutMenu.h"
-// #include "../menus/HelpMenu.h"
-// #include "../menus/TitleMenu.h"
 #include "../Logic.h"
+
+void CatEntity__tick(Entity* entity);
+void CatEntity__tick(Entity* entity);
+void CatSpawnBlock__tick(Entity* entity);
+void DebugText__tick(Entity* entity);
+void Player__tick(Entity* entity);
+void RubbleSprite__tick(Entity* entity);
+void SkyBox__tick(Entity* entity);
+void SpawnBlock__tick(Entity* entity);
+
+void BreakBlock__action(Entity* entity, void* action);
+void CatEntity__action(Entity* entity, void* action);
+void CatEntity__collide(Entity* entity, void* action);
+void RedWallBlock__action(Entity* entity, void* action);
 
 extern Engine__State* g_engine;
 

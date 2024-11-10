@@ -1,6 +1,5 @@
 #include "Level.h"
 
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
 #include "../common/Bmp.h"
@@ -25,7 +24,7 @@ extern Engine__State* g_engine;
 
 Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
-  level->bmp = NULL;
+  level->bmp = 0;
   level->entities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
@@ -41,12 +40,12 @@ void Level__init(Level* level) {
   level->wallCol = 0;
   level->ceilCol = 0;
   level->floorCol = 0;
-  level->spawner = NULL;
+  level->spawner = 0;
 }
 
 static Entity* Level__makeEntity(u32 col, f32 x, f32 y) {
   if (0xff000000 == col) {  // black; empty space
-    return NULL;
+    return 0;
   } else if (0xffffffff == col) {  // white
     WallBlock* block = Arena__Push(g_engine->arena, sizeof(WallBlock));
     WallBlock__init((Entity*)block, x, y);
@@ -70,7 +69,7 @@ static Entity* Level__makeEntity(u32 col, f32 x, f32 y) {
   }
 
   LOG_DEBUGF("Unimplemented Level Block pixel color %08x", col);
-  return NULL;
+  return 0;
 }
 
 void Level__preload(Level* level) {
@@ -99,9 +98,9 @@ s32 Level__zsort(void* a, void* b) {
 
   // get position relative to player camera
   HMM_Vec3 adPos = HMM_SubV3(cPos, aPos);
-  f32 alen = fabsf(HMM_LenV3(adPos));
+  f32 alen = Math__fabsf(HMM_LenV3(adPos));
   HMM_Vec3 bdPos = HMM_SubV3(cPos, bPos);
-  f32 blen = fabsf(HMM_LenV3(bdPos));
+  f32 blen = Math__fabsf(HMM_LenV3(bdPos));
 
   return alen < blen ? -1 : alen > blen ? +1 : 0;
 }
@@ -117,7 +116,7 @@ static void Level__loaded(Level* level) {
     for (s32 x = 0; x < level->bmp->w; x++) {
       u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
       Entity* entity = Level__makeEntity(color, x, y);
-      if (NULL != entity) {
+      if (0 != entity) {
         List__append(g_engine->arena, level->entities, entity);
       }
     }
@@ -126,10 +125,10 @@ static void Level__loaded(Level* level) {
 
 void Level__tick(Level* level) {
   PROFILE__BEGIN(LEVEL__TICK);
-  if (NULL == level->entities || 0 == level->entities->len) return;
+  if (0 == level->entities || 0 == level->entities->len) return;
   g_engine->entity_count =  // for perf counters
       level->entities->len +  //
-      (NULL == level->zentities ? 0 : level->zentities->len) +  //
+      (0 == level->zentities ? 0 : level->zentities->len) +  //
       g_engine->logic->ui_entities->len;
   Logic__State* logic = g_engine->logic;
 
@@ -166,7 +165,7 @@ void Level__tick(Level* level) {
 
       Dispatcher__call1(entity->engine->tick, entity);
 
-      if (NULL != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
+      if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
         List__insort(logic->frameArena, level->zentities, entity, Level__zsort);
       } else {
         List__append(logic->frameArena, level->nzentities, entity);
@@ -183,13 +182,13 @@ void Level__render(Level* level) {
   Level__loaded(level);
   if (!level->loaded) return;
 
-  if (NULL == level->entities || 0 == level->entities->len) return;
+  if (0 == level->entities || 0 == level->entities->len) return;
 
   List* sky = List__alloc(g_engine->logic->frameArena);
   List__append(g_engine->logic->frameArena, sky, level->cubemap);
   MeshRenderer__renderBatches(sky);
 
-  if (NULL != level->nzentities) {
+  if (0 != level->nzentities) {
     List__Node* node = level->nzentities->head;
     for (u32 i = 0; i < level->nzentities->len; i++) {
       Entity* entity = node->data;
@@ -201,7 +200,7 @@ void Level__render(Level* level) {
     MeshRenderer__renderBatches(level->nzentities);
   }
 
-  if (NULL != level->zentities) {
+  if (0 != level->zentities) {
     List__Node* node = level->zentities->head;
     for (u32 i = 0; i < level->zentities->len; i++) {
       Entity* entity = node->data;

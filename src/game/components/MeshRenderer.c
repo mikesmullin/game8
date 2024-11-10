@@ -1,8 +1,5 @@
 #include "MeshRenderer.h"
 
-#include <math.h>
-
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../../../vendor/sokol/sokol_gfx.h"
 #include "../Logic.h"
 #include "../common/Arena.h"

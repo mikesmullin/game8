@@ -1,8 +1,5 @@
 #include "Player.h"
 
-#include <math.h>
-
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
 #include "../behaviortrees/Action.h"
 #include "../common/Arena.h"
@@ -195,7 +192,7 @@ void Player__tick(Entity* entity) {
 
     f32 xm = self->joy.xAxis;
     f32 zm = self->joy.zAxis;
-    f32 d = sqrtf(xm * xm + zm * zm);
+    f32 d = Math__sqrtf(xm * xm + zm * zm);
     if (0 != self->joy.zAxis && 0 != self->joy.xAxis) {
       // normalize diagonal movement, so it is not faster
       entity->rb->xa /= SQRT_TWO;
@@ -251,7 +248,7 @@ void Player__tick(Entity* entity) {
         Entity* other = (Entity*)matchData[i];
         if (entity == other) continue;
 
-        if (NULL != other->engine && 0 != other->engine->action &&
+        if (0 != other->engine && 0 != other->engine->action &&
             HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call2(
               other->engine->action,

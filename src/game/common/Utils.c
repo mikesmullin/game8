@@ -1,7 +1,6 @@
 #include "Utils.h"
 
 #include <ctype.h>
-#include <math.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -168,7 +167,7 @@ u64 msscanf(const char* input, const char* format, ...) {
 }
 
 f32 mwave(f32 ms, f32 a, f32 b) {
-  return Math__map(sinf(g_engine->now / ms), -1, 1, a, b);
+  return Math__map(Math__sinf(g_engine->now / ms), -1, 1, a, b);
 }
 
 void hexdump(const void* data, u32 len, char* out, u32 maxLen) {

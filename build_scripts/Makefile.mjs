@@ -1,10 +1,12 @@
 import { glob } from 'glob'
 import cbFs from 'fs';
 import fs from 'fs/promises';
+import { createReadStream } from 'fs';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
+import readline from 'readline';
 
 const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
@@ -21,6 +23,8 @@ const absBuild = (...args) => path.join(workspaceFolder, BUILD_PATH, ...args);
 const absWs = (...args) => path.join(workspaceFolder, ...args);
 const relBuild = (...args) => path.relative(path.join(workspaceFolder, BUILD_PATH), path.join(...args));
 const relWs = (...args) => path.relative(path.join(workspaceFolder), path.join(...args));
+const repeat = (n, s) => new Array(n).fill(s).join('');
+const indent = (n, s) => s.replace(/^/gm, repeat(n, '  '));
 const DEBUG_COMPILER_ARGS = [
   '-O0',
   // export debug symbols (x86dbg understands both; turn these on when debugging, leave off for faster compile)
@@ -471,6 +475,58 @@ const run_web = async (basename) => {
   return r1.code;
 }
 
+const fs_exists = async (file) => {
+  try {
+    const stat = await fs.stat(file);
+    return true;
+  } catch (e) {
+    return false;
+  }
+};
+
+const extract_include_units = async function* (opts) {
+  if (!opts) opts = {};
+  if (!opts.file) return;
+  if (undefined == opts.depth) opts.depth = 0;
+  if (undefined == opts.seen) opts.seen = new Set();
+  if (undefined == opts.analyze) opts.analyze = false;
+  opts.seen.add(opts.file);
+  const dname1 = path.dirname(opts.file);
+  const rl = readline.createInterface({
+    input: createReadStream(opts.file),
+    crlfDelay: Infinity, // Handle both \n and \r\n newlines
+  });
+  const RX_INCLUDE1 = /^#include "([^"]+)"$/gm;
+  const RX_INCLUDE2 = /^#include <([^"]+)>$/gm;
+  let m;
+  for await (const line of rl) {
+    while (null != (m = RX_INCLUDE1.exec(line))) {
+      const [, include] = m;
+      const cwd = process.cwd();
+      const dname2 = path.dirname(include);
+      const bname = path.basename(include, '.h');
+      const c_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.c`));
+      const c_exists = await fs_exists(c_file);
+      if (c_exists) {
+        if (opts.seen.has(c_file)) continue;
+        opts.seen.add(c_file);
+        yield { c_file, depth: opts.depth };
+        yield* await extract_include_units({
+          file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
+        });
+      }
+    }
+    if (opts.analyze) {
+      while (null != (m = RX_INCLUDE2.exec(line))) {
+        const [, include] = m;
+        if (opts.seen.has(include)) continue;
+        opts.seen.add(include);
+        yield { c_file: `<${include}>`, depth: opts.depth };
+      }
+    }
+  }
+};
+
 // like rspec
 //
 // usage:
@@ -485,8 +541,6 @@ const test = async () => {
   overall.compileLap = 0, overall.execLap = 0, overall.lap = 0;
   overall.available = COMPILER_TRANSLATION_UNITS_TESTS.length;
   overall.ran = 0;
-  const repeat = (n, s) => new Array(n).fill(s).join('');
-  const indent = (n, s) => s.replace(/^/gm, repeat(n, '  '));
   for (const arg of process.argv) {
     if (arg.startsWith('--filter=')) {
       const [, filter] = arg.split('=');
@@ -494,19 +548,19 @@ const test = async () => {
     }
   }
 
-  const unit_files = [];
+  // const unit_files = [];
   // for (const u of COMPILER_TRANSLATION_UNITS) {
   //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
   //     unit_files.push(file);
   //   }
   // }
-  for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
-    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-      if (!ENGINE_ONLY.includes(nixPath(file))) {
-        unit_files.push(relWs(workspaceFolder, file));
-      }
-    }
-  }
+  // for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
+  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+  //     if (!ENGINE_ONLY.includes(nixPath(file))) {
+  //       unit_files.push(relWs(workspaceFolder, file));
+  //     }
+  //   }
+  // }
 
   for (const u of COMPILER_TRANSLATION_UNITS_TESTS) {
     for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
@@ -531,6 +585,15 @@ const test = async () => {
       }
       overall.ran++;
 
+      // discover included translation unit files
+      // ie. we have a naming convention .h may have a matching .c
+      const unit_files = [];
+      for await (const m of extract_include_units({ file: unit })) {
+        if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
+          unit_files.push(relWs(workspaceFolder, m.c_file));
+        }
+      }
+
       // compile and link in one step
       const started1 = performance.now();
       const basename = path.basename(unit, '.c');
@@ -545,7 +608,7 @@ const test = async () => {
         // ...C_COMPILER_INCLUDES,
         // ...LINKER_LIBS,
         // ...LINKER_LIB_PATHS,
-        ...unit_files.map(unit => relWs(workspaceFolder, unit)),
+        ...unit_files,
         unit,
         '-o', executable,
       ], { buffer: true });
@@ -578,11 +641,11 @@ const test = async () => {
         console.log(`\n${overall.ran}) ${result.description}`);
       }
       else {
-        console.log(`\n${overall.ran}) ${result.basename}`);
+        console.log(`\n${overall.ran}) ${result.basename} `);
       }
 
       if (0 != result.compileLap > 1000) {
-        console.log(chalk.yellow(indent(1, `Compilation took ${result.compileLap.toFixed(2)}ms!`)));
+        console.log(chalk.yellow(indent(1, `Compilation took ${result.compileLap.toFixed(2)} ms!`)));
         console.log(chalk.grey(indent(1, result.compileCmd)));
       }
       else if (0 != result.compileCode) {
@@ -590,7 +653,7 @@ const test = async () => {
       }
 
       if (0 != result.compileCode) {
-        console.error(chalk.red(indent(1, `compilation failed. code: ${result.compileCode}`)));
+        console.error(chalk.red(indent(1, `compilation failed.code: ${result.compileCode} `)));
         if (result.compileOut) {
           console.error(chalk.red(indent(2, result.compileOut)));
         }
@@ -601,14 +664,14 @@ const test = async () => {
 
       if (result.pass) {
         overall.passes++;
-        console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode}`)));
+        console.log(chalk.green(indent(1, `process succeeded.code: ${result.execCode} `)));
         if (result.execOut) {
           console.log(chalk.green(indent(2, result.execOut)));
         }
       }
       else if (result.fail) {
         overall.fails++;
-        console.error(chalk.red(indent(1, `process failed. code: ${result.execCode}`)));
+        console.error(chalk.red(indent(1, `process failed.code: ${result.execCode} `)));
         if (result.execOut) {
           console.error(chalk.red(indent(2, result.execOut)));
         }
@@ -626,7 +689,7 @@ const test = async () => {
     }
   }
 
-  console.log(`\nFinished in ${overall.lap.toFixed(2)}ms, compiled in ${overall.compileLap.toFixed(2)}ms, execed in ${overall.execLap.toFixed(2)}ms.`);
+  console.log(`\nFinished in ${overall.lap.toFixed(2)} ms, compiled in ${overall.compileLap.toFixed(2)} ms, execed in ${overall.execLap.toFixed(2)} ms.`);
 
   const color = overall.fails > 0 ? 'red' : overall.passes > 0 ? 'green' : 'white';
   console['red' == color ? 'error' : 'log'](chalk[color](`${overall.ran} run, ${overall.fails} failures, ${overall.skips} skips. (${overall.available} found)`));
@@ -637,68 +700,75 @@ const test = async () => {
 
 (async () => {
   const [, , ...cmds] = process.argv;
-  loop:
-  for (const cmd of cmds) {
-    if (cmd.startsWith('--')) continue;
-    let code;
-    switch (cmd) {
-      case 'all':
-        code = await all(false);
-        if (0 != code) process.exit(code);
-        break;
-      case 'web':
-        web();
-        break;
-      case 'clean':
-        await clean();
-        break;
-      case 'copy_dlls':
-        await copy_dlls();
-        break;
-      case 'shaders':
-        await shaders('hlsl5:glsl430');
-        // await shaders('glsl300es');
-        break;
-      case 'clang':
-        await generate_clangd_compile_commands();
-        break;
-      case 'main':
-        await compile(cmd);
-        break;
-      case 'reload':
-        await compile_reload("src/game/Logic.c.dll");
-        break;
-      case 'watch':
-        await watch();
-        break;
-      case 'loop':
-        await all_loop();
-        break;
-      case 'test':
-        code = await test();
-        if (0 != code) process.exit(code);
-        break;
-      case 'help':
-      default:
-        console.log(`
+  const [cmd] = cmds;
+  let code;
+  switch (cmd) {
+    case 'all':
+      code = await all(false);
+      if (0 != code) process.exit(code);
+      break;
+    case 'web':
+      web();
+      break;
+    case 'clean':
+      await clean();
+      break;
+    case 'copy_dlls':
+      await copy_dlls();
+      break;
+    case 'shaders':
+      await shaders('hlsl5:glsl430');
+      // await shaders('glsl300es');
+      break;
+    case 'clang':
+      await generate_clangd_compile_commands();
+      break;
+    case 'main':
+      await compile(cmd);
+      break;
+    case 'reload':
+      await compile_reload("src/game/Logic.c.dll");
+      break;
+    case 'watch':
+      await watch();
+      break;
+    case 'loop':
+      await all_loop();
+      break;
+    case 'test':
+      code = await test();
+      if (0 != code) process.exit(code);
+      break;
+    case 'analyze':
+      let [, , , file, analyze] = process.argv;
+      analyze = '--analyze' == analyze;
+      let i = 0;
+      for await (const unit of extract_include_units({ file, analyze })) {
+        console.log(indent(unit.depth, unit.c_file));
+        i++;
+      }
+      break;
+    case 'help':
+    default:
+      console.log(`
 Mike's hand-rolled build system.
 
-USAGE:
+    USAGE:
 node build_scripts\\Makefile.mjs < SUBCOMMAND >
 
-SUBCOMMANDS:
+      SUBCOMMANDS:
   all        Clean, rebuild, and launch the default app.
   web        Clean, rebuild, and launch the default app in browser.
   clean      Delete all build output.
   copy_dlls  Copy dynamic libraries to build directory.
   shaders    Compile SPIRV shaders with GLSLC.
   clang      Generate the.json file needed for clangd for vscode extension.
-  watch      Watch for changes, recompile .dll.
+  watch      Watch for changes, recompile.dll.
   loop       Watch for changes, recompile all.
   main       Compile and run the main app
   test       Compile and run the test suite
-  `);
-        break loop;
-    }
+  analyze    Print include tree for a given file
+      `);
+      break;
   }
 })();

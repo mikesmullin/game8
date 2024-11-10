@@ -1,8 +1,5 @@
 #include "AudioSource.h"
 
-#include <math.h>
-
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
 #include "../common/Audio.h"
 #include "../common/Log.h"
@@ -15,7 +12,7 @@ void AudioSource__play(Entity* entity, WavReader* sound) {
   f32 MAX_HEAR_DIST = 15.0f;
   Player* player = (Player*)g_engine->logic->player;
   // only play if listener is near
-  if (NULL != player->base.hear) {
+  if (0 != player->base.hear) {
     // calc pan value
     HMM_Vec3 p1_minus_p0, forward, right, up = HMM_V3(0, 1, 0);
     f32 pan_value;
@@ -49,7 +46,7 @@ void AudioSource__play(Entity* entity, WavReader* sound) {
         HMM_V3(player->base.tform->pos.x, player->base.tform->pos.y, player->base.tform->pos.z),
         HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z)));
     f32 d2 = Math__map(
-        Math__clamp(2, fabs(d1), MAX_HEAR_DIST),  //
+        Math__clamp(2, Math__fabsf(d1), MAX_HEAR_DIST),  //
         2,
         MAX_HEAR_DIST,  //
         1,
