@@ -478,9 +478,9 @@ const run_web = async (basename) => {
 const fs_exists = async (file) => {
   try {
     const stat = await fs.stat(file);
-    return true;
+    return { exists: true, stat };
   } catch (e) {
-    return false;
+    return { exists: false };
   }
 };
 
@@ -506,7 +506,7 @@ const extract_include_units = async function* (opts) {
       const dname2 = path.dirname(include);
       const bname = path.basename(include, '.h');
       const c_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.c`));
-      const c_exists = await fs_exists(c_file);
+      const { exists: c_exists } = await fs_exists(c_file);
       if (c_exists) {
         if (opts.seen.has(c_file)) continue;
         opts.seen.add(c_file);
@@ -525,6 +525,29 @@ const extract_include_units = async function* (opts) {
       }
     }
   }
+};
+
+const recompile_object = async (unit) => {
+  const basename = path.basename(unit, '.c');
+  const out_path = path.join(workspaceFolder, BUILD_PATH, relWs(unit).replace(/\.c$/, ''));
+  const object = relWs(path.join(out_path, `${basename}.o`));
+  await fs.mkdir(out_path, { recursive: true });
+  const { stat: { mtime: unit_mtime } } = await fs_exists(unit);
+  const { stat: { mtime: object_mtime } } = await fs_exists(object);
+  let r1;
+  if (unit_mtime > object_mtime) {
+    r1 = await child_spawn(C_COMPILER_PATH, [
+      ...DEBUG_COMPILER_ARGS,
+      ...C_COMPILER_ARGS,
+      ...C_ENGINE_COMPILER_FLAGS,
+      // ...C_COMPILER_INCLUDES,
+      // ...LINKER_LIBS,
+      // ...LINKER_LIB_PATHS,
+      '-c', unit, // compile without linking
+      '-o', object,
+    ], { buffer: true });
+  }
+  return { unit, object, r: r1 };
 };
 
 // like rspec
@@ -587,10 +610,11 @@ const test = async () => {
 
       // discover included translation unit files
       // ie. we have a naming convention .h may have a matching .c
-      const unit_files = [];
+      const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
         if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
-          unit_files.push(relWs(workspaceFolder, m.c_file));
+          const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+          object_files.push(r.object);
         }
       }
 
@@ -608,7 +632,7 @@ const test = async () => {
         // ...C_COMPILER_INCLUDES,
         // ...LINKER_LIBS,
         // ...LINKER_LIB_PATHS,
-        ...unit_files,
+        ...object_files,
         unit,
         '-o', executable,
       ], { buffer: true });
@@ -653,7 +677,7 @@ const test = async () => {
       }
 
       if (0 != result.compileCode) {
-        console.error(chalk.red(indent(1, `compilation failed.code: ${result.compileCode} `)));
+        console.error(chalk.red(indent(1, `compilation failed. code: ${result.compileCode} `)));
         if (result.compileOut) {
           console.error(chalk.red(indent(2, result.compileOut)));
         }
@@ -664,14 +688,14 @@ const test = async () => {
 
       if (result.pass) {
         overall.passes++;
-        console.log(chalk.green(indent(1, `process succeeded.code: ${result.execCode} `)));
+        console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode} `)));
         if (result.execOut) {
           console.log(chalk.green(indent(2, result.execOut)));
         }
       }
       else if (result.fail) {
         overall.fails++;
-        console.error(chalk.red(indent(1, `process failed.code: ${result.execCode} `)));
+        console.error(chalk.red(indent(1, `process failed. code: ${result.execCode} `)));
         if (result.execOut) {
           console.error(chalk.red(indent(2, result.execOut)));
         }
