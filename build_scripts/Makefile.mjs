@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { spawn } from 'child_process';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk';
 
 const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
@@ -27,7 +28,7 @@ const DEBUG_COMPILER_ARGS = [
   '-g', /* '-gcodeview',*/ // CodeView (PDB / windbg / Windows compatible)
 ];
 const C_COMPILER_ARGS = [
-  '-m64', // generate 64-bit executable 
+  // '-m64', // generate 64-bit executable
 
   // ignore specific warnings
   '-Wno-microsoft-enum-forward-reference',
@@ -81,6 +82,9 @@ const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   relWs(workspaceFolder, 'assets', 'web', '*'),
 ];
+const COMPILER_TRANSLATION_UNITS_TESTS = [
+  relWs(workspaceFolder, 'test', '**', '*.c'),
+];
 
 const EDITOR_INCLUDES = [
   `-I${relBuild(workspaceFolder, 'vendor', 'emsdk', 'upstream', 'emscripten', 'cache', 'sysroot', 'include')}`,
@@ -121,33 +125,36 @@ const generate_clangd_compile_commands = async () => {
 };
 
 const child_spawn = async (cmd, args = [], opts = {}) => {
-  console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
-  let stdin, stdout;
-  const stdio = ['inherit', 'inherit', 'inherit'];
-  if (opts.stdin) {
-    stdio[0] = 'pipe';
-    // stdin = cbFs.createReadStream(path.join(workspaceFolder, stdinfile));
+  if (!opts.buffer) {
+    console.log(`${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`);
   }
-  if (opts.stdout) {
-    stdio[1] = 'pipe';
-    // stdout = await cbFs.createWriteStream(path.join(workspaceFolder, stdoutfile));
+  let stdio = ['inherit', 'inherit', 'inherit'];
+  let buf = false, outBuf = '', errBuf = '';
+  if (opts.buffer) {
+    buf = true;
+    delete opts.buffer;
+    stdio = ['inherit', 'pipe', 'pipe'];
   }
   const child = spawn(cmd, args, { stdio });
-  if (opts.stdin) {
-    stdin.pipe(child.stdin);
-  }
-  if (opts.stdout) {
-    child.stdout.pipe(stdout);
+  if (buf) {
+    child.stdout.on('data', (data) => {
+      outBuf += data.toString();
+    });
+    child.stderr.on('data', (data) => {
+      errBuf += data.toString();
+    });
   }
   const code = await new Promise((ok) => {
     child.on('close', async (code) => {
       if (code !== 0) {
-        console.log(`process exited with code ${code}`);
+        if (!buf) {
+          console.log(`process exited with code ${code}`);
+        }
       }
       ok(code);
     });
   });
-  return code;
+  return { code, stdout: outBuf, stderr: errBuf };
 };
 
 const all = async (autorun) => {
@@ -191,10 +198,10 @@ const shaders = async (out_type) => {
   const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
   for (const shaderFile of shaderFiles) {
     const relPath = path.relative(path.join(workspaceFolder), shaderFile);
-    const code = await child_spawn(SDHC_PATH, ['-i',
+    const r1 = await child_spawn(SDHC_PATH, ['-i',
       relPath, '-o', `${relPath}.h`,
       '-l', out_type]);
-    if (0 !== code) return code;
+    if (0 !== r1.code) return r1.code;
   }
   return 0;
 };
@@ -222,7 +229,7 @@ const compile = async (basename) => {
   }
 
   // compile and link in one step
-  const code = await child_spawn(C_COMPILER_PATH, [
+  const r1 = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     ...C_COMPILER_ARGS,
     ...C_ENGINE_COMPILER_FLAGS,
@@ -233,9 +240,9 @@ const compile = async (basename) => {
     '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);
 
-  if (0 == code) console.log("done compiling.");
+  if (0 == r1.code) console.log("done compiling.");
   else console.log("compile failed.");
-  return code;
+  return r1.code;
 };
 
 function generateRandomString(length) {
@@ -292,7 +299,7 @@ const compile_reload = async (outname) => {
   if (ANALYZE) await child_spawn(ANALYZER, ['--start', 'src/game']);
 
   const started = performance.now();
-  const code = await child_spawn(C_COMPILER_PATH, [
+  const r1 = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
@@ -325,8 +332,8 @@ const compile_reload = async (outname) => {
     console.log('copy failed.', e);
   }
 
-  console.log(`recompilation ${0 == code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`);
-  return code;
+  console.log(`recompilation ${0 == r1.code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`);
+  return r1.code;
 };
 
 const watch = async () => {
@@ -405,7 +412,7 @@ const compile_web = async (basename) => {
   }
 
   // compile and link in one step
-  const code = await child_spawn(EMCC_COMPILER_PATH, [
+  const r1 = await child_spawn(EMCC_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     '-gsource-map',
     // ...C_COMPILER_ARGS,
@@ -426,7 +433,7 @@ const compile_web = async (basename) => {
   }
 
   console.log("done compiling.");
-  return code;
+  return r1.code;
 };
 
 const run_web = async (basename) => {
@@ -443,22 +450,162 @@ const run_web = async (basename) => {
   // const serve_root = path.relative(path.join(workspaceFolder, BUILD_PATH), process.cwd());
   // console.log(serve_root);
   console.log("http://localhost:9090/build/main.html");
-  const code = await child_spawn(EMRUN_PATH, [
+  const r1 = await child_spawn(EMRUN_PATH, [
     '--port', 9090,
     // '--serve-root', serve_root,
     '--no-browser',
     html,
   ]);
-  return code;
+  return r1.code;
 }
+
+// like rspec
+//
+// usage:
+//    # run only jobs with `// @tag net` metadata
+//    node build_scripts\\Makefile.mjs test --filter=net
+//
+const test = async () => {
+  const results = [], overall = {};
+  overall.filters = [];
+  overall.results = results;
+  overall.passes = 0, overall.fails = 0, overall.skips = 0;
+  overall.compileLap = 0, overall.execLap = 0, overall.lap = 0;
+  overall.available = COMPILER_TRANSLATION_UNITS_TESTS.length;
+  overall.ran = 0;
+  const repeat = (n, s) => new Array(n).fill(s).join('');
+  const indent = (n, s) => s.replace(/^/gm, repeat(n, '  '));
+  for (const arg of process.argv) {
+    if (arg.startsWith('--filter=')) {
+      const [, filter] = arg.split('=');
+      overall.filters.push(filter);
+    }
+  }
+
+  for (const u of COMPILER_TRANSLATION_UNITS_TESTS) {
+    for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+      const result = {};
+      unit = relWs(workspaceFolder, unit);
+
+      // read file metadata
+      const c = await fs.readFile(unit, { encoding: 'utf8' });
+      const RX_META = /^\/\/ @(\w+) (.+)$/gm;
+      let m;
+      while (null != (m = RX_META.exec(c))) {
+        const [, k, v] = m;
+        if ('describe' == k) result.description = v;
+        if ('tag' == k) !result.tags && (result.tags = ''), result.tags += ',' + v;
+      }
+      if (result.tags && !overall.filters.some(t => result.tags.includes(t))) {
+        result.pass = false, result.fail = false, result.skip = true;
+        results.push(result);
+        overall.skips++;
+        continue;
+      }
+      overall.ran++;
+
+      // compile and link in one step
+      const started1 = performance.now();
+      const basename = path.basename(unit, '.c');
+      result.basename = basename;
+      const test_out_path = path.join(workspaceFolder, BUILD_PATH, 'test');
+      const executable = relWs(path.join(test_out_path, `${basename}${isWin ? '.exe' : ''}`));
+      await fs.mkdir(test_out_path, { recursive: true });
+      const r1 = await child_spawn(C_COMPILER_PATH, [
+        ...DEBUG_COMPILER_ARGS,
+        ...C_COMPILER_ARGS,
+        // ...C_ENGINE_COMPILER_FLAGS,
+        // ...C_COMPILER_INCLUDES,
+        // ...LINKER_LIBS,
+        // ...LINKER_LIB_PATHS,
+        unit,
+        '-o', executable,
+      ], { buffer: true });
+      result.compileCode = r1.code, result.compileOut = r1.stdout, result.compileErr = r1.stderr;
+      const ended1 = performance.now();
+      result.compileLap = ended1 - started1; // ms
+      if (0 == result.compileCode) {
+        // execute test
+        const started2 = performance.now();
+        if (isNix || isMac) {
+          await fs.chmod(executable, 0o755); // chmod +x
+        }
+        const r2 = await child_spawn(executable, [], { buffer: true });
+        result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
+        const ended2 = performance.now();
+        result.execLap = ended2 - started2; // ms
+      }
+
+      overall.compileLap += result.compileLap;
+      overall.execLap += result.execLap;
+      overall.lap += overall.compileLap + overall.execLap;
+      result.pass = true, result.fail = false, result.skip = false;
+      if (0 != result.compileCode || 0 != result.execCode) {
+        result.pass = false, result.fail = true, result.skip = false;
+      }
+
+      if (result.description) {
+        console.log(`\n${overall.ran}) ${result.description}`);
+      }
+      else {
+        console.log(`\n${overall.ran}) ${result.basename}`);
+      }
+
+      if (0 != result.compileCode) {
+        console.error(chalk.red(indent(1, `compilation failed. code: ${result.compileCode}`)));
+        if (result.compileOut) {
+          console.error(chalk.red(indent(2, result.compileOut)));
+        }
+        if (result.compileErr) {
+          console.error(chalk.red(indent(2, result.compileErr)));
+        }
+      }
+
+      if (result.pass) {
+        overall.passes++;
+        console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode}`)));
+        if (result.execOut) {
+          console.log(chalk.green(indent(2, result.execOut)));
+        }
+      }
+      else if (result.fail) {
+        overall.fails++;
+        console.error(chalk.red(indent(1, `process failed. code: ${result.execCode}`)));
+        if (result.execOut) {
+          console.error(chalk.red(indent(2, result.execOut)));
+        }
+      }
+
+      if (result.execErr) {
+        console.log(chalk.red(indent(2, result.execErr)));
+      }
+
+      results.push(result);
+
+      if (!result.pass) {
+        break;
+      }
+    }
+  }
+
+  console.log(`\nFinished in ${overall.lap.toFixed(2)}ms, compiled in ${overall.compileLap.toFixed(2)}ms, execed in ${overall.execLap.toFixed(2)}ms.`);
+
+  const color = overall.fails > 0 ? 'red' : overall.passes > 0 ? 'green' : 'white';
+  console['red' == color ? 'error' : 'log'](chalk[color](`${overall.ran} run, ${overall.fails} failures, ${overall.skips} skips. (${overall.available} found)`));
+
+  // console.debug('overall', overall);
+  return overall.fails > 0 ? 1 : 0;
+};
 
 (async () => {
   const [, , ...cmds] = process.argv;
   loop:
   for (const cmd of cmds) {
+    if (cmd.startsWith('--')) continue;
+    let code;
     switch (cmd) {
       case 'all':
-        const code = await all(false);
+        code = await all(false);
         if (0 != code) process.exit(code);
         break;
       case 'web':
@@ -489,6 +636,10 @@ const run_web = async (basename) => {
       case 'loop':
         await all_loop();
         break;
+      case 'test':
+        code = await test();
+        if (0 != code) process.exit(code);
+        break;
       case 'help':
       default:
         console.log(`
@@ -507,6 +658,7 @@ SUBCOMMANDS:
   watch      Watch for changes, recompile .dll.
   loop       Watch for changes, recompile all.
   main       Compile and run the main app
+  test       Compile and run the test suite
   `);
         break loop;
     }
