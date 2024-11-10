@@ -10,13 +10,15 @@
 #include "common/Log.h"
 #include "common/Math.h"
 #include "common/Profiler.h"
-#include "components/MeshRenderer.h"
 #include "entities/Screen.h"
 
 #ifdef __EMSCRIPTEN__
 #define LOGIC_DECL
-#else
+#endif
+#ifdef _WIN32
 #define LOGIC_DECL __declspec(dllexport)
+#else
+#define LOGIC_DECL __attribute__((visibility("default")))
 #endif
 
 Engine__State* g_engine;
@@ -284,25 +286,16 @@ LOGIC_DECL void logic_onfixedupdate(void) {
 LOGIC_DECL void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
+  // 1st pass
   g_engine->sg_begin_pass(logic->pass1);
   Game__render();
   Game__gui();
   g_engine->sg_end_pass();
 
-  // 2nd pass: apply pixelized post-processing effect
+  // 2nd pass
   logic->pass2->swapchain = g_engine->sglue_swapchain();
   g_engine->sg_begin_pass(logic->pass2);
-  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
-  Sprite* screen = (Sprite*)logic->screen->head->data;
-  // f32 w = g_engine->window_width, h = g_engine->window_height;
-  // f32 sw = w / SCREEN_SIZE, sh = h / SCREEN_SIZE;
-  // f32 u = Math__min(sw, sh);
-  screen->base.tform->scale.x = screen->base.tform->scale.y = SCREEN_SIZE * 0.95f;
-  screen->base.tform->rot.x = 0;
-  screen->base.tform->rot.y = 0;
-  screen->base.tform->rot.z = 180;
-  MeshRenderer__renderBatches(logic->screen);
-  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
+  Game__postprocessing();
   g_engine->sg_end_pass();
 
   g_engine->sg_commit();

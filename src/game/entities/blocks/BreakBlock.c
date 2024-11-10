@@ -8,7 +8,6 @@
 #include "../../common/Preloader.h"
 #include "../../common/Profiler.h"
 #include "../../components/AudioSource.h"
-#include "../../components/MeshRenderer.h"
 #include "../../levels/Level.h"
 #include "../RubbleSprite.h"
 #include "Block.h"

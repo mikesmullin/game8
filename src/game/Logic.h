@@ -285,7 +285,7 @@ typedef struct AudioSourceComponent {
 
 // Entities ----------------------------------------------
 
-typedef enum EntityTags1 : u64 {
+typedef enum EntityTags1 {
   TAG_NONE = 0,
   TAG_LOADED = 1 << 1,
   TAG_WALL = 1 << 2,
@@ -379,7 +379,7 @@ typedef struct Action {
   Entity* target;
 } Action;
 
-typedef enum SGStateTags1 : u64 {
+typedef enum SGStateTags1 {
   SGST_NONE = 0,  //
   SGST_BUSY = 1 << 1,
 } SGStateTags1;

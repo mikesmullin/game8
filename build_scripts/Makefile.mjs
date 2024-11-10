@@ -318,6 +318,12 @@ const compile_reload = async (outname) => {
   ]);
   const ended = performance.now();
 
+  // TODO: on linux, to analyze with gcc
+  // gcc -std=c11 -ftime-report -Wno-implicit-int ... -lm
+
+  // TODO: `-ftime-trace` is JSON-based profiling outputs 
+  // that can be loaded into Chrome's `chrome://tracing` visualizer
+
   if (ANALYZE) await child_spawn(ANALYZER, ['--stop', analyzer_out_path, analyzer_bin]);
   if (ANALYZE) await child_spawn(ANALYZER, ['--analyze', analyzer_bin]);
 

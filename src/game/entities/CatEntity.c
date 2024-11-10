@@ -13,7 +13,6 @@
 #include "../common/Profiler.h"
 #include "../common/QuadTree.h"
 #include "../components/Collider.h"
-#include "../components/MeshRenderer.h"
 #include "../components/Rigidbody2D.h"
 #include "../stategraphs/SGCat.h"
 #include "../stategraphs/StateGraph.h"

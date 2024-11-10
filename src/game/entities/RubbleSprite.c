@@ -7,7 +7,6 @@
 #include "../common/Log.h"
 #include "../common/Math.h"
 #include "../common/Profiler.h"
-#include "../components/MeshRenderer.h"
 #include "Entity.h"
 #include "Sprite.h"
 

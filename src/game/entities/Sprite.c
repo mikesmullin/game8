@@ -1,13 +1,11 @@
 #include "Sprite.h"
 
-#include "../../../vendor/HandmadeMath/HandmadeMath.h"
 #include "../Logic.h"
 #include "../common/Arena.h"
 #include "../common/Color.h"
 #include "../common/Dispatcher.h"
 #include "../common/Math.h"
 #include "../common/Preloader.h"
-#include "../components/MeshRenderer.h"
 #include "Entity.h"
 
 extern Engine__State* g_engine;

@@ -12,7 +12,6 @@
 #include "../common/Preloader.h"
 #include "../common/Profiler.h"
 #include "../common/Utils.h"
-#include "../components/MeshRenderer.h"
 #include "../levels/Level.h"
 #include "Entity.h"
 #include "Sprite.h"

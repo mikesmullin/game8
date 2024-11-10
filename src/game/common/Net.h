@@ -11,7 +11,7 @@ typedef uint64_t u64;
 
 #define BUFFER_SIZE 1024
 
-typedef enum SocketOpts : u32 {
+typedef enum SocketOpts {
   SERVER_SOCKET,
   CLIENT_SOCKET,
 } SocketOpts;
@@ -21,12 +21,12 @@ typedef struct SocketBuffer {
   char data[BUFFER_SIZE];
 } SocketBuffer;
 
-typedef enum SocketState : u32 {
+typedef enum SocketState {
   SOCKET_NONE,
   SOCKET_CONNECTED,
 } SocketState;
 
-typedef enum SessionState : u32 {
+typedef enum SessionState {
   SESSION_NONE,
   SESSION_SERVER_HANDSHAKE_AWAIT,
   SESSION_SERVER_HANDSHAKE_SENT,

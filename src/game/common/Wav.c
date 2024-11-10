@@ -19,7 +19,7 @@ typedef struct RIFFHeader {
   char format[4];  // "WAVE"
 } RIFFHeader;
 
-typedef enum : u16 {
+typedef enum {
   NONE,
   PCM,
 } WavType;

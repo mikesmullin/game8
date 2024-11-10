@@ -26,7 +26,7 @@
 #ifdef __EMSCRIPTEN__
 #include <emscripten/emscripten.h>
 
-typedef enum WebsocketFnId : u32 {
+typedef enum WebsocketFnId {
   WS_CLIENT_CONNECTION_ERROR = 1,
   WS_CLIENT_ESTABLISHED = 2,
   WS_CLOSED = 3,

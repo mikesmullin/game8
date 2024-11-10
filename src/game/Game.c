@@ -161,6 +161,23 @@ void Game__gui() {
   PROFILE__END(GAME__GUI);
 }
 
+void Game__postprocessing() {
+  Logic__State* logic = g_engine->logic;
+
+  // apply pixelized post-processing effect
+  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
+  Sprite* screen = (Sprite*)logic->screen->head->data;
+  // f32 w = g_engine->window_width, h = g_engine->window_height;
+  // f32 sw = w / SCREEN_SIZE, sh = h / SCREEN_SIZE;
+  // f32 u = Math__min(sw, sh);
+  screen->base.tform->scale.x = screen->base.tform->scale.y = SCREEN_SIZE * 0.95f;
+  screen->base.tform->rot.x = 0;
+  screen->base.tform->rot.y = 0;
+  screen->base.tform->rot.z = 180;
+  MeshRenderer__renderBatches(logic->screen);
+  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
+}
+
 void Game__shutdown() {
   NetMgr__shutdown();
 }

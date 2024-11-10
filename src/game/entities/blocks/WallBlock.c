@@ -5,7 +5,6 @@
 #include "../../common/Dispatcher.h"
 #include "../../common/Log.h"
 #include "../../common/Preloader.h"
-#include "../../components/MeshRenderer.h"
 #include "Block.h"
 
 extern Engine__State* g_engine;

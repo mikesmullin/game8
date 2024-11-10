@@ -6,7 +6,7 @@ typedef uint32_t u32;
 typedef uint64_t u64;
 typedef float f32;
 
-typedef enum MessageId : u32 {
+typedef enum MessageId {
   MSG_NONE,
   MSG_MOVE_REQ,
 } MessageId;

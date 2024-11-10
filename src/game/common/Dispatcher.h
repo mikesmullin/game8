@@ -4,7 +4,7 @@
 typedef uint32_t u32;
 typedef struct Entity Entity;
 
-typedef enum DispatchFnId1 : u32 {
+typedef enum DispatchFnId1 {
   DISPATCH1_NONE,
   CAT_ENTITY__TICK,
   CAT_SPAWN_BLOCK__TICK,
@@ -34,7 +34,7 @@ typedef enum DispatchFnId1 : u32 {
   DISPATCH1__COUNT,
 } DispatchFnId1;
 
-typedef enum DispatchFnId2 : u32 {
+typedef enum DispatchFnId2 {
   DISPATCH2_NONE,
 
   BREAK_BLOCK__ACTION,
