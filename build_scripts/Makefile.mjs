@@ -63,6 +63,7 @@ const C_WEB_COMPILER_FLAGS = [
 const ENGINE_ONLY = [
   'src/app.c',
   'src/lib/HotReload.c',
+  'src/lib/Log.c',
 ];
 const LINKER_LIBS = [];
 // if (isWin) {
@@ -167,13 +168,13 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
 const all = async (autorun) => {
   // await clean();
   await copy_dlls();
-  console.log('shaders');
+  console.log('--shaders--');
   const code1 = await shaders('hlsl5:glsl430');
   if (0 != code1) return code1;
-  console.log('main');
+  console.log('--main--');
   const code2 = await compile('main');
   if (0 != code2) return code2;
-  console.log('dll');
+  console.log('--dll--');
   const code3 = await compile_reload("src/game/Logic.c.dll");
   if (0 != code3) return code3;
   if (autorun) await run('main');
@@ -226,12 +227,24 @@ const clean = async () => {
 const compile = async (basename) => {
   console.log(`compiling ${basename}...`);
 
-  const unit_files = [];
-  for (const u of COMPILER_TRANSLATION_UNITS) {
-    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-      // if (ENGINE_ONLY.includes(nixPath(file))) {
-      unit_files.push(file);
-      // }
+  // const unit_files = [];
+  // for (const u of COMPILER_TRANSLATION_UNITS) {
+  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+  //     // if (ENGINE_ONLY.includes(nixPath(file))) {
+  //     unit_files.push(file);
+  //     // }
+  //   }
+  // }
+
+  const unit = 'src/app.c';
+
+  // discover included translation unit files
+  // ie. we have a naming convention .h may have a matching .c
+  const object_files = [];
+  for await (const m of extract_include_units({ file: unit })) {
+    if (ENGINE_ONLY.includes(nixPath(m.c_file))) {
+      const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+      object_files.push(r.object);
     }
   }
 
@@ -243,7 +256,8 @@ const compile = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
-    ...unit_files.map(unit => relWs(workspaceFolder, unit)),
+    ...object_files,
+    unit,
     '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
   ]);
 
@@ -267,17 +281,28 @@ const compile_reload = async (outname) => {
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });
 
-  const dsts = [];
-  for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
-    for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-      if (!ENGINE_ONLY.includes(nixPath(file))) {
-        dsts.push(relWs(workspaceFolder, file));
-      }
-    }
-  }
+  // const dsts = [];
+  // for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
+  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+  //     if (!ENGINE_ONLY.includes(nixPath(file))) {
+  //       dsts.push(relWs(workspaceFolder, file));
+  //     }
+  //   }
+  // }
 
   const unit = 'src/game/Logic.c';
   await fs.mkdir(absBuild(path.dirname(unit)), { recursive: true });
+
+  // discover included translation unit files
+  // ie. we have a naming convention .h may have a matching .c
+  const object_files = [];
+  for await (const m of extract_include_units({ file: unit })) {
+    if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
+      const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+      object_files.push(r.object);
+    }
+  }
+
   // const src = relWs(workspaceFolder, unit);
   const target = outname;
   const dst = relWs(workspaceFolder, BUILD_PATH, target);
@@ -317,7 +342,7 @@ const compile_reload = async (outname) => {
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
     '-shared',
-    ...dsts,
+    ...object_files,
     '-o', dst,
   ]);
   const ended = performance.now();
@@ -480,7 +505,7 @@ const fs_exists = async (file) => {
     const stat = await fs.stat(file);
     return { exists: true, stat };
   } catch (e) {
-    return { exists: false };
+    return { exists: false, stat: { mtime: null } };
   }
 };
 
@@ -612,10 +637,10 @@ const test = async () => {
       // ie. we have a naming convention .h may have a matching .c
       const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
-        if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
-          const r = await recompile_object(relWs(workspaceFolder, m.c_file));
-          object_files.push(r.object);
-        }
+        // if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
+        const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+        object_files.push(r.object);
+        // }
       }
 
       // compile and link in one step
