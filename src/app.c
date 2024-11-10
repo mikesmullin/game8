@@ -1,3 +1,5 @@
+#include <string.h>
+
 #define SOKOL_IMPL
 #include "../vendor/sokol/sokol_app.h"
 #include "../vendor/sokol/sokol_audio.h"

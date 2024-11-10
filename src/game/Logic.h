@@ -49,7 +49,6 @@ typedef struct sg_pipeline sg_pipeline;
 typedef struct sg_pipeline_desc sg_pipeline_desc;
 typedef struct saudio_desc saudio_desc;
 typedef struct sg_pass sg_pass;
-typedef struct sg_pipeline sg_pipeline;
 typedef struct sg_desc sg_desc;
 typedef struct sg_bindings sg_bindings;
 typedef struct sg_pass_action sg_pass_action;
