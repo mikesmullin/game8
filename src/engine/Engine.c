@@ -10,6 +10,7 @@ void Engine__init() {
   g_engine->useInput = true;
   g_engine->useNet = true;
   g_engine->useTime = true;
+  g_engine->useHotReload = false;
 
   // wrappers
   g_engine->log = Log__out;
@@ -102,6 +103,10 @@ void Engine__cli(int argc, char* argv[]) {
       // integration test, running visibly for fun
       g_engine->useVideo = true;
       // g_engine->useAudio = true;
+    } else if (String__isEqual("-noreload", argv[i])) {
+      g_engine->useHotReload = false;
+    } else if (String__isEqual("-reload", argv[i])) {
+      g_engine->useHotReload = true;
     }
   }
 }
@@ -114,8 +119,10 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
   g_engine->stream_cb1 = Engine__sokol_stream_cb;
 
   // hot-reload support
-  g_engine->fm = (FileMonitor){.directory = "src/game", .fileName = "Logic.c.dll"};
-  ASSERT_CONTEXT(HotReload__load(LOGIC_FILENAME), "Failed to load Logic.dll");
+  if (g_engine->useHotReload) {
+    g_engine->fm = (FileMonitor){.directory = "src/game", .fileName = "Logic.c.dll"};
+    ASSERT_CONTEXT(HotReload__load(LOGIC_FILENAME), "Failed to load Logic.dll");
+  }
 
   g_engine->logic_oninit(g_engine);
 
@@ -138,23 +145,27 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
 }
 
 void Engine__sokol_init(void) {
-  HotReload__StartMonitor(&g_engine->fm);
+  if (g_engine->useHotReload) {
+    HotReload__StartMonitor(&g_engine->fm);
+  }
 
   g_engine->logic_onpreload();
 }
 
 void Engine__sokol_frame(void) {
-  // check for fs changes
-  char path[32] = "src/game/";
-  char file[31];
-  if (2 == HotReload__CheckMonitor(&g_engine->fm, file)) {
-    strcat_s(path, 32, file);
-    while (2 == HotReload__CheckMonitor(&g_engine->fm, file)) {
-      // flush all pending events
-    }
-    g_engine->stream_cb2 = NULL;
-    if (HotReload__load(path)) {
-      g_engine->logic_onreload(g_engine);
+  if (g_engine->useHotReload) {
+    // check for fs changes
+    char path[32] = "src/game/";
+    char file[31];
+    if (2 == HotReload__CheckMonitor(&g_engine->fm, file)) {
+      strcat_s(path, 32, file);
+      while (2 == HotReload__CheckMonitor(&g_engine->fm, file)) {
+        // flush all pending events
+      }
+      g_engine->stream_cb2 = NULL;
+      if (HotReload__load(path)) {
+        g_engine->logic_onreload(g_engine);
+      }
     }
   }
 
@@ -210,7 +221,9 @@ void Engine__sokol_frame(void) {
 
 void Engine__sokol_cleanup(void) {
   g_engine->logic_onshutdown();
-  HotReload__EndMonitor(&g_engine->fm);
+  if (g_engine->useHotReload) {
+    HotReload__EndMonitor(&g_engine->fm);
+  }
 }
 
 void Engine__sokol_event_cb(const sapp_event* event) {

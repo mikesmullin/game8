@@ -10,7 +10,8 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/main.exe",
       "args": [
-        "-server"
+        "-server",
+        "-reload"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build",

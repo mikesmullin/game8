@@ -7,13 +7,13 @@
 static void* logic = NULL;
 
 u8 HotReload__load(const char* file) {
+  if (!g_engine->useHotReload) return 1;
   if (logic != NULL) {
     if (!HotReload__unload()) {
       return 0;  // fail
     }
   }
 
-#ifdef ENGINE__HOT_RELOAD
 #ifdef _WIN32
   // LOG_DEBUGF("load lib %s", file);
   logic = LoadLibrary(file);
@@ -53,13 +53,13 @@ u8 HotReload__load(const char* file) {
   g_engine->logic_onupdate = (logic_onupdate_t)GetProcAddress(logic, "logic_onupdate");
   g_engine->logic_onshutdown = (logic_onshutdown_t)GetProcAddress(logic, "logic_onshutdown");
 #endif
-#endif
 
   return 1;  // success
 }
 
 u8 HotReload__unload(void) {
-#ifdef ENGINE__HOT_RELOAD
+  if (!g_engine->useHotReload) return 1;
+
 #ifdef _WIN32
   if (FreeLibrary(logic) == 0) {
     // Retrieve the error code
@@ -88,14 +88,14 @@ u8 HotReload__unload(void) {
     return 0;  // fail
   }
 #endif
-#endif
 
   logic = NULL;
   return 1;  // success
 }
 
 u8 HotReload__StartMonitor(FileMonitor* fm) {
-#ifdef ENGINE__HOT_RELOAD
+  if (!g_engine->useHotReload) return 0;
+
 #ifdef _WIN32
   // Open a handle to the directory
   // LOG_DEBUGF("watching dir: %s, file: %s", fm->directory, fm->fileName);
@@ -142,15 +142,15 @@ u8 HotReload__StartMonitor(FileMonitor* fm) {
 
   // LOG_DEBUGF("Monitoring for changes. directory: %s, file: %s", fm->directory, fm->fileName);
 #endif
-#endif
 
   return 0;  // success
 }
 
 u8 HotReload__CheckMonitor(FileMonitor* fm, char* file) {
+  if (!g_engine->useHotReload) return 0;
+
   u8 r = 0;
 
-#ifdef ENGINE__HOT_RELOAD
 #ifdef _WIN32
   // Wait for the event to be signaled
   DWORD waitStatus = WaitForSingleObject(fm->_win.hEvent, 0);
@@ -209,18 +209,17 @@ u8 HotReload__CheckMonitor(FileMonitor* fm, char* file) {
     return 1;  // fail
   }
 #endif
-#endif
 
   return r;  // 0 = success, 1 = fail
 }
 
 u8 HotReload__EndMonitor(const FileMonitor* fm) {
-#ifdef ENGINE__HOT_RELOAD
+  if (!g_engine->useHotReload) return 0;
+
 #ifdef _WIN32
   // Close the directory handle
   CloseHandle(fm->_win.hDir);
   CloseHandle(fm->_win.hEvent);
-#endif
 #endif
 
   return 0;  // success (always)

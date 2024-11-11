@@ -43,6 +43,7 @@ typedef struct Engine__State {
   bool useInput;
   bool useNet;
   bool useTime;
+  bool useHotReload;
 
   FileMonitor fm;
   bool quit;
