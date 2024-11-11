@@ -1,31 +1,15 @@
+#define ENGINE__DLL
 #include "Logic.h"
 
-#include "../../vendor/sokol/sokol_app.h"
-#include "../../vendor/sokol/sokol_fetch.h"
-#include "../../vendor/sokol/sokol_gfx.h"
+#include "../engine/common/Audio.h"
+#include "../engine/common/List.h"
+#include "../engine/common/Profiler.h"
 #include "Game.h"
-#include "common/Arena.h"
-#include "common/Audio.h"
-#include "common/List.h"
-#include "common/Log.h"
-#include "common/Math.h"
-#include "common/Profiler.h"
 #include "entities/Screen.h"
 
-#ifdef __EMSCRIPTEN__
-#define LOGIC_DECL
-#endif
-#ifdef _WIN32
-#define LOGIC_DECL __declspec(dllexport)
-#else
-#define LOGIC_DECL __attribute__((visibility("default")))
-#endif
-
-Engine__State* g_engine;
-
 // on init (data only)
-LOGIC_DECL void logic_oninit(Engine__State* state) {
-  g_engine = state;
+HOT_RELOAD__EXPORT void logic_oninit(Engine__State* engine) {
+  g_engine = engine;
 
   // NOTICE: logging won't work in here
 
@@ -36,7 +20,7 @@ LOGIC_DECL void logic_oninit(Engine__State* state) {
   Game__init();
 }
 
-LOGIC_DECL void logic_onpreload(void) {
+HOT_RELOAD__EXPORT void logic_onpreload(void) {
   Logic__State* logic = g_engine->logic;
 
   // sokol_time.h
@@ -102,8 +86,8 @@ LOGIC_DECL void logic_onpreload(void) {
   List__append(g_engine->arena, logic->screen, screen);
 }
 
-LOGIC_DECL void logic_onreload(Engine__State* state) {
-  g_engine = state;
+HOT_RELOAD__EXPORT void logic_onreload(Engine__State* engine) {
+  g_engine = engine;
   LOG_DEBUGF("Logic dll reloaded.");
 
   Audio__reload();
@@ -111,7 +95,7 @@ LOGIC_DECL void logic_onreload(Engine__State* state) {
 }
 
 // window, keyboard, mouse events
-LOGIC_DECL void logic_onevent(const sapp_event* event) {
+HOT_RELOAD__EXPORT void logic_onevent(const sapp_event* event) {
   Logic__State* logic = g_engine->logic;
 
   // LOG_DEBUGF("event frame_count %llu", event->frame_count);
@@ -267,7 +251,7 @@ LOGIC_DECL void logic_onevent(const sapp_event* event) {
 }
 
 // on physics
-LOGIC_DECL void logic_onfixedupdate(void) {
+HOT_RELOAD__EXPORT void logic_onfixedupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   g_engine->sfetch_dowork();
@@ -283,7 +267,7 @@ LOGIC_DECL void logic_onfixedupdate(void) {
 }
 
 // on draw
-LOGIC_DECL void logic_onupdate(void) {
+HOT_RELOAD__EXPORT void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   // 1st pass
@@ -304,7 +288,7 @@ LOGIC_DECL void logic_onupdate(void) {
   g_engine->draw_count = stats.num_draw;
 }
 
-LOGIC_DECL void logic_onshutdown(void) {
+HOT_RELOAD__EXPORT void logic_onshutdown(void) {
   Game__shutdown();
   g_engine->sg_shutdown();
   Audio__shutdown();

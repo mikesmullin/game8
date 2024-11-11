@@ -1,12 +1,9 @@
 #include "Collider.h"
 
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Geometry.h"
+#include "../../engine/common/QuadTree.h"
 #include "../Logic.h"
-#include "../common/Dispatcher.h"
-#include "../common/Geometry.h"
-#include "../common/Log.h"
-#include "../common/QuadTree.h"
-
-extern Engine__State* g_engine;
 
 // TODO: add a boxcircle checker
 

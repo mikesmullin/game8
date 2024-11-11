@@ -1,9 +1,6 @@
 #pragma once
 
-// #include <time.h>
-#include <stdbool.h>
-#include <stdint.h>
-typedef uint32_t u32;
+#include "../../engine/common/Types.h"
 
 typedef struct Entity_t Entity_t;
 

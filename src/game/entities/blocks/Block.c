@@ -1,10 +1,7 @@
 #include "Block.h"
 
 #include "../../Logic.h"
-#include "../../common/Arena.h"
 #include "../Entity.h"
-
-extern Engine__State* g_engine;
 
 // blocks are 3d models instantiated from level RGB pixel data
 

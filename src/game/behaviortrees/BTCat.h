@@ -1,6 +1,5 @@
 #pragma once
 
-// #include "../../lib/Log.h"
 #include "../Logic.h"
 #include "BehaviorTree.h"
 

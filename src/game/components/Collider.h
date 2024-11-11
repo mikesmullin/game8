@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-typedef float f32;
+#include "../../engine/common/Types.h"
 
 typedef struct Entity Entity;
 

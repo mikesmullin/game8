@@ -1,25 +1,18 @@
 #include "CatEntity.h"
 
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/List.h"
-#include "../common/Math.h"
 
 // #include "../behaviortrees/BTCat.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Log.h"
-#include "../common/Preloader.h"
-#include "../common/Profiler.h"
-#include "../common/QuadTree.h"
+#include "../../engine/common/Color.h"
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Preloader.h"
+#include "../../engine/common/Profiler.h"
 #include "../components/Collider.h"
 #include "../components/Rigidbody2D.h"
 #include "../stategraphs/SGCat.h"
 #include "../stategraphs/StateGraph.h"
 #include "Entity.h"
 #include "Sprite.h"
-
-extern Engine__State* g_engine;
 
 static const f32 CAT_MOVE_SPEED = 0.01f;  // per-second
 static f32 lastTurnWait = 2.0f;

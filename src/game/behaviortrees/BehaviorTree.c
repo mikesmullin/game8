@@ -3,9 +3,6 @@
 #include <stdlib.h>  // TODO: remove me
 
 #include "../Logic.h"
-#include "../common/Math.h"
-
-extern Engine__State* g_engine;
 
 // This set of nodes provides a wide variety of behaviors and
 // control flow for a behavior tree.

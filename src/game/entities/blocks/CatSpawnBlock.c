@@ -1,19 +1,12 @@
 #include "CatSpawnBlock.h"
 
-#include <stdint.h>
-
+#include "../../../engine/common/Dispatcher.h"
+#include "../../../engine/common/List.h"
+#include "../../../engine/common/Profiler.h"
 #include "../../Logic.h"
-#include "../../common/Arena.h"
-#include "../../common/Dispatcher.h"
-#include "../../common/List.h"
-#include "../../common/Log.h"
-#include "../../common/Math.h"
-#include "../../common/Profiler.h"
 #include "../../levels/Level.h"
 #include "../CatEntity.h"
 #include "Block.h"
-
-extern Engine__State* g_engine;
 
 typedef int32_t s32;
 

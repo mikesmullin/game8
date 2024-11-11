@@ -2,21 +2,15 @@
 
 #include <string.h>
 
+#include "../../engine/common/Color.h"
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/List.h"
+#include "../../engine/common/Preloader.h"
+#include "../../engine/common/Profiler.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/List.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Preloader.h"
-#include "../common/Profiler.h"
-#include "../common/Utils.h"
 #include "../levels/Level.h"
 #include "Entity.h"
 #include "Sprite.h"
-
-extern Engine__State* g_engine;
 
 void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color) {
   Logic__State* logic = g_engine->logic;
@@ -39,7 +33,7 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.render->billboard = false;
 
     // preload assets
-    sprite->base.render->material = Preload__material(&logic->materials.glyph);
+    sprite->base.render->material = Preload__material(&logic->materials.glyph, sizeof(Material));
     sprite->base.render->material->mesh = Preload__model(  //
         &logic->models.plane2D,
         "../assets/models/plane2D.obj");

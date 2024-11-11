@@ -1,15 +1,10 @@
 #include "SkyBox.h"
 
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Preloader.h"
+#include "../../engine/common/Profiler.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Log.h"
-#include "../common/Preloader.h"
-#include "../common/Profiler.h"
 #include "Entity.h"
-
-extern Engine__State* g_engine;
 
 void SkyBox__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;
@@ -37,7 +32,7 @@ void SkyBox__init(Entity* entity) {
   entity->tform->scale.z = 256.0f * s;
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.cubemap);
+  entity->render->material = Preload__material(&logic->materials.cubemap, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &logic->models.skybox,
       "../assets/models/skybox.obj");

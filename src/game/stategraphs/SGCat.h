@@ -1,12 +1,8 @@
 #pragma once
 
-// #include "../common/Log.h"
 #include "../Logic.h"
-#include "../common/Math.h"
 #include "../components/AudioSource.h"
 #include "StateGraph.h"
-
-extern Engine__State* g_engine;
 
 // cat indexed palette
 // 1 unused

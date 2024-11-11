@@ -1,19 +1,13 @@
 #include "MeshRenderer.h"
 
-#include "../../../vendor/sokol/sokol_gfx.h"
+#include "../../engine/common/Bmp.h"
+#include "../../engine/common/Color.h"
+#include "../../engine/common/List.h"
+#include "../../engine/common/Wavefront.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Bmp.h"
-#include "../common/Color.h"
-#include "../common/List.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Wavefront.h"
 
 //
 #include "../../../assets/shaders/atlas.glsl.h"
-
-extern Engine__State* g_engine;
 
 #define MAX_BATCH_ELEMENTS 128
 
@@ -163,7 +157,7 @@ void MeshRenderer__renderBatches(List* entities) {
   if (!entityZero->render->material->loaded) return;  // no draw until all assets have loaded
   Material* material = entityZero->render->material;
   Player* camera = g_engine->logic->camera;
-  vs_params_t* vs_params = Arena__Push(g_engine->logic->frameArena, sizeof(vs_params_t));
+  vs_params_t* vs_params = Arena__Push(g_engine->frameArena, sizeof(vs_params_t));
   fs_params_t fs_params;
 
   // TODO: move to OrbitalCameraComponent
@@ -179,7 +173,7 @@ void MeshRenderer__renderBatches(List* entities) {
   HMM_Mat4 I = HMM_Translate(HMM_V3(0.0f, 0.0f, 0.0f));
 
   // separate list into renderable batches
-  List *batches = List__alloc(g_engine->logic->frameArena), *batch;
+  List *batches = List__alloc(g_engine->frameArena), *batch;
   List__Node *c = entities->head, *cc;
   for (u32 i = 0, b = 0; i < entities->len; i++) {
     Entity* entity = c->data;
@@ -187,10 +181,10 @@ void MeshRenderer__renderBatches(List* entities) {
 
     if (0 == entity->render) continue;
     if (0 == b++ % MAX_BATCH_ELEMENTS) {
-      batch = List__alloc(g_engine->logic->frameArena);
-      List__append(g_engine->logic->frameArena, batches, batch);
+      batch = List__alloc(g_engine->frameArena);
+      List__append(g_engine->frameArena, batches, batch);
     }
-    List__append(g_engine->logic->frameArena, batch, entity);
+    List__append(g_engine->frameArena, batch, entity);
   }
 
   c = batches->head;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include <stdint.h>
-typedef uint32_t u32;
-typedef float f32;
+#include "../../engine/common/Types.h"
+
 typedef struct Entity Entity;
 
 void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color);

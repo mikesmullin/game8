@@ -1,10 +1,6 @@
 #include "Messages.h"
 
-#include "../Logic.h"
-#include "../common/Log.h"
-#include "../common/Utils.h"
-
-extern Engine__State* g_engine;
+#include "../Logic.h"  // IWYU pragma: keep
 
 void Message__Parse(u32 len, u8** ptr) {
   u8* start = (*ptr);

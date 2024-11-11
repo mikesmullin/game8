@@ -1,12 +1,8 @@
 #include "AudioSource.h"
 
+#include "../../engine/common/Audio.h"
+#include "../../engine/common/Wav.h"
 #include "../Logic.h"
-#include "../common/Audio.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Wav.h"
-
-extern Engine__State* g_engine;
 
 void AudioSource__play(Entity* entity, WavReader* sound) {
   f32 MAX_HEAR_DIST = 15.0f;

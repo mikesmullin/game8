@@ -1,14 +1,11 @@
 #include "Screen.h"
 
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Preloader.h"
 #include "../Logic.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Preloader.h"
 #include "../levels/Level.h"
 #include "Entity.h"
 #include "Sprite.h"
-
-extern Engine__State* g_engine;
 
 void Screen__init(Entity* entity, u32 mpTexture) {
   Logic__State* logic = g_engine->logic;
@@ -20,7 +17,7 @@ void Screen__init(Entity* entity, u32 mpTexture) {
   sprite->base.render->rg = SCREEN_RG;
 
   // preload assets
-  sprite->base.render->material = Preload__material(&logic->materials.screen);
+  sprite->base.render->material = Preload__material(&logic->materials.screen, sizeof(Material));
   sprite->base.render->material->mesh = Preload__model(  //
       &logic->models.screen2D,
       "../assets/models/screen2D.obj");

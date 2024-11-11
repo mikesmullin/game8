@@ -1,7 +1,6 @@
 #pragma once
 
-#include <stdint.h>
-typedef uint32_t u32;
+#include "../../engine/common/Types.h"
 
 typedef struct Arena Arena;
 typedef struct Entity Entity;

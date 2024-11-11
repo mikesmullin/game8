@@ -1,6 +1,7 @@
 #pragma once
 
-typedef float f32;
+#include "../../engine/common/Types.h"
+
 typedef struct Entity Entity;
 
 static const f32 PLAYER_HURT_ANIM_TIME = 0.33;

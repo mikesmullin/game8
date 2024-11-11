@@ -1,13 +1,9 @@
 #include "WallBlock.h"
 
+#include "../../../engine/common/Dispatcher.h"
+#include "../../../engine/common/Preloader.h"
 #include "../../Logic.h"
-#include "../../common/Arena.h"
-#include "../../common/Dispatcher.h"
-#include "../../common/Log.h"
-#include "../../common/Preloader.h"
 #include "Block.h"
-
-extern Engine__State* g_engine;
 
 void WallBlock__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
@@ -19,7 +15,7 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.wall);
+  entity->render->material = Preload__material(&logic->materials.wall, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &logic->models.box,
       "../assets/models/box.obj");

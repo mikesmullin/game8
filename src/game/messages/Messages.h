@@ -1,12 +1,8 @@
 #pragma once
 
-#include <stdint.h>
-typedef uint8_t u8;
-typedef uint32_t u32;
-typedef uint64_t u64;
-typedef float f32;
+#include "../../engine/common/Types.h"
 
-typedef enum MessageId {
+typedef enum MessageId /* : u32 */ {
   MSG_NONE,
   MSG_MOVE_REQ,
 } MessageId;

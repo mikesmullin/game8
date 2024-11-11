@@ -1,19 +1,15 @@
 #include "BreakBlock.h"
 
+#include "../../../engine/common/Dispatcher.h"
+#include "../../../engine/common/List.h"
+#include "../../../engine/common/Preloader.h"
+#include "../../../engine/common/Profiler.h"
 #include "../../Logic.h"
-#include "../../common/Arena.h"
-#include "../../common/Dispatcher.h"
-#include "../../common/List.h"
-#include "../../common/Log.h"
-#include "../../common/Preloader.h"
-#include "../../common/Profiler.h"
 #include "../../components/AudioSource.h"
 #include "../../levels/Level.h"
 #include "../RubbleSprite.h"
 #include "Block.h"
 #include "WallBlock.h"
-
-extern Engine__State* g_engine;
 
 void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   Logic__State* logic = g_engine->logic;
@@ -30,7 +26,7 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.wall);
+  entity->render->material = Preload__material(&logic->materials.wall, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &logic->models.box,
       "../assets/models/box.obj");

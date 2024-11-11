@@ -12,7 +12,7 @@ const isWin = process.platform === "win32";
 const isMac = process.platform === "darwin";
 const isNix = process.platform === "linux";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const SDHC_PATH = path.join('vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: multiplatform support
+const SDHC_PATH = path.join('vendor', 'sokol-tools-bin', 'bin', 'win32', 'sokol-shdc.exe'); // TODO: cross-platform support
 const BUILD_PATH = "build";
 const C_COMPILER_PATH = 'clang';
 const EMCC_COMPILER_PATH = 'emcc.bat';
@@ -41,12 +41,9 @@ const C_COMPILER_ARGS = [
 const C_COMPILER_INCLUDES = [
 ];
 const C_ENGINE_COMPILER_FLAGS = [
-  // '-DSOKOL_IMPL', // use Sokol
   '-DSOKOL_GLCORE', // use GL backend
 ];
 const C_DLL_COMPILER_FLAGS = [
-  // '-DSOKOL_API_DECL=static', // headers-only
-  '-DSOKOL_GLCORE', // use GL backend
 ];
 const C_WEB_COMPILER_FLAGS = [
   '-DSOKOL_GLES3', // use GLES3 backend
@@ -60,39 +57,31 @@ const C_WEB_COMPILER_FLAGS = [
   '-sEXPORTED_RUNTIME_METHODS=cwrap', // ,ccall
 ];
 
-const ENGINE_ONLY = [
-  'src/app.c',
-  'src/lib/HotReload.c',
-  'src/lib/Log.c',
-];
 const LINKER_LIBS = [];
 // if (isWin) {
 //   LINKER_LIBS.push('-l', 'Ws2_32.lib');
 // }
 const LINKER_LIB_PATHS = [];
 const COMPILER_TRANSLATION_UNITS = [
-  relWs(workspaceFolder, 'src', '*.c'),
-  relWs(workspaceFolder, 'src', 'lib', '**', '*.c'),
+  relWs(workspaceFolder, 'src', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_DLL = [
-  relWs(workspaceFolder, 'src', 'lib', '**', '*.c'),
-  relWs(workspaceFolder, 'src', 'game', '**', '*.c'),
+  relWs(workspaceFolder, 'src', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB = [
   relWs(workspaceFolder, 'src', '**', '*.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
-  relWs(workspaceFolder, 'src', 'lib', 'HotReload.c'),
 ];
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   relWs(workspaceFolder, 'assets', 'web', '*'),
 ];
 const COMPILER_TRANSLATION_UNITS_TESTS = [
-  relWs(workspaceFolder, 'test', '**', '*.c'),
+  relWs(workspaceFolder, 'test', 'unit', '**', '*.c'),
 ];
 
 const EDITOR_INCLUDES = [
-  `-I${relBuild(workspaceFolder, 'vendor', 'emsdk', 'upstream', 'emscripten', 'cache', 'sysroot', 'include')}`,
+  // `-I${relBuild(workspaceFolder, 'vendor', 'emsdk', 'upstream', 'emscripten', 'cache', 'sysroot', 'include')}`,
 ];
 
 const nixPath = (p) =>
@@ -103,8 +92,6 @@ const generate_clangd_compile_commands = async () => {
   const compile_commands = [];
   const unit_files = await glob('{src,tests}/**/*.c');
   console.debug('unit_files: ', unit_files);
-  const dll_files = await glob('{src,tests}/game/**/*.c');
-  let is_dll = false;
   for (const unit_file of unit_files) {
     is_dll = dll_files.includes(unit_file);
     compile_commands.push({
@@ -113,7 +100,7 @@ const generate_clangd_compile_commands = async () => {
         C_COMPILER_PATH,
         ...C_COMPILER_ARGS,
         // ...C_COMPILER_INCLUDES,
-        ...(is_dll ? C_DLL_COMPILER_FLAGS : C_ENGINE_COMPILER_FLAGS),
+        ...C_ENGINE_COMPILER_FLAGS,
         ...EDITOR_INCLUDES,
         '-c',
         '-o', `${unit_file}.o`,
@@ -227,25 +214,14 @@ const clean = async () => {
 const compile = async (basename) => {
   console.log(`compiling ${basename}...`);
 
-  // const unit_files = [];
-  // for (const u of COMPILER_TRANSLATION_UNITS) {
-  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-  //     // if (ENGINE_ONLY.includes(nixPath(file))) {
-  //     unit_files.push(file);
-  //     // }
-  //   }
-  // }
-
   const unit = 'src/app.c';
 
   // discover included translation unit files
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
-    if (ENGINE_ONLY.includes(nixPath(m.c_file))) {
-      const r = await recompile_object(relWs(workspaceFolder, m.c_file));
-      object_files.push(r.object);
-    }
+    const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+    object_files.push(r.object);
   }
 
   // compile and link in one step
@@ -281,15 +257,6 @@ const compile_reload = async (outname) => {
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });
 
-  // const dsts = [];
-  // for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
-  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-  //     if (!ENGINE_ONLY.includes(nixPath(file))) {
-  //       dsts.push(relWs(workspaceFolder, file));
-  //     }
-  //   }
-  // }
-
   const unit = 'src/game/Logic.c';
   await fs.mkdir(absBuild(path.dirname(unit)), { recursive: true });
 
@@ -297,10 +264,8 @@ const compile_reload = async (outname) => {
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
-    if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
-      const r = await recompile_object(relWs(workspaceFolder, m.c_file));
-      object_files.push(r.object);
-    }
+    const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+    object_files.push(r.object);
   }
 
   // const src = relWs(workspaceFolder, unit);
@@ -338,7 +303,7 @@ const compile_reload = async (outname) => {
     // '-ftime-report', // display compile time stats
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
-    ...C_DLL_COMPILER_FLAGS,
+    ...C_ENGINE_COMPILER_FLAGS,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
     '-shared',
@@ -413,7 +378,7 @@ const all_loop = async () => {
   }
 };
 
-const run = async (basename) => {
+const run = async (basename, args = []) => {
   const executable = `${basename}${isWin ? '.exe' : ''}`;
   const exePath = path.join(workspaceFolder, BUILD_PATH, executable);
 
@@ -429,7 +394,7 @@ const run = async (basename) => {
     await fs.chmod(exePath, 0o755);
   }
 
-  await child_spawn(exePath);
+  await child_spawn(exePath, args);
 }
 
 const compile_web = async (basename) => {
@@ -515,14 +480,15 @@ const extract_include_units = async function* (opts) {
   if (undefined == opts.depth) opts.depth = 0;
   if (undefined == opts.seen) opts.seen = new Set();
   if (undefined == opts.analyze) opts.analyze = false;
-  opts.seen.add(opts.file);
   const dname1 = path.dirname(opts.file);
+
+  opts.seen.add(opts.file);
   const rl = readline.createInterface({
     input: createReadStream(opts.file),
     crlfDelay: Infinity, // Handle both \n and \r\n newlines
   });
-  const RX_INCLUDE1 = /^#include "([^"]+)"$/gm;
-  const RX_INCLUDE2 = /^#include <([^"]+)>$/gm;
+  const RX_INCLUDE1 = /^#include "([^"]+)"/gm;
+  const RX_INCLUDE2 = /^#include <([^"]+)>/gm;
   let m;
   for await (const line of rl) {
     while (null != (m = RX_INCLUDE1.exec(line))) {
@@ -530,15 +496,28 @@ const extract_include_units = async function* (opts) {
       const cwd = process.cwd();
       const dname2 = path.dirname(include);
       const bname = path.basename(include, '.h');
+      const h_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.h`));
+      const { exists: h_exists } = await fs_exists(h_file);
       const c_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.c`));
       const { exists: c_exists } = await fs_exists(c_file);
+      // console.debug('match', { h_file, c_file });
+      if (h_exists) {
+        if (!opts.seen.has(h_file)) {
+          opts.seen.add(h_file);
+          // yield { c_file: h_file, depth: opts.depth };
+          yield* await extract_include_units({
+            file: h_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
+          });
+        }
+      }
       if (c_exists) {
-        if (opts.seen.has(c_file)) continue;
-        opts.seen.add(c_file);
-        yield { c_file, depth: opts.depth };
-        yield* await extract_include_units({
-          file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
-        });
+        if (!opts.seen.has(c_file)) {
+          opts.seen.add(c_file);
+          yield { c_file, depth: opts.depth };
+          yield* await extract_include_units({
+            file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
+          });
+        }
       }
     }
     if (opts.analyze) {
@@ -571,6 +550,11 @@ const recompile_object = async (unit) => {
       '-c', unit, // compile without linking
       '-o', object,
     ], { buffer: true });
+    if (0 != r1.code) {
+      console.log(chalk.grey(r1.cmd));
+      console.log(chalk.red(r1.stdout));
+      console.log(chalk.red(r1.stderr));
+    }
   }
   return { unit, object, r: r1 };
 };
@@ -595,20 +579,6 @@ const test = async () => {
       overall.filters.push(filter);
     }
   }
-
-  // const unit_files = [];
-  // for (const u of COMPILER_TRANSLATION_UNITS) {
-  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-  //     unit_files.push(file);
-  //   }
-  // }
-  // for (const u of COMPILER_TRANSLATION_UNITS_DLL) {
-  //   for (const file of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
-  //     if (!ENGINE_ONLY.includes(nixPath(file))) {
-  //       unit_files.push(relWs(workspaceFolder, file));
-  //     }
-  //   }
-  // }
 
   for (const u of COMPILER_TRANSLATION_UNITS_TESTS) {
     for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
@@ -637,10 +607,8 @@ const test = async () => {
       // ie. we have a naming convention .h may have a matching .c
       const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
-        // if (!ENGINE_ONLY.includes(nixPath(m.c_file))) {
         const r = await recompile_object(relWs(workspaceFolder, m.c_file));
         object_files.push(r.object);
-        // }
       }
 
       // compile and link in one step
@@ -772,9 +740,6 @@ const test = async () => {
     case 'clang':
       await generate_clangd_compile_commands();
       break;
-    case 'main':
-      await compile(cmd);
-      break;
     case 'reload':
       await compile_reload("src/game/Logic.c.dll");
       break;
@@ -783,6 +748,10 @@ const test = async () => {
       break;
     case 'loop':
       await all_loop();
+      break;
+    case 'run':
+      const [, ...args] = cmds;
+      await run('main', args);
       break;
     case 'test':
       code = await test();
@@ -814,7 +783,7 @@ node build_scripts\\Makefile.mjs < SUBCOMMAND >
   clang      Generate the.json file needed for clangd for vscode extension.
   watch      Watch for changes, recompile.dll.
   loop       Watch for changes, recompile all.
-  main       Compile and run the main app
+  run        Run the main app
   test       Compile and run the test suite
   analyze    Print include tree for a given file
       `);

@@ -1,10 +1,7 @@
 #include "Entity.h"
 
+#include "../../engine/common/Dispatcher.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Dispatcher.h"
-
-extern Engine__State* g_engine;
 
 void Entity__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;

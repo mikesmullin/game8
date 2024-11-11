@@ -1,12 +1,8 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-typedef uint32_t u32;
-typedef uint64_t u64;
+#include "../../engine/common/Types.h"
 
 typedef struct StateGraph StateGraph;
-// typedef enum SGStateTags1 : u64 SGStateTags1;
 
 void StateGraph__gotoState(StateGraph* sg, u32 state);
 void StateGraph__tick(StateGraph* sg);

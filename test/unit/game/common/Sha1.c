@@ -1,13 +1,9 @@
-#include "../../../../src/game/common/Sha1.h"
+#define ENGINE__NO_MAIN
+#include "../../../../src/engine/common/Sha1.h"
 
-#include <stdint.h>
 #include <string.h>
 
-#include "../../../../src/game/common/Utils.h"
-
-typedef uint8_t u8;
-
-#include "../../../../src/lib/Log.h"
+#include "../../../../src/engine/Engine.h"  // IWYU pragma: keep
 
 // @describe Sha1
 // @tag common

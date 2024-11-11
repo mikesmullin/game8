@@ -1,9 +1,9 @@
 #include "Rigidbody2D.h"
 
+// TODO: use deterministic fixed-point math instead
 #include <float.h>
 
 #include "../Logic.h"
-#include "../common/Math.h"
 #include "../components/Collider.h"
 
 void Rigidbody2D__move(Entity* entity) {

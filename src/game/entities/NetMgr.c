@@ -2,17 +2,12 @@
 
 #include <string.h>
 
+#include "../../engine/common/Net.h"
+#include "../../engine/common/Websocket.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Log.h"
-#include "../common/Net.h"
-#include "../common/Utils.h"
-#include "../common/Websocket.h"
 #include "../messages/Messages.h"
 
 #define DEBUG_STR_LEN (2046)
-
-extern Engine__State* g_engine;
 
 static void onAccept(Socket* server, Socket* client);
 static void onConnect(Socket* client);
@@ -84,7 +79,7 @@ static void ServerPump(Socket* client) {
   // Read data from client
   Net__read(client);
   if (client->buf.len > 0) {
-    char* debug = Arena__Push(g_engine->logic->frameArena, DEBUG_STR_LEN);
+    char* debug = Arena__Push(g_engine->frameArena, DEBUG_STR_LEN);
     hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
     LOG_DEBUGF("Server recv. len: %u, data:\n%s", client->buf.len, debug);
 
@@ -92,7 +87,7 @@ static void ServerPump(Socket* client) {
       char key[256];
       Websocket__ParseHandshake(client->buf.data, key);
       char response[512];
-      WebSocket__RespondHandshake(g_engine->logic->frameArena, key, response);
+      WebSocket__RespondHandshake(g_engine->frameArena, key, response);
 
       // Send response to client
       u32 len = strlen(response);
@@ -104,7 +99,7 @@ static void ServerPump(Socket* client) {
       u8* payload = NULL;
       u64 payload_length = 0;
       int r = WebSocket__ParseFrame(
-          g_engine->logic->frameArena,
+          g_engine->frameArena,
           (const u8*)client->buf.data,
           client->buf.len,
           &payload,
@@ -126,7 +121,7 @@ static void ClientPump(Socket* client) {
 
   Logic__State* logic = g_engine->logic;
   NetMgr* self = &logic->net;
-  char* debug = Arena__Push(g_engine->logic->frameArena, DEBUG_STR_LEN);
+  char* debug = Arena__Push(g_engine->frameArena, DEBUG_STR_LEN);
 
   if (SESSION_NONE == client->sessionState) {
     // Send request to server

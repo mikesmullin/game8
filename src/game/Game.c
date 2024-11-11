@@ -3,25 +3,19 @@
 #include <stdio.h>
 #include <string.h>
 
+#include "../engine/common/Audio.h"
+#include "../engine/common/Color.h"
+#include "../engine/common/Dispatcher.h"
+#include "../engine/common/List.h"
+#include "../engine/common/Preloader.h"
+#include "../engine/common/Profiler.h"
 #include "Logic.h"
-#include "common/Arena.h"
-#include "common/Audio.h"
-#include "common/Color.h"
-#include "common/Dispatcher.h"
-#include "common/List.h"
-#include "common/Log.h"
-#include "common/Preloader.h"
-#include "common/Profiler.h"
-#include "common/Utils.h"
-#include "common/Wav.h"
 #include "components/MeshRenderer.h"
 #include "entities/DebugText.h"
 #include "entities/NetMgr.h"
 #include "entities/Player.h"
 #include "entities/SkyBox.h"
 #include "levels/Level.h"
-
-extern Engine__State* g_engine;
 
 void Game__init() {
   Logic__State* logic = g_engine->logic;

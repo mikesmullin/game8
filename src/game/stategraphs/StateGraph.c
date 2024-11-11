@@ -1,8 +1,6 @@
 #include "StateGraph.h"
 
-// #include "../../lib/Log.h"
 #include "../Logic.h"
-#include "../common/Color.h"
 #include "../entities/CatEntity.h"
 
 void StateGraph__gotoState(StateGraph* sg, u32 state) {

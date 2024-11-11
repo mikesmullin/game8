@@ -1,17 +1,13 @@
 #include "Level.h"
 
+#include "../../engine/common/Bmp.h"
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Geometry.h"
+#include "../../engine/common/List.h"
+#include "../../engine/common/Preloader.h"
+#include "../../engine/common/Profiler.h"
+#include "../../engine/common/QuadTree.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Bmp.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Geometry.h"
-#include "../common/List.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Preloader.h"
-#include "../common/Profiler.h"
-#include "../common/QuadTree.h"
 #include "../components/MeshRenderer.h"
 #include "../entities/Sprite.h"
 #include "../entities/blocks/BreakBlock.h"
@@ -20,15 +16,13 @@
 #include "../entities/blocks/SpawnBlock.h"
 #include "../entities/blocks/WallBlock.h"
 
-extern Engine__State* g_engine;
-
 Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = 0;
   level->entities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
-  g_engine->logic->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
+  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
 
   return level;
 }
@@ -135,12 +129,12 @@ void Level__tick(Level* level) {
   Dispatcher__call1(level->cubemap->engine->tick, level->cubemap);
 
   // build a QuadTree of all entities
-  Arena__Reset(logic->frameArena);
+  Arena__Reset(g_engine->frameArena);
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-  level->qt = QuadTreeNode_create(logic->frameArena, boundary);
-  level->nzentities = List__alloc(logic->frameArena);
-  level->zentities = List__alloc(logic->frameArena);
+  level->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
+  level->nzentities = List__alloc(g_engine->frameArena);
+  level->zentities = List__alloc(g_engine->frameArena);
   List__Node* node = level->entities->head;
   u32 len = level->entities->len;  // cache, because loop will modify length as it goes
   for (u32 i = 0; i < len; i++) {
@@ -156,7 +150,7 @@ void Level__tick(Level* level) {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
       // if (TAG_WALL & entity->tags1) {
       QuadTreeNode_insert(
-          logic->frameArena,
+          g_engine->frameArena,
           level->qt,
           (Point){entity->tform->pos.x, entity->tform->pos.z},
           entity);
@@ -166,9 +160,9 @@ void Level__tick(Level* level) {
       Dispatcher__call1(entity->engine->tick, entity);
 
       if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
-        List__insort(logic->frameArena, level->zentities, entity, Level__zsort);
+        List__insort(g_engine->frameArena, level->zentities, entity, Level__zsort);
       } else {
-        List__append(logic->frameArena, level->nzentities, entity);
+        List__append(g_engine->frameArena, level->nzentities, entity);
       }
     }
   }
@@ -184,8 +178,8 @@ void Level__render(Level* level) {
 
   if (0 == level->entities || 0 == level->entities->len) return;
 
-  List* sky = List__alloc(g_engine->logic->frameArena);
-  List__append(g_engine->logic->frameArena, sky, level->cubemap);
+  List* sky = List__alloc(g_engine->frameArena);
+  List__append(g_engine->frameArena, sky, level->cubemap);
   MeshRenderer__renderBatches(sky);
 
   if (0 != level->nzentities) {

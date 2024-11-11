@@ -1,16 +1,12 @@
 #include "RubbleSprite.h"
 
+#include "../../engine/common/Color.h"
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Easing.h"
+#include "../../engine/common/Profiler.h"
 #include "../Logic.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Easing.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Profiler.h"
 #include "Entity.h"
 #include "Sprite.h"
-
-extern Engine__State* g_engine;
 
 void RubbleSprite__init(Entity* entity) {
   Logic__State* logic = g_engine->logic;

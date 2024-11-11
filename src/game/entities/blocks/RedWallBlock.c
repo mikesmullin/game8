@@ -1,15 +1,12 @@
 #include "RedWallBlock.h"
 
+#include "../../../engine/common/Dispatcher.h"
+#include "../../../engine/common/Preloader.h"
 #include "../../Logic.h"
-#include "../../common/Dispatcher.h"
-#include "../../common/Log.h"
-#include "../../common/Preloader.h"
 #include "../../components/AudioSource.h"
 #include "../../levels/Level.h"
 #include "Block.h"
 #include "WallBlock.h"
-
-extern Engine__State* g_engine;
 
 void RedWallBlock__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;

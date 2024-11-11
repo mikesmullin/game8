@@ -1,19 +1,13 @@
 #include "SpawnBlock.h"
 
-#include <stdint.h>
-
+#include "../../../engine/common/Audio.h"
+#include "../../../engine/common/Dispatcher.h"
+#include "../../../engine/common/Preloader.h"
+#include "../../../engine/common/Profiler.h"
 #include "../../Logic.h"
-#include "../../common/Arena.h"
-#include "../../common/Audio.h"
-#include "../../common/Dispatcher.h"
-#include "../../common/Preloader.h"
-#include "../../common/Profiler.h"
-#include "../../common/Wav.h"
 #include "Block.h"
 
 typedef int32_t s32;
-
-extern Engine__State* g_engine;
 
 void SpawnBlock__init(Entity* entity, f32 x, f32 z) {
   Block* block = (Block*)entity;

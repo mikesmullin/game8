@@ -1,14 +1,10 @@
 #include "Sprite.h"
 
+#include "../../engine/common/Color.h"
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Preloader.h"
 #include "../Logic.h"
-#include "../common/Arena.h"
-#include "../common/Color.h"
-#include "../common/Dispatcher.h"
-#include "../common/Math.h"
-#include "../common/Preloader.h"
 #include "Entity.h"
-
-extern Engine__State* g_engine;
 
 void Sprite__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
@@ -22,7 +18,7 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->render->billboard = true;
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.sprite);
+  entity->render->material = Preload__material(&logic->materials.sprite, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &logic->models.plane2D,
       "../assets/models/plane2D.obj");

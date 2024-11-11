@@ -1,23 +1,18 @@
 #include "Player.h"
 
+#include "../../engine/common/Dispatcher.h"
+#include "../../engine/common/Geometry.h"
+#include "../../engine/common/List.h"
+#include "../../engine/common/Profiler.h"
+#include "../../engine/common/QuadTree.h"
 #include "../Logic.h"
 #include "../behaviortrees/Action.h"
-#include "../common/Arena.h"
-#include "../common/Dispatcher.h"
-#include "../common/Geometry.h"
-#include "../common/List.h"
-#include "../common/Log.h"
-#include "../common/Math.h"
-#include "../common/Profiler.h"
-#include "../common/QuadTree.h"
 #include "../components/Rigidbody2D.h"
 #include "../levels/Level.h"
 #include "CatEntity.h"
 #include "Entity.h"
 #include "RubbleSprite.h"
 #include "blocks/BreakBlock.h"
-
-extern Engine__State* g_engine;
 
 static const f32 PLAYER_WALK_SPEED = 5.0f;  // per-second
 static const f32 PLAYER_STRAFE_MOD = 0.5f;  // percent of walk
@@ -62,13 +57,13 @@ void Player__tick(Entity* entity) {
 
   if (logic->player->input.use && !logic->mouseCaptured) {
     logic->player->input.use = false;
-    g_engine->sapp_lock_mouse(true);
     LOG_DEBUGF("request mouse lock");
+    g_engine->sapp_lock_mouse(true);
   }
   if (logic->player->input.esc && logic->mouseCaptured) {
     logic->player->input.esc = false;
-    g_engine->sapp_lock_mouse(false);
     LOG_DEBUGF("request mouse unlock");
+    g_engine->sapp_lock_mouse(false);
   }
   bool ml = g_engine->sapp_mouse_locked();
   if (ml != logic->mouseCaptured) {
