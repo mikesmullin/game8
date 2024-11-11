@@ -1,10 +1,7 @@
-#include "../../../../src/game/Logic.h"
+#include "Logic.h"
 
-#include "../../../../src/game/common/Arena.h"
 // #include "../../../../src/game/common/Audio.h"
 #include "Game.h"
-
-Engine__State* g_engine;
 
 // on init (data only)
 void logic_oninit(Engine__State* state) {

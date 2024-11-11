@@ -50,6 +50,30 @@
         "showReuseMessage": false,
         "clear": false
       }
+    },
+    {
+      "label": "build_integration",
+      "type": "shell",
+      "command": "node",
+      "args": [
+        "build_scripts/Makefile.mjs",
+        "test",
+        "--filter=net",
+        "-norun"
+      ],
+      "options": {
+        "cwd": "${workspaceFolder}",
+      },
+      "group": "build",
+      //"problemMatcher": "$gcc", // better to leave it off and let clangd update vscode problems list
+      "presentation": {
+        "echo": false,
+        "reveal": "silent",
+        "focus": false,
+        "panel": "shared",
+        "showReuseMessage": false,
+        "clear": false
+      }
     }
   ]
 }

@@ -1,46 +1,30 @@
 #define ENGINE__MAIN
-#define ENGINE__COUNT (2)
 #include "../../../src/engine/Engine.h"
+#include "game/Logic.h"
 
-static void common_app(Engine__State* engine);
-static void common_app_pump(Engine__State* engine);
+extern logic_oninit_t logic_oninit;
+extern logic_onpreload_t logic_onpreload;
+extern logic_onreload_t logic_onreload;
+extern logic_onevent_t logic_onevent;
+extern logic_onfixedupdate_t logic_onfixedupdate;
+extern logic_onupdate_t logic_onupdate;
+extern logic_onshutdown_t logic_onshutdown;
 
 // @describe Gaffer Deterministic Lockstep Katamari demo
 // see: https://gafferongames.com/post/deterministic_lockstep/
 // @tag net
-int main() {
-  // spawn app1 -server
-  engines[0].isMaster = true;
-  common_app(&engines[0]);
-  // spawn app2
-  common_app(&engines[1]);
+// @run -server
+sapp_desc sokol_main(int argc, char* argv[]) {
+  // use first (and only) engine
+  g_engine = &engines[0];
 
-  while (!engines[0].quit && !engines[1].quit) {
-    common_app_pump(&engines[0]);
-    common_app_pump(&engines[1]);
+  g_engine->logic_oninit = logic_oninit;
+  g_engine->logic_onpreload = logic_onpreload;
+  g_engine->logic_onreload = logic_onreload;
+  g_engine->logic_onevent = logic_onevent;
+  g_engine->logic_onfixedupdate = logic_onfixedupdate;
+  g_engine->logic_onupdate = logic_onupdate;
+  g_engine->logic_onshutdown = logic_onshutdown;
 
-    // TODO: wait for connect
-    // TODO: macro player1 input
-    // TODO: assert checksum game state on both apps (lockstep deterministic networking)
-  }
-
-  return 0;
-}
-
-static void common_app(Engine__State* engine) {
-  g_engine = engine;
-
-  Engine__sokol_main(0, NULL);
-  g_engine->useVideo = false;
-  g_engine->useAudio = false;
-  g_engine->useInput = false;
-  g_engine->useNet = false;
-
-  Engine__sokol_init();
-}
-
-static void common_app_pump(Engine__State* engine) {
-  g_engine = engine;
-
-  Engine__sokol_frame();
+  return Engine__sokol_main(argc, argv);
 }

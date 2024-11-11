@@ -76,8 +76,11 @@ const COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE = [
 const COMPILER_TRANSLATION_UNITS_WEB_COPY = [
   relWs(workspaceFolder, 'assets', 'web', '*'),
 ];
-const COMPILER_TRANSLATION_UNITS_TESTS = [
+const COMPILER_TRANSLATION_UNITS_UNIT_TESTS = [
   relWs(workspaceFolder, 'test', 'unit', '**', '*.c'),
+];
+const COMPILER_TRANSLATION_UNITS_INTEGRATION_TESTS = [
+  relWs(workspaceFolder, 'test', 'integration', '**', 'app.c'),
 ];
 
 const EDITOR_INCLUDES = [
@@ -571,18 +574,24 @@ const test = async () => {
   overall.results = results;
   overall.passes = 0, overall.fails = 0, overall.skips = 0;
   overall.compileLap = 0, overall.execLap = 0, overall.lap = 0;
-  overall.available = COMPILER_TRANSLATION_UNITS_TESTS.length;
+  overall.available = COMPILER_TRANSLATION_UNITS_UNIT_TESTS.length;
   overall.ran = 0;
   for (const arg of process.argv) {
     if (arg.startsWith('--filter=')) {
       const [, filter] = arg.split('=');
       overall.filters.push(filter);
     }
+    else if (arg.startsWith('-norun')) {
+      overall.norun = true;
+    }
   }
 
-  for (const u of COMPILER_TRANSLATION_UNITS_TESTS) {
+  for (const u of [...COMPILER_TRANSLATION_UNITS_UNIT_TESTS, ...COMPILER_TRANSLATION_UNITS_INTEGRATION_TESTS]) {
     for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
       const result = {};
+      result.execCmd = '';
+      result.execCode = 0, result.execOut = '', result.execErr = '';
+      result.execLap = 0;
       unit = relWs(workspaceFolder, unit);
 
       // read file metadata
@@ -594,6 +603,7 @@ const test = async () => {
         if ('describe' == k) result.description = v;
         else if ('tag' == k) !result.tags && (result.tags = ''), result.tags += ',' + v;
         else if ('skip' == k) result.skip = true;
+        else if ('run' == k) !result.runInsts && (result.runInsts = []), result.runInsts.push(v);
       }
       if (result.skip || (result.tags && overall.filters.length > 0 && !overall.filters.some(t => result.tags.includes(t)))) {
         result.pass = false, result.fail = false, result.skip = true;
@@ -613,9 +623,10 @@ const test = async () => {
 
       // compile and link in one step
       const started1 = performance.now();
-      const basename = path.basename(unit, '.c');
+      const dname = path.dirname(unit);
+      const basename = path.basename(dname);
       result.basename = basename;
-      const test_out_path = path.join(workspaceFolder, BUILD_PATH, relWs(unit).replace(/\.c$/, ''));
+      const test_out_path = path.join(workspaceFolder, BUILD_PATH);
       const executable = relWs(path.join(test_out_path, `${basename}${isWin ? '.exe' : ''}`));
       await fs.mkdir(test_out_path, { recursive: true });
       const r1 = await child_spawn(C_COMPILER_PATH, [
@@ -634,16 +645,48 @@ const test = async () => {
       const ended1 = performance.now();
       result.compileLap = ended1 - started1; // ms
       if (0 == result.compileCode) {
-        // execute test
-        const started2 = performance.now();
         if (isNix || isMac) {
           await fs.chmod(executable, 0o755); // chmod +x
         }
-        const r2 = await child_spawn(executable, [], { buffer: true });
-        result.execCmd = r2.cmd;
-        result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
-        const ended2 = performance.now();
-        result.execLap = ended2 - started2; // ms
+
+        if (overall.norun) {
+        } else {
+          // execute test
+          const started2 = performance.now();
+
+          if (result.runInsts?.length == 1) {
+            // use args specified in test
+            const args2a = result.runInsts[0].split(/\s+/g);
+            const p2a = child_spawn(executable, args2a, { buffer: true });
+            const r2a = await p2a;
+            result.execCmd = r2a.cmd;
+            result.execCode = r2a.code, result.execOut = r2a.stdout, result.execErr = r2a.stderr;
+          }
+          else if (result.runInsts?.length == 3) {
+            // launch three, wait for all, only consider result of third
+            const args2a = result.runInsts[0].split(/\s+/g);
+            const args2b = result.runInsts[1].split(/\s+/g);
+            const args2c = result.runInsts[2].split(/\s+/g);
+            const p2a = child_spawn(executable, args2a, { buffer: true });
+            const p2b = child_spawn(executable, args2b, { buffer: true });
+            const p2c = child_spawn(executable, args2c, { buffer: true });
+            const r2a = await p2a;
+            const r2b = await p2b;
+            const r2c = await p2c;
+
+            result.execCmd = r2c.cmd;
+            result.execCode = r2c.code, result.execOut = r2c.stdout, result.execErr = r2c.stderr;
+          }
+          else {
+            // no args
+            const r2 = await child_spawn(executable, [], { buffer: true });
+            result.execCmd = r2.cmd;
+            result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
+          }
+
+          const ended2 = performance.now();
+          result.execLap = ended2 - started2; // ms
+        }
       }
 
       overall.compileLap += result.compileLap;
@@ -688,6 +731,7 @@ const test = async () => {
       }
       else if (result.fail) {
         overall.fails++;
+        console.error(chalk.gray(indent(1, result.execCmd)));
         console.error(chalk.red(indent(1, `process failed. code: ${result.execCode} `)));
         if (result.execOut) {
           console.error(chalk.red(indent(2, result.execOut)));

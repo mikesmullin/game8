@@ -1,17 +1,12 @@
 #include "Level.h"
 
-#include "../../../../../src/game/Logic.h"
-#include "../../../../../src/game/common/Arena.h"
-#include "../../../../../src/game/common/Bmp.h"
-#include "../../../../../src/game/common/Color.h"
-#include "../../../../../src/game/common/Dispatcher.h"
-#include "../../../../../src/game/common/Geometry.h"
-#include "../../../../../src/game/common/List.h"
-#include "../../../../../src/game/common/Log.h"
-#include "../../../../../src/game/common/Math.h"
-#include "../../../../../src/game/common/Preloader.h"
-#include "../../../../../src/game/common/Profiler.h"
-#include "../../../../../src/game/common/QuadTree.h"
+#include "../../../../../src/engine/common/Dispatcher.h"
+#include "../../../../../src/engine/common/Geometry.h"
+#include "../../../../../src/engine/common/List.h"
+#include "../../../../../src/engine/common/Profiler.h"
+#include "../../../../../src/engine/common/QuadTree.h"
+#include "../Logic.h"
+
 // #include "../../../../../src/game/components/MeshRenderer.h"
 #include "../entities/Cube.h"
 
@@ -22,7 +17,7 @@ Level* Level__alloc() {
   level->entities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
-  g_engine->logic->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
+  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
 
   return level;
 }
@@ -54,10 +49,10 @@ void Level__tick(Level* level) {
   Dispatcher__call1(level->cubemap->engine->tick, level->cubemap);
 
   // build a QuadTree of all entities
-  Arena__Reset(logic->frameArena);
+  Arena__Reset(g_engine->frameArena);
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-  level->qt = QuadTreeNode_create(logic->frameArena, boundary);
+  level->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
   List__Node* node = level->entities->head;
   u32 len = level->entities->len;  // cache, because loop will modify length as it goes
   for (u32 i = 0; i < len; i++) {
@@ -73,7 +68,7 @@ void Level__tick(Level* level) {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
       // if (TAG_WALL & entity->tags1) {
       QuadTreeNode_insert(
-          logic->frameArena,
+          g_engine->frameArena,
           level->qt,
           (Point){entity->tform->pos.x, entity->tform->pos.z},
           entity);

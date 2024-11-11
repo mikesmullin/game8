@@ -1,18 +1,15 @@
 #include "Cube.h"
 
-#include "../../../../../src/game/Logic.h"
-#include "../../../../../src/game/common/Arena.h"
-#include "../../../../../src/game/common/Dispatcher.h"
-#include "../../../../../src/game/common/Log.h"
-#include "../../../../../src/game/common/Preloader.h"
-#include "../../../../../src/game/entities/Entity.h"
+#include "../../../../../src/engine/common/Dispatcher.h"
+#include "../../../../../src/engine/common/Preloader.h"
+// #include "../../../../../src/game/entities/Entity.h"
+#include "../Logic.h"
 
 extern Engine__State* g_engine;
 
 void Cube__init(Entity* entity, f32 x, f32 z) {
   Logic__State* logic = g_engine->logic;
 
-  entity->masked = false;
   entity->tform->pos.x = x;
   entity->tform->pos.z = z;
 
@@ -20,16 +17,14 @@ void Cube__init(Entity* entity, f32 x, f32 z) {
   collider->base.type = BOX_COLLIDER_2D;
   f32 sq_r = 0.5f;  // square radius
   collider->hw = sq_r, collider->hh = sq_r;
-  block->base.collider = (ColliderComponent*)collider;
+  entity->collider = (ColliderComponent*)collider;
 
-  Cube* self = (Cube*)block;
-  Block__init(block, x, z);
   entity->tags1 |= TAG_WALL;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.wall);
+  entity->render->material = Preload__material(&logic->materials.wall, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &logic->models.box,
       "../assets/models/box.obj");

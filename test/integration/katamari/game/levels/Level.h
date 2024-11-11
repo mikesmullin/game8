@@ -1,8 +1,6 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stdint.h>
-typedef int32_t s32;
+#include "../../../../../src/engine/common/Types.h"
 
 typedef struct Level Level;
 typedef struct Entity Entity;

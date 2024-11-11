@@ -2,20 +2,16 @@
 
 #include <string.h>
 
-#include "../../../../src/game/Logic.h"
-#include "../../../../src/game/common/Arena.h"
+#include "Logic.h"
 // #include "../../../../src/game/common/Audio.h"
-#include "../../../../src/game/common/Color.h"
-#include "../../../../src/game/common/Dispatcher.h"
-#include "../../../../src/game/common/List.h"
-#include "../../../../src/game/common/Log.h"
-// #include "../../../../src/game/common/Preloader.h"
-// #include "../../../../src/game/common/Profiler.h"
-#include "../../../../src/game/common/Utils.h"
-#include "../../../../src/game/common/Wav.h"
-#include "../../../../src/game/components/MeshRenderer.h"
-#include "../../../../src/game/entities/NetMgr.h"
-#include "../../../../src/game/entities/Player.h"
+#include "../../../../src/engine/common/Dispatcher.h"
+#include "../../../../src/engine/common/List.h"
+// #include "../../../../src/engine/common/Preloader.h"
+// #include "../../../../src/engine/common/Profiler.h"
+#include "../../../../src/engine/common/Wav.h"
+// #include "../../../../src/game/components/MeshRenderer.h"
+// #include "../../../../src/game/entities/NetMgr.h"
+// #include "../../../../src/game/entities/Player.h"
 #include "levels/Level.h"
 
 extern Engine__State* g_engine;

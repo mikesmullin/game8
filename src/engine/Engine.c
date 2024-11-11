@@ -116,6 +116,7 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
   // hot-reload support
   g_engine->fm = (FileMonitor){.directory = "src/game", .fileName = "Logic.c.dll"};
   ASSERT_CONTEXT(HotReload__load(LOGIC_FILENAME), "Failed to load Logic.dll");
+
   g_engine->logic_oninit(g_engine);
 
   // NOTICE: You can't log here--it's too early. The window + console aren't initialized, yet.
