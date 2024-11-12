@@ -9,3 +9,4 @@ void mprintf(char** dstCursor, const char* format, s64 maxLen, ...);
 void hexdump(const void* data, u32 len, char* out, u32 maxLen);
 
 bool String__isEqual(char* a, char* b);
+void* mmemcp(void* dst, const void* src, size_t sz);

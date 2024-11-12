@@ -400,5 +400,3 @@ typedef struct Logic__State {
 } Logic__State;
 
 HOT_RELOAD__EXPORT void logic_onbootstrap(Engine__State* engine);
-
-#undef MAX_LISTENERS

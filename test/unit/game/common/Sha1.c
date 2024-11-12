@@ -1,8 +1,6 @@
 #define ENGINE__NO_MAIN
 #include "../../../../src/engine/common/Sha1.h"
 
-#include <string.h>
-
 #include "../../../../src/engine/Engine.h"  // IWYU pragma: keep
 
 // @describe Sha1

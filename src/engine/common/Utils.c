@@ -194,3 +194,7 @@ void hexdump(const void* data, u32 len, char* out, u32 maxLen) {
 bool String__isEqual(char* a, char* b) {
   return strcmp(a, b) == 0;
 }
+
+void* mmemcp(void* dst, const void* src, size_t sz) {
+  return memcpy(dst, src, sz);
+}
