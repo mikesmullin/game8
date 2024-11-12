@@ -34,5 +34,5 @@ void Screen__init(Entity* entity, u32 mpTexture) {
   // entity->render->tw = entity->render->th = 8;
   // entity->render->aw = entity->render->ah = 64;
   // entity->render->useMask = false;
-  // entity->render->color = TRANSPARENT;
+  // entity->render->color = COLOR_TRANSPARENT;
 }

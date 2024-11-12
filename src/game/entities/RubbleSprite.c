@@ -22,7 +22,7 @@ void RubbleSprite__init(Entity* entity) {
 
   entity->render->ti = 7;
   entity->render->useMask = true;
-  entity->render->mask = BLACK;
+  entity->render->mask = COLOR_BLACK;
   entity->render->color = logic->level->wallCol;
 }
 

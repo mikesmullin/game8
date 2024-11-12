@@ -1,10 +1,8 @@
 #define ENGINE__MAIN
-#include "engine/Engine.h"
+#include "game/Logic.h"
 
 sapp_desc sokol_main(int argc, char* argv[]) {
-  // use first (and only) engine
-  g_engine = &engines[0];
+  g_engine->onbootstrap = logic_onbootstrap;
 
-  // bootstrap Logic.c.dll
   return Engine__sokol_main(argc, argv);
 }

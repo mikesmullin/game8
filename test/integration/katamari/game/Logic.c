@@ -6,9 +6,7 @@
 #include "Game.h"
 
 // on init (data only)
-void logic_oninit(Engine__State* state) {
-  g_engine = state;
-
+static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
@@ -20,7 +18,7 @@ void logic_oninit(Engine__State* state) {
   Game__init();
 }
 
-void logic_onpreload(void) {
+static void logic_onpreload(void) {
   // sokol_time.h
   g_engine->stm_setup();
 
@@ -49,14 +47,14 @@ void logic_onevent(const sapp_event* event) {
 }
 
 // on physics
-void logic_onfixedupdate(void) {
+static void logic_onfixedupdate(void) {
   // g_engine->sfetch_dowork();
 
   Game__tick();
 }
 
 // on draw
-void logic_onupdate(void) {
+static void logic_onupdate(void) {
   // 1st pass
   Game__render();
   Game__gui();
@@ -65,7 +63,23 @@ void logic_onupdate(void) {
   Game__postprocessing();
 }
 
-void logic_onshutdown(void) {
+static void logic_onshutdown(void) {
   Game__shutdown();
   // Audio__shutdown();
+}
+
+void logic_onbootstrap(Engine__State* engine) {
+  // NOTICE: logging won't work in here (first time)
+
+  g_engine = engine;
+  g_engine->onbootstrap = logic_onbootstrap;
+  g_engine->oninit = logic_oninit;
+  g_engine->onpreload = logic_onpreload;
+  g_engine->onevent = logic_onevent;
+  g_engine->onfixedupdate = logic_onfixedupdate;
+  g_engine->onupdate = logic_onupdate;
+  g_engine->onshutdown = logic_onshutdown;
+  LOG_DEBUGF("Logic dll reloaded.");
+
+  // Game__reload();
 }

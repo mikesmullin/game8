@@ -49,8 +49,8 @@ void CatEntity__init(Entity* entity) {
   entity->render->po = Math__urandom2(0, 7);
   entity->render->ti = 2 * 8 + 4;
   entity->render->useMask = true;
-  entity->render->mask = BLACK;
-  entity->render->color = TRANSPARENT;
+  entity->render->mask = COLOR_BLACK;
+  entity->render->color = COLOR_TRANSPARENT;
 
   // preload assets
   Preload__audio(

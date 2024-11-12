@@ -1,4 +1,6 @@
+#ifdef ENGINE__COMPILING_DLL
 #define ENGINE__DLL
+#endif
 #include "Logic.h"
 
 #include "../engine/common/Audio.h"
@@ -8,9 +10,7 @@
 #include "entities/Screen.h"
 
 // on init (data only)
-HOT_RELOAD__EXPORT void logic_oninit(Engine__State* engine) {
-  g_engine = engine;
-
+static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
@@ -20,7 +20,7 @@ HOT_RELOAD__EXPORT void logic_oninit(Engine__State* engine) {
   Game__init();
 }
 
-HOT_RELOAD__EXPORT void logic_onpreload(void) {
+static void logic_onpreload(void) {
   Logic__State* logic = g_engine->logic;
 
   // sokol_time.h
@@ -86,16 +86,8 @@ HOT_RELOAD__EXPORT void logic_onpreload(void) {
   List__append(g_engine->arena, logic->screen, screen);
 }
 
-HOT_RELOAD__EXPORT void logic_onreload(Engine__State* engine) {
-  g_engine = engine;
-  LOG_DEBUGF("Logic dll reloaded.");
-
-  Audio__reload();
-  Game__reload();
-}
-
 // window, keyboard, mouse events
-HOT_RELOAD__EXPORT void logic_onevent(const sapp_event* event) {
+static void logic_onevent(const sapp_event* event) {
   Logic__State* logic = g_engine->logic;
 
   // LOG_DEBUGF("event frame_count %llu", event->frame_count);
@@ -251,7 +243,7 @@ HOT_RELOAD__EXPORT void logic_onevent(const sapp_event* event) {
 }
 
 // on physics
-HOT_RELOAD__EXPORT void logic_onfixedupdate(void) {
+static void logic_onfixedupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   g_engine->sfetch_dowork();
@@ -267,7 +259,7 @@ HOT_RELOAD__EXPORT void logic_onfixedupdate(void) {
 }
 
 // on draw
-HOT_RELOAD__EXPORT void logic_onupdate(void) {
+static void logic_onupdate(void) {
   Logic__State* logic = g_engine->logic;
 
   // 1st pass
@@ -288,9 +280,26 @@ HOT_RELOAD__EXPORT void logic_onupdate(void) {
   g_engine->draw_count = stats.num_draw;
 }
 
-HOT_RELOAD__EXPORT void logic_onshutdown(void) {
+static void logic_onshutdown(void) {
   Game__shutdown();
   g_engine->sg_shutdown();
   Audio__shutdown();
   g_engine->sfetch_shutdown();
+}
+
+void logic_onbootstrap(Engine__State* engine) {
+  // NOTICE: logging won't work in here (first time)
+
+  g_engine = engine;
+  g_engine->onbootstrap = logic_onbootstrap;
+  g_engine->oninit = logic_oninit;
+  g_engine->onpreload = logic_onpreload;
+  g_engine->onevent = logic_onevent;
+  g_engine->onfixedupdate = logic_onfixedupdate;
+  g_engine->onupdate = logic_onupdate;
+  g_engine->onshutdown = logic_onshutdown;
+  LOG_DEBUGF("Logic dll reloaded.");
+
+  Audio__reload();
+  Game__reload();
 }

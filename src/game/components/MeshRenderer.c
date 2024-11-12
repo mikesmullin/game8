@@ -121,7 +121,7 @@ static void MeshRenderer__loaded(Entity* entity) {
     u32 ii = 0, mask, color;
     for (u32 y = 0; y < material->texture->h; y++) {
       for (u32 x = 0; x < material->texture->w; x++) {
-        mask = entity->render->useMask ? entity->render->mask : PINK;
+        mask = entity->render->useMask ? entity->render->mask : COLOR_PINK;
         color = Bmp__Get2DPixel(texture, x, y, mask);
         pixels[ii++] = color;
       }

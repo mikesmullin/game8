@@ -44,6 +44,7 @@ const C_ENGINE_COMPILER_FLAGS = [
   '-DSOKOL_GLCORE', // use GL backend
 ];
 const C_DLL_COMPILER_FLAGS = [
+  '-DENGINE__COMPILING_DLL',
 ];
 const C_WEB_COMPILER_FLAGS = [
   '-DSOKOL_GLES3', // use GLES3 backend
@@ -204,6 +205,7 @@ const shaders = async (out_type) => {
 };
 
 const clean = async () => {
+  // TODO: selective clean
   await fs.rm(path.join(workspaceFolder, BUILD_PATH), { recursive: true, force: true });
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH));
 
@@ -213,9 +215,20 @@ const clean = async () => {
   }
 };
 
-const compile = async (basename) => {
-  console.log(`compiling ${basename}...`);
+const logic_hotreload_variants = (mode) => (unit) => {
+  if ('main' == mode) {
+    unit = unit.replace(/Logic.o$/, 'Logic_main.o');
+  }
+  else if ('dll' == mode) {
+    unit = unit.replace(/Logic.o$/, 'Logic_dll.o');
+  }
+  return unit;
+}
 
+
+const compile = async (basename) => {
+  const started = performance.now();
+  console.log(`compiling ${basename}...`);
   const unit = 'src/app.c';
 
   // discover included translation unit files
@@ -227,6 +240,7 @@ const compile = async (basename) => {
   }
 
   // compile and link in one step
+  const executable = relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`);
   const r1 = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     ...C_COMPILER_ARGS,
@@ -234,14 +248,22 @@ const compile = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
-    '-DENGINE__COMPILE_HOT_RELOAD',
-    ...object_files,
+    ...object_files.filter(
+      logic_hotreload_variants('main'),
+    ),
     unit,
-    '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
-  ]);
+    '-o', executable,
+  ], { buffer: true });
+  const ended = performance.now();
 
-  if (0 == r1.code) console.log("done compiling.");
-  else console.log("compile failed.");
+  const success = 0 == r1.code;
+  const color = success ? 'green' : 'red';
+  const log = success ? 'log' : 'error';
+  console.log(chalk.grey(r1.cmd));
+  if (r1.stdout) console.log(r1.stdout);
+  if (r1.stderr) console.error(chalk.red(r1.stderr));
+  console[log](chalk[color](`compiling ${basename} ${success ? 'succeeded' : 'failed'}. file: ${executable}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`));
+
   return r1.code;
 };
 
@@ -256,6 +278,7 @@ function generateRandomString(length) {
 }
 
 const compile_reload = async (outname) => {
+  const started = performance.now();
   console.log(`recompiling...`);
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });
@@ -267,7 +290,7 @@ const compile_reload = async (outname) => {
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
-    const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+    const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'dll', C_DLL_COMPILER_FLAGS);
     object_files.push(r.object);
   }
 
@@ -300,21 +323,30 @@ const compile_reload = async (outname) => {
   const analyzer_bin = path.join('build', 'analysis.bin');
   if (ANALYZE) await child_spawn(ANALYZER, ['--start', analyzer_out_path]);
 
-  const started = performance.now();
   const r1 = await child_spawn(C_COMPILER_PATH, [
     ...DEBUG_COMPILER_ARGS,
     // '-ftime-report', // display compile time stats
     ...(ANALYZE ? ['-ftime-trace'] : []), // display compile time stats
     ...C_COMPILER_ARGS,
     ...C_ENGINE_COMPILER_FLAGS,
+    ...C_DLL_COMPILER_FLAGS,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
-    '-DENGINE__COMPILING_DLL',
     '-shared',
-    ...object_files,
+    ...object_files.filter(
+      logic_hotreload_variants('dll'),
+    ),
     '-o', dst,
-  ]);
+  ], { buffer: true });
   const ended = performance.now();
+
+  const success = 0 == r1.code;
+  const color = success ? 'green' : 'red';
+  const log = success ? 'log' : 'error';
+  console.log(chalk.grey(r1.cmd));
+  if (r1.stdout) console.log(r1.stdout);
+  if (r1.stderr) console.error(chalk.red(r1.stderr));
+
 
   // TODO: on linux, to analyze with gcc
   // gcc -std=c11 -ftime-report -Wno-implicit-int ... -lm
@@ -339,10 +371,10 @@ const compile_reload = async (outname) => {
       await fs.cp(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, target2));
     }
   } catch (e) {
-    console.log('copy failed.', e);
+    console.log(chalk.red('copy failed.'), e);
   }
 
-  console.log(`recompilation ${0 == r1.code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`);
+  console[log](chalk[color](`compiling DLL ${0 == r1.code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`));
   return r1.code;
 };
 
@@ -535,10 +567,11 @@ const extract_include_units = async function* (opts) {
   }
 };
 
-const recompile_object = async (unit) => {
+const recompile_object = async (unit, mode = 'main', extra_compiler_flags = []) => {
   const basename = path.basename(unit, '.c');
   const out_path = path.join(workspaceFolder, BUILD_PATH, relWs(unit).replace(/\.c$/, ''));
-  const object = relWs(path.join(out_path, `${basename}.o`));
+  let object = relWs(path.join(out_path, `${basename}.o`));
+  object = logic_hotreload_variants(mode)(object);
   await fs.mkdir(out_path, { recursive: true });
   const { stat: { mtime: unit_mtime } } = await fs_exists(unit);
   const { stat: { mtime: object_mtime } } = await fs_exists(object);
@@ -548,16 +581,17 @@ const recompile_object = async (unit) => {
       ...DEBUG_COMPILER_ARGS,
       ...C_COMPILER_ARGS,
       ...C_ENGINE_COMPILER_FLAGS,
+      ...extra_compiler_flags,
       // ...C_COMPILER_INCLUDES,
       // ...LINKER_LIBS,
       // ...LINKER_LIB_PATHS,
       '-c', unit, // compile without linking
       '-o', object,
     ], { buffer: true });
+    console.log(chalk.grey(r1.cmd));
     if (0 != r1.code) {
-      console.log(chalk.grey(r1.cmd));
-      console.log(chalk.red(r1.stdout));
-      console.log(chalk.red(r1.stderr));
+      console.error(chalk.red(r1.stdout));
+      console.error(chalk.red(r1.stderr));
     }
   }
   return { unit, object, r: r1 };
@@ -637,7 +671,9 @@ const test = async () => {
         // ...C_COMPILER_INCLUDES,
         // ...LINKER_LIBS,
         // ...LINKER_LIB_PATHS,
-        ...object_files,
+        ...object_files.filter(
+          logic_hotreload_variants('main'),
+        ),
         unit,
         '-o', executable,
       ], { buffer: true });

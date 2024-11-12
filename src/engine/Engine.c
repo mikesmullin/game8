@@ -124,7 +124,8 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
     ASSERT_CONTEXT(HotReload__load(LOGIC_FILENAME), "Failed to load Logic.dll");
   }
 
-  g_engine->logic_oninit(g_engine);
+  g_engine->onbootstrap(g_engine);
+  g_engine->oninit();
 
   // NOTICE: You can't log here--it's too early. The window + console aren't initialized, yet.
 
@@ -149,7 +150,7 @@ void Engine__sokol_init(void) {
     HotReload__StartMonitor(&g_engine->fm);
   }
 
-  g_engine->logic_onpreload();
+  g_engine->onpreload();
 }
 
 void Engine__sokol_frame(void) {
@@ -164,7 +165,7 @@ void Engine__sokol_frame(void) {
       }
       g_engine->stream_cb2 = NULL;
       if (HotReload__load(path)) {
-        g_engine->logic_onreload(g_engine);
+        g_engine->onbootstrap(g_engine);
       }
     }
   }
@@ -174,11 +175,11 @@ void Engine__sokol_frame(void) {
   g_engine->deltaTime = g_engine->stm_sec(g_engine->stm_laptime(&lastTick));
 
   u64 startPhysics = g_engine->stm_now(), costPhysics;
-  g_engine->logic_onfixedupdate();
+  g_engine->onfixedupdate();
   costPhysics = g_engine->stm_ms(g_engine->stm_laptime(&startPhysics));
 
   u64 startRender = g_engine->stm_now(), costRender;
-  g_engine->logic_onupdate();
+  g_engine->onupdate();
   costRender = g_engine->stm_ms(g_engine->stm_laptime(&startRender));
 
   // performance stats
@@ -220,7 +221,7 @@ void Engine__sokol_frame(void) {
 }
 
 void Engine__sokol_cleanup(void) {
-  g_engine->logic_onshutdown();
+  g_engine->onshutdown();
   if (g_engine->useHotReload) {
     HotReload__EndMonitor(&g_engine->fm);
   }
@@ -228,7 +229,7 @@ void Engine__sokol_cleanup(void) {
 
 void Engine__sokol_event_cb(const sapp_event* event) {
   if (!g_engine->useInput) return;
-  g_engine->logic_onevent(event);
+  g_engine->onevent(event);
 }
 
 void Engine__sokol_stream_cb(float* buffer, int num_frames, int num_channels) {

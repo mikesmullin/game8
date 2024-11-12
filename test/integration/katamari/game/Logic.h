@@ -399,11 +399,6 @@ typedef struct Logic__State {
   NetMgr net;
 } Logic__State;
 
-HOT_RELOAD__EXPORT void logic_oninit(Engine__State* state);
-HOT_RELOAD__EXPORT void logic_onpreload(void);
-HOT_RELOAD__EXPORT void logic_onevent(const sapp_event* event);
-HOT_RELOAD__EXPORT void logic_onfixedupdate(void);
-HOT_RELOAD__EXPORT void logic_onupdate(void);
-HOT_RELOAD__EXPORT void logic_onshutdown(void);
+HOT_RELOAD__EXPORT void logic_onbootstrap(Engine__State* engine);
 
 #undef MAX_LISTENERS

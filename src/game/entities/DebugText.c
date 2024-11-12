@@ -44,7 +44,7 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.render->tw = 4, sprite->base.render->th = 6;  // glyph 4x6 pixels
     sprite->base.render->aw = 128, sprite->base.render->ah = 24;  // atlas 32x4 chars
     sprite->base.render->useMask = true;
-    sprite->base.render->mask = WHITE;
+    sprite->base.render->mask = COLOR_WHITE;
     sprite->base.render->color = color;
     sprite->base.render->rg = UI_ZSORT_RG;
 

@@ -45,7 +45,7 @@ void Game__preload() {
   level->height = 10;
   // DEBUG: UV ColorMap
   // level->wallTex = 0;
-  // level->wallCol = TRANSPARENT;
+  // level->wallCol = COLOR_TRANSPARENT;
   level->wallTex = 5;
   level->wallCol = 0x66ff0000;
   // level->ceilCol = 0x77000022;  // blood red
@@ -60,7 +60,7 @@ void Game__preload() {
 
   logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
   char txt[40] = "Hello world!";
-  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, WHITE);
+  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, COLOR_WHITE);
   List__insort(g_engine->arena, logic->ui_entities, logic->dt, Level__zsort);
 
   // preload assets
@@ -74,6 +74,7 @@ void Game__preload() {
 
 void Game__reload() {
   Logic__State* logic = g_engine->logic;
+  if (NULL == logic) return;  // first time will not be defined
 
   Audio__replay(logic->audio.pickupCoin);
 }

@@ -36,6 +36,14 @@ typedef struct Engine__State {
   bool useTime;
   bool useHotReload;
 
+  void (*onbootstrap)(Engine__State* engine);
+  void (*oninit)(void);
+  void (*onpreload)(void);
+  void (*onevent)(const sapp_event* event);
+  void (*onfixedupdate)(void);
+  void (*onupdate)(void);
+  void (*onshutdown)(void);
+
   FileMonitor fm;
   bool quit;
 
@@ -107,14 +115,6 @@ typedef struct Engine__State {
   void (*sfetch_shutdown)(void);
   sfetch_handle_t (*sfetch_send)(const sfetch_request_t* request);
 
-  void (*logic_oninit)(Engine__State* state);
-  void (*logic_onpreload)(void);
-  void (*logic_onreload)(Engine__State* state);
-  void (*logic_onevent)(const sapp_event* event);
-  void (*logic_onfixedupdate)(void);
-  void (*logic_onupdate)(void);
-  void (*logic_onshutdown)(void);
-
   u64 now;
   f32 deltaTime;
   u16 entity_count;
@@ -129,9 +129,10 @@ typedef struct Engine__State {
 #endif
 #if defined(ENGINE__MAIN) || defined(ENGINE__NO_MAIN)
 Engine__State engines[ENGINE__COUNT];
+Engine__State* g_engine = &engines[0];
 #endif
 
-#if defined(ENGINE__MAIN) || defined(ENGINE__DLL) || defined(ENGINE__NO_MAIN)
+#if defined(ENGINE__DLL)
 Engine__State* g_engine;
 #endif
 

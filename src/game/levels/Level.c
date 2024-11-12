@@ -1,6 +1,7 @@
 #include "Level.h"
 
 #include "../../engine/common/Bmp.h"
+#include "../../engine/common/Color.h"
 #include "../../engine/common/Dispatcher.h"
 #include "../../engine/common/Geometry.h"
 #include "../../engine/common/List.h"
@@ -108,7 +109,7 @@ static void Level__loaded(Level* level) {
 
   for (s32 y = 0; y < level->bmp->h; y++) {
     for (s32 x = 0; x < level->bmp->w; x++) {
-      u32 color = Bmp__Get2DPixel(level->bmp, x, y, TRANSPARENT);
+      u32 color = Bmp__Get2DPixel(level->bmp, x, y, COLOR_TRANSPARENT);
       Entity* entity = Level__makeEntity(color, x, y);
       if (0 != entity) {
         List__append(g_engine->arena, level->entities, entity);
