@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Types.h"
-
-typedef struct WavReader WavReader;
+#include "Wav.h"
 
 void Audio__init();
 void Audio__reload();

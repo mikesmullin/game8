@@ -31,6 +31,7 @@ void wslog_func(
 void wsapp_lock_mouse(bool lock);
 bool wsapp_mouse_locked(void);
 void wsapp_update_window_title(const char* title);
+void wsapp_request_quit(void);
 
 // sokol_gfx
 

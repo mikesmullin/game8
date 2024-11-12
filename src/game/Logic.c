@@ -36,7 +36,6 @@ static void logic_onpreload(void) {
       .environment = g_engine->sglue_environment(),  //
       .logger.func = g_engine->slog_func,  //
   });
-
   g_engine->sg_enable_frame_stats();
 
   // multi-pass rendering
@@ -298,7 +297,8 @@ void logic_onbootstrap(Engine__State* engine) {
   g_engine->onfixedupdate = logic_onfixedupdate;
   g_engine->onupdate = logic_onupdate;
   g_engine->onshutdown = logic_onshutdown;
-  LOG_DEBUGF("Logic dll reloaded.");
+
+  if (NULL != g_engine->logic) LOG_DEBUGF("Logic dll reloaded.");
 
   Audio__reload();
   Game__reload();

@@ -52,6 +52,15 @@ void wsapp_update_window_title(const char* title) {
 #endif
 }
 
+extern void sapp_request_quit(void);
+
+void wsapp_request_quit(void) {
+  if (g_engine->useVideo) {
+    sapp_request_quit();
+  }
+  g_engine->quit = true;
+}
+
 // sokol_gfx
 
 extern void sg_setup(const sg_desc* desc);

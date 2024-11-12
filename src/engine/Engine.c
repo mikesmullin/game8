@@ -21,6 +21,7 @@ void Engine__init() {
   g_engine->sapp_lock_mouse = wsapp_lock_mouse;
   g_engine->sapp_mouse_locked = wsapp_mouse_locked;
   g_engine->sapp_update_window_title = wsapp_update_window_title;
+  g_engine->sapp_request_quit = wsapp_request_quit;
 
   g_engine->sg_setup = wsg_setup;
   g_engine->sglue_environment = wsglue_environment;
@@ -112,6 +113,22 @@ void Engine__cli(int argc, char* argv[]) {
 }
 
 // --- Engine + Sokol integration ---
+
+int Engine__main(int argc, char* argv[]) {
+  sapp_desc desc = Engine__sokol_main(argc, argv);
+  if (g_engine->useVideo) {
+    sapp_run(&desc);
+  } else {
+    Engine__sokol_init();
+    while (!g_engine->quit) {
+      Engine__sokol_frame();
+      // TODO: constant must become dynamic, based on last lap
+      SLEEP(1000 / 60);  // TODO: use fixedUpdate time step?
+    }
+    Engine__sokol_cleanup();
+  }
+  return 0;
+}
 
 sapp_desc Engine__sokol_main(int argc, char* argv[]) {
   Engine__init();

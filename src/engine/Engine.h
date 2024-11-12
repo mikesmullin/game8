@@ -1,13 +1,6 @@
 #pragma once
 
-#ifdef ENGINE__MAIN
-#define SOKOL_IMPL
-#endif
-#ifdef ENGINE__DLL
-#define SOKOL_IMPL
-#define SOKOL_NO_ENTRY
-#endif
-#ifdef ENGINE__NO_MAIN
+#if defined(ENGINE__MAIN) || defined(ENGINE__DLL) || defined(ENGINE__NO_MAIN)
 #define SOKOL_IMPL
 #define SOKOL_NO_ENTRY
 #endif
@@ -15,10 +8,12 @@
 
 //
 
-#include "common/Arena.h"  // IWYU pragma: keep
-#include "common/HotReload.h"  // IWYU pragma: keep
+#include "common/Arena.h"
+#include "common/Audio.h"  // IWYU pragma: keep
+#include "common/HotReload.h"
 #include "common/Log.h"  // IWYU pragma: keep
 #include "common/Math.h"  // IWYU pragma: keep
+#include "common/Sleep.h"  // IWYU pragma: keep
 #include "common/Types.h"
 #include "common/Utils.h"  // IWYU pragma: keep
 
@@ -71,6 +66,7 @@ typedef struct Engine__State {
   void (*sapp_lock_mouse)(bool lock);
   bool (*sapp_mouse_locked)(void);
   void (*sapp_update_window_title)(const char* title);
+  void (*sapp_request_quit)(void);
 
   sg_buffer (*sg_make_buffer)(const sg_buffer_desc* desc);
   sg_shader (*sg_make_shader)(const sg_shader_desc* desc);
@@ -142,6 +138,7 @@ extern Engine__State* g_engine;
 
 void Engine__init();
 void Engine__cli(int argc, char* argv[]);
+int Engine__main(int argc, char* argv[]);
 sapp_desc Engine__sokol_main(int argc, char* argv[]);
 void Engine__sokol_init(void);
 void Engine__sokol_frame(void);

@@ -15,6 +15,7 @@ static void logic_oninit(void) {
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
   g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
 
+  Audio__init();
   Game__init();
 }
 
@@ -22,7 +23,13 @@ static void logic_onpreload(void) {
   // sokol_time.h
   g_engine->stm_setup();
 
+  // sokol_fetch.h
+  g_engine->sfetch_setup(&(sfetch_desc_t){
+      .logger.func = g_engine->slog_func,
+  });
+
   // preload assets
+  Audio__preload();
   Game__preload();
 }
 
@@ -48,7 +55,7 @@ void logic_onevent(const sapp_event* event) {
 
 // on physics
 static void logic_onfixedupdate(void) {
-  // g_engine->sfetch_dowork();
+  g_engine->sfetch_dowork();
 
   Game__tick();
 }
@@ -64,8 +71,10 @@ static void logic_onupdate(void) {
 }
 
 static void logic_onshutdown(void) {
+  LOG_DEBUGF("logic shutdown");
   Game__shutdown();
-  // Audio__shutdown();
+  Audio__shutdown();
+  exit(0);
 }
 
 void logic_onbootstrap(Engine__State* engine) {
@@ -79,7 +88,8 @@ void logic_onbootstrap(Engine__State* engine) {
   g_engine->onfixedupdate = logic_onfixedupdate;
   g_engine->onupdate = logic_onupdate;
   g_engine->onshutdown = logic_onshutdown;
-  LOG_DEBUGF("Logic dll reloaded.");
 
-  // Game__reload();
+  if (NULL != g_engine->logic) LOG_DEBUGF("Logic dll reloaded.");
+
+  Game__reload();
 }

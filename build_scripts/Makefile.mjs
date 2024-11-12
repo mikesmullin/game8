@@ -131,7 +131,8 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
     delete opts.buffer;
     stdio = ['ignore', 'pipe', 'pipe'];
   }
-  const child = spawn(cmd, args, { stdio });
+  const cwd = opts.cwd || process.cwd();
+  const child = spawn(cmd, args, { stdio, cwd });
   if (buf) {
     child.stdout.setEncoding('utf8');
     child.stdout.on('data', (data) => {
@@ -430,7 +431,7 @@ const run = async (basename, args = []) => {
     await fs.chmod(exePath, 0o755);
   }
 
-  await child_spawn(exePath, args);
+  await child_spawn(exePath, args, { cwd: absBuild() });
 }
 
 const compile_web = async (basename) => {
@@ -690,11 +691,10 @@ const test = async () => {
         } else {
           // execute test
           const started2 = performance.now();
-
           if (result.runInsts?.length == 1) {
             // use args specified in test
             const args2a = result.runInsts[0].split(/\s+/g);
-            const p2a = child_spawn(executable, args2a, { buffer: true });
+            const p2a = child_spawn(relBuild(executable), args2a, { buffer: true, cwd: absBuild() });
             const r2a = await p2a;
             result.execCmd = r2a.cmd;
             result.execCode = r2a.code, result.execOut = r2a.stdout, result.execErr = r2a.stderr;
@@ -704,9 +704,9 @@ const test = async () => {
             const args2a = result.runInsts[0].split(/\s+/g);
             const args2b = result.runInsts[1].split(/\s+/g);
             const args2c = result.runInsts[2].split(/\s+/g);
-            const p2a = child_spawn(executable, args2a, { buffer: true });
-            const p2b = child_spawn(executable, args2b, { buffer: true });
-            const p2c = child_spawn(executable, args2c, { buffer: true });
+            const p2a = child_spawn(relBuild(executable), args2a, { buffer: true, cwd: absBuild() });
+            const p2b = child_spawn(relBuild(executable), args2b, { buffer: true, cwd: absBuild() });
+            const p2c = child_spawn(relBuild(executable), args2c, { buffer: true, cwd: absBuild() });
             const r2a = await p2a;
             const r2b = await p2b;
             const r2c = await p2c;
@@ -716,7 +716,7 @@ const test = async () => {
           }
           else {
             // no args
-            const r2 = await child_spawn(executable, [], { buffer: true });
+            const r2 = await child_spawn(relBuild(executable), [], { buffer: true, cwd: absBuild() });
             result.execCmd = r2.cmd;
             result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
           }
@@ -759,6 +759,7 @@ const test = async () => {
         }
       }
 
+      console.error(chalk.gray(indent(1, result.execCmd)));
       if (result.pass) {
         overall.passes++;
         console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode} `)));
@@ -768,7 +769,6 @@ const test = async () => {
       }
       else if (result.fail) {
         overall.fails++;
-        console.error(chalk.gray(indent(1, result.execCmd)));
         console.error(chalk.red(indent(1, `process failed. code: ${result.execCode} `)));
         if (result.execOut) {
           console.error(chalk.red(indent(2, result.execOut)));
