@@ -290,7 +290,6 @@ extern u64 stm_now(void);
 u64 wstm_now(void) {
   if (!g_engine->useTime) return 0;
   return stm_now();
-  return 0;
 }
 
 extern f64 stm_ns(u64 ticks);
@@ -298,7 +297,6 @@ extern f64 stm_ns(u64 ticks);
 f64 wstm_ns(u64 ticks) {
   if (!g_engine->useTime) return 0;
   return stm_ns(ticks);
-  return 0;
 }
 
 extern f64 stm_us(u64 ticks);
@@ -306,7 +304,6 @@ extern f64 stm_us(u64 ticks);
 f64 wstm_us(u64 ticks) {
   if (!g_engine->useTime) return 0;
   return stm_us(ticks);
-  return 0;
 }
 
 extern f64 stm_ms(u64 ticks);
@@ -314,7 +311,6 @@ extern f64 stm_ms(u64 ticks);
 f64 wstm_ms(u64 ticks) {
   if (!g_engine->useTime) return 0;
   return stm_ms(ticks);
-  return 0;
 }
 
 extern f64 stm_sec(u64 ticks);
@@ -322,7 +318,6 @@ extern f64 stm_sec(u64 ticks);
 f64 wstm_sec(u64 ticks) {
   if (!g_engine->useTime) return 0;
   return stm_sec(ticks);
-  return 0;
 }
 
 extern u64 stm_laptime(u64* last_time);
@@ -330,7 +325,6 @@ extern u64 stm_laptime(u64* last_time);
 u64 wstm_laptime(u64* last_time) {
   if (!g_engine->useTime) return 0;
   return stm_laptime(last_time);
-  return 0;
 }
 
 // sokol_fetch

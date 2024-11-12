@@ -44,14 +44,13 @@ u8 HotReload__load(const char* file) {
     return 0;  // fail
   }
 
-  g_engine->logic_oninit = (logic_oninit_t)GetProcAddress(logic, "logic_oninit");
-  g_engine->logic_onpreload = (logic_onpreload_t)GetProcAddress(logic, "logic_onpreload");
-  g_engine->logic_onreload = (logic_onreload_t)GetProcAddress(logic, "logic_onreload");
-  g_engine->logic_onevent = (logic_onevent_t)GetProcAddress(logic, "logic_onevent");
-  g_engine->logic_onfixedupdate =
-      (logic_onfixedupdate_t)GetProcAddress(logic, "logic_onfixedupdate");
-  g_engine->logic_onupdate = (logic_onupdate_t)GetProcAddress(logic, "logic_onupdate");
-  g_engine->logic_onshutdown = (logic_onshutdown_t)GetProcAddress(logic, "logic_onshutdown");
+  g_engine->logic_oninit = (void*)GetProcAddress(logic, "logic_oninit");
+  g_engine->logic_onpreload = (void*)GetProcAddress(logic, "logic_onpreload");
+  g_engine->logic_onreload = (void*)GetProcAddress(logic, "logic_onreload");
+  g_engine->logic_onevent = (void*)GetProcAddress(logic, "logic_onevent");
+  g_engine->logic_onfixedupdate = (void*)GetProcAddress(logic, "logic_onfixedupdate");
+  g_engine->logic_onupdate = (void*)GetProcAddress(logic, "logic_onupdate");
+  g_engine->logic_onshutdown = (void*)GetProcAddress(logic, "logic_onshutdown");
 #endif
 
   return 1;  // success

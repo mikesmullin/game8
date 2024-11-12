@@ -96,9 +96,8 @@ const generate_clangd_compile_commands = async () => {
   const unit_files = await glob('{src,tests}/**/*.c');
   console.debug('unit_files: ', unit_files);
   for (const unit_file of unit_files) {
-    is_dll = dll_files.includes(unit_file);
     compile_commands.push({
-      directory: path.join(workspaceFolder, BUILD_PATH),
+      directory: path.join(workspaceFolder),
       arguments: [
         C_COMPILER_PATH,
         ...C_COMPILER_ARGS,
@@ -107,13 +106,13 @@ const generate_clangd_compile_commands = async () => {
         ...EDITOR_INCLUDES,
         '-c',
         '-o', `${unit_file}.o`,
-        relBuild(unit_file),
+        relWs(unit_file),
       ],
-      file: relBuild(workspaceFolder, unit_file),
+      file: relWs(workspaceFolder, unit_file),
     });
   }
 
-  console.log(`writing ${OUT_FILE}...`)
+  console.log(`writing ${OUT_FILE} ...`)
   await fs.writeFile(OUT_FILE, JSON.stringify(compile_commands, null, 2));
 
   console.log('done making.');
@@ -235,6 +234,7 @@ const compile = async (basename) => {
     // ...C_COMPILER_INCLUDES,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
+    '-DENGINE__COMPILE_HOT_RELOAD',
     ...object_files,
     unit,
     '-o', relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`),
@@ -309,6 +309,7 @@ const compile_reload = async (outname) => {
     ...C_ENGINE_COMPILER_FLAGS,
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
+    '-DENGINE__COMPILING_DLL',
     '-shared',
     ...object_files,
     '-o', dst,

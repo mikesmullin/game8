@@ -1,6 +1,8 @@
+#ifdef ENGINE__COMPILING_DLL
+#define ENGINE__DLL
+#endif
 #include "Logic.h"
 
-// #include "../../../../src/game/common/Audio.h"
 #include "Game.h"
 
 // on init (data only)
@@ -12,13 +14,17 @@ void logic_oninit(Engine__State* state) {
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
   g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
 
-  // Audio__init();
+  // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
+  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
+
   Game__init();
 }
 
 void logic_onpreload(void) {
+  // sokol_time.h
+  g_engine->stm_setup();
+
   // preload assets
-  // Audio__preload();
   Game__preload();
 }
 
@@ -26,25 +32,25 @@ void logic_onpreload(void) {
 void logic_onevent(const sapp_event* event) {
   Logic__State* logic = g_engine->logic;
 
-  logic->player->input.fwd = false;
-  logic->player->input.left = false;
-  logic->player->input.back = false;
-  logic->player->input.right = false;
-  logic->player->input.use = false;
-  logic->player->input.up = false;
-  logic->player->input.down = false;
-  logic->player->input.reload = false;
-  logic->player->input.esc = false;
-  logic->player->input.use = false;
+  // logic->player->input.fwd = false;
+  // logic->player->input.left = false;
+  // logic->player->input.back = false;
+  // logic->player->input.right = false;
+  // logic->player->input.use = false;
+  // logic->player->input.up = false;
+  // logic->player->input.down = false;
+  // logic->player->input.reload = false;
+  // logic->player->input.esc = false;
+  // logic->player->input.use = false;
 
-  logic->player->ptr.wheely = 0;
-  logic->player->ptr.x = 0;
-  logic->player->ptr.y = 0;
+  // logic->player->ptr.wheely = 0;
+  // logic->player->ptr.x = 0;
+  // logic->player->ptr.y = 0;
 }
 
 // on physics
 void logic_onfixedupdate(void) {
-  g_engine->sfetch_dowork();
+  // g_engine->sfetch_dowork();
 
   Game__tick();
 }

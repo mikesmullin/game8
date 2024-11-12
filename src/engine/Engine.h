@@ -23,15 +23,6 @@
 #include "common/Utils.h"  // IWYU pragma: keep
 
 typedef struct Engine__State Engine__State;
-
-typedef void (*logic_oninit_t)(Engine__State* state);
-typedef void (*logic_onpreload_t)(void);
-typedef void (*logic_onreload_t)(Engine__State* state);
-typedef void (*logic_onevent_t)(const sapp_event* event);
-typedef void (*logic_onfixedupdate_t)(void);
-typedef void (*logic_onupdate_t)(void);
-typedef void (*logic_onshutdown_t)(void);
-
 typedef struct Logic__State Logic__State;
 typedef struct WavReader WavReader;
 
@@ -116,13 +107,13 @@ typedef struct Engine__State {
   void (*sfetch_shutdown)(void);
   sfetch_handle_t (*sfetch_send)(const sfetch_request_t* request);
 
-  logic_oninit_t logic_oninit;
-  logic_onpreload_t logic_onpreload;
-  logic_onreload_t logic_onreload;
-  logic_onevent_t logic_onevent;
-  logic_onfixedupdate_t logic_onfixedupdate;
-  logic_onupdate_t logic_onupdate;
-  logic_onshutdown_t logic_onshutdown;
+  void (*logic_oninit)(Engine__State* state);
+  void (*logic_onpreload)(void);
+  void (*logic_onreload)(Engine__State* state);
+  void (*logic_onevent)(const sapp_event* event);
+  void (*logic_onfixedupdate)(void);
+  void (*logic_onupdate)(void);
+  void (*logic_onshutdown)(void);
 
   u64 now;
   f32 deltaTime;
@@ -140,19 +131,7 @@ typedef struct Engine__State {
 Engine__State engines[ENGINE__COUNT];
 #endif
 
-#if defined(ENGINE__MAIN) && defined(ENGINE__HOT_RELOAD)  // app.c (game)
-Engine__State* g_engine;
-#endif
-
-#if defined(ENGINE__MAIN) && !defined(ENGINE__HOT_RELOAD)  // app.c (integration test)
-Engine__State* g_engine;
-#endif
-
-#if defined(ENGINE__DLL) && !defined(ENGINE__HOT_RELOAD)  // Logic.c.dll (alone)
-Engine__State* g_engine;
-#endif
-
-#if defined(ENGINE__NO_MAIN) && !defined(ENGINE__HOT_RELOAD)  // app.c (unit test)
+#if defined(ENGINE__MAIN) || defined(ENGINE__DLL) || defined(ENGINE__NO_MAIN)
 Engine__State* g_engine;
 #endif
 
