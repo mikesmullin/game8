@@ -16,7 +16,8 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->render->material = Preload__material(&g_engine->materials->sprite, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &g_engine->models->plane2D,
-      "../assets/models/plane2D.obj");
+      "../assets/models/",
+      "plane2D.obj");
   entity->render->material->texture = Preload__texture(  //
       &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");

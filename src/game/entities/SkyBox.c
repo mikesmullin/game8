@@ -28,7 +28,8 @@ void SkyBox__init(Entity* entity) {
   entity->render->material = Preload__material(&g_engine->materials->cubemap, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &g_engine->models->skybox,
-      "../assets/models/skybox.obj");
+      "../assets/models/",
+      "skybox.obj");
   entity->render->material->texture = Preload__texture(  //
       &g_engine->textures->sky,
       "../assets/textures/sky.bmp");

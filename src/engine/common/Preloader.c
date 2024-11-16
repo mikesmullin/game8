@@ -5,10 +5,10 @@
 #include "Wav.h"
 #include "Wavefront.h"
 
-Wavefront* Preload__model(Wavefront** saveSlot, const char* filePath) {
+Wavefront* Preload__model(Wavefront** saveSlot, const char* path, const char* file) {
   if (0 == *saveSlot) {
-    LOG_DEBUGF("Preloading model %s", filePath);
-    (*saveSlot) = Wavefront__Read(filePath);
+    LOG_DEBUGF("Preloading model %s%s", path, file);
+    (*saveSlot) = Wavefront__Read(path, file);
   }
   return *saveSlot;
 }

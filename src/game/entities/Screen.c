@@ -12,7 +12,8 @@ void Screen__init(Entity* entity, u32 mpTexture) {
   sprite->base.render->material = Preload__material(&g_engine->materials->screen, sizeof(Material));
   sprite->base.render->material->mesh = Preload__model(  //
       &g_engine->models->screen2D,
-      "../assets/models/screen2D.obj");
+      "../assets/models/",
+      "screen2D.obj");
   sprite->base.render->ti = 0;
   sprite->base.render->tw = SCREEN_SIZE, sprite->base.render->th = SCREEN_SIZE;
   sprite->base.render->aw = SCREEN_SIZE, sprite->base.render->ah = SCREEN_SIZE;

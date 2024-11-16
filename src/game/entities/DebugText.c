@@ -24,7 +24,8 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
         Preload__material(&g_engine->materials->glyph, sizeof(Material));
     sprite->base.render->material->mesh = Preload__model(  //
         &g_engine->models->plane2D,
-        "../assets/models/plane2D.obj");
+        "../assets/models/",
+        "plane2D.obj");
     sprite->base.render->material->texture = Preload__texture(  //
         &g_engine->textures->glyphs0,
         "../assets/textures/glyphs0.bmp");

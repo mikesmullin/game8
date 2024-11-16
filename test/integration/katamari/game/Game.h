@@ -9,8 +9,25 @@
 
 // Entities ----------------------------------------------
 
+#include "entities/Cube.h"  // IWYU pragma: keep
+
+typedef struct PreloadedAudio {
+  WavReader* pickupCoin;
+} PreloadedAudio;
+
+typedef struct PreloadedModels {
+  Wavefront* cube;
+} PreloadedModels;
+
+typedef struct PreloadedTextures {
+  // BmpReader *atlas, *glyphs0, *sky;
+} PreloadedTextures;
+
+typedef struct PreloadedMaterials {
+  Material* red;
+} PreloadedMaterials;
+
 typedef struct Game {
-  WavReader* coin;
   bool playedSfxOnce, testComplete;
 } Game;
 

@@ -12,7 +12,8 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   entity->render->material = Preload__material(&g_engine->materials->wall, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
       &g_engine->models->box,
-      "../assets/models/box.obj");
+      "../assets/models/",
+      "box.obj");
   entity->render->material->texture = Preload__texture(  //
       &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");
