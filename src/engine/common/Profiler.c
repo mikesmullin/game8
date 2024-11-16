@@ -1,8 +1,6 @@
 #include "Profiler.h"
 
 #include "../Engine.h"
-#include "Dispatcher.h"
-#include "Types.h"
 
 typedef struct Trace {
   u64 last_time;
@@ -10,8 +8,10 @@ typedef struct Trace {
   u32 call_count;
 } Trace;
 
+#define MAX_PROFILE_FNS (99)
+
 typedef struct Profiler {
-  Trace traces[DISPATCH1__COUNT];
+  Trace traces[MAX_PROFILE_FNS];
 } Profiler;
 
 static Profiler profiler;
@@ -30,7 +30,7 @@ void Profiler__endTrace(int id) {
 
 void Profiler__printf() {
   LOG_DEBUGF("\nProfiler:")
-  for (u32 id = 0; id < DISPATCH1__COUNT; id++) {
+  for (u32 id = 0; id < MAX_PROFILE_FNS; id++) {
     if (0 == profiler.traces[id].call_count) continue;
     LOG_DEBUGF(
         "  fn %2u took %5llu ticks %5.1lf us %5.1lf ms avg (%5d calls)",

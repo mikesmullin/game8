@@ -1,16 +1,9 @@
 #include "SkyBox.h"
 
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Preloader.h"
-#include "../../engine/common/Profiler.h"
-#include "../Logic.h"
-#include "Entity.h"
-
 void SkyBox__init(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
   Entity__init((Entity*)entity);
   entity->tags1 |= TAG_SKY;
-  entity->engine->tick = SKY_BOX__TICK;
+  entity->dispatch->tick = SKY_BOX__TICK;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
   entity->render->billboard = false;
@@ -32,20 +25,20 @@ void SkyBox__init(Entity* entity) {
   entity->tform->scale.z = 256.0f * s;
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.cubemap, sizeof(Material));
+  entity->render->material = Preload__material(&g_engine->materials->cubemap, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
-      &logic->models.skybox,
+      &g_engine->models->skybox,
       "../assets/models/skybox.obj");
   entity->render->material->texture = Preload__texture(  //
-      &logic->textures.sky,
+      &g_engine->textures->sky,
       "../assets/textures/sky.bmp");
 }
 
 void SkyBox__tick(Entity* entity) {
   PROFILE__BEGIN(SKY_BOX__TICK);
-  Logic__State* logic = g_engine->logic;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
-  entity->tform->pos.x = logic->player->base.tform->pos.x;
-  entity->tform->pos.z = logic->player->base.tform->pos.z;
+  entity->tform->pos.x = player1->base.base.tform->pos.x;
+  entity->tform->pos.z = player1->base.base.tform->pos.z;
   PROFILE__END(SKY_BOX__TICK);
 }

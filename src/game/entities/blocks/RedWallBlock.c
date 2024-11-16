@@ -1,25 +1,16 @@
 #include "RedWallBlock.h"
 
-#include "../../../engine/common/Dispatcher.h"
-#include "../../../engine/common/Preloader.h"
-#include "../../Logic.h"
-#include "../../components/AudioSource.h"
-#include "../../levels/Level.h"
-#include "Block.h"
-#include "WallBlock.h"
-
 void RedWallBlock__init(Entity* entity, f32 x, f32 z) {
-  Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   WallBlock* self = (WallBlock*)block;
   WallBlock__init(entity, x, z);
-  entity->engine->action = RED_WALL_BLOCK__ACTION;
+  entity->dispatch->action = RED_WALL_BLOCK__ACTION;
 
   entity->render->color = 0x660000ff;  // red
 
   // preload assets
   Preload__audio(
-      &logic->audio.click,  //
+      &g_engine->audio->click,  //
       "../assets/audio/sfx/click.wav");
 }
 
@@ -28,14 +19,14 @@ bool findCatBlock(Entity* entity) {
 }
 
 void RedWallBlock__action(Entity* entity, void* _action) {
-  Logic__State* logic = g_engine->logic;
   CatEntity* self = (CatEntity*)entity;
   Action* action = (Action*)_action;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
   if (ACTION_USE == action->type) {
-    CatSpawnBlock* csb = (CatSpawnBlock*)Level__findEntity(logic->level, findCatBlock);
+    CatSpawnBlock* csb = (CatSpawnBlock*)Level__findEntity(g_engine->game->level, findCatBlock);
     csb->maxSpawnCount += 100;
 
-    AudioSource__play(entity, g_engine->logic->audio.click);
+    AudioSource__play(g_engine->audio->click, entity, (Entity*)player1);
   }
 }

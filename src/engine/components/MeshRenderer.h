@@ -1,5 +1,5 @@
 #pragma once
 
-typedef struct List List;
+#include "../Engine.h"  // IWYU pragma: keep
 
 void MeshRenderer__renderBatches(List* entities);

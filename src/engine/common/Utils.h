@@ -1,6 +1,8 @@
 #pragma once
 
-#include "Types.h"
+#include <stdio.h>  // IWYU pragma: keep
+
+#include "../Engine.h"  // IWYU pragma: keep
 
 u64 mindexOf(u8* src, char byte, s64 smaxlen);
 u64 mread(void* dst, s64 readlen, u8** srcCursor, s64 smaxlen);

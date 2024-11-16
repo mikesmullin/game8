@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../../../engine/common/Types.h"
-typedef struct Entity Entity;
+#include "../../Game.h"  // IWYU pragma: keep
 
 void RedWallBlock__init(Entity* entity, f32 x, f32 z);
 void RedWallBlock__render(Entity* entity);

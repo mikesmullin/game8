@@ -1,21 +1,12 @@
 #include "CatSpawnBlock.h"
 
-#include "../../../engine/common/Dispatcher.h"
-#include "../../../engine/common/List.h"
-#include "../../../engine/common/Profiler.h"
-#include "../../Logic.h"
-#include "../../levels/Level.h"
-#include "../CatEntity.h"
-#include "Block.h"
-
 typedef int32_t s32;
 
 void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
-  Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
   Block__init(block, x, y);
-  block->base.engine->tick = CAT_SPAWN_BLOCK__TICK;
+  block->base.dispatch->tick = CAT_SPAWN_BLOCK__TICK;
   block->base.collider = 0;
   entity->tags1 |= TAG_CATSPAWN;
 
@@ -28,7 +19,6 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
 
 void CatSpawnBlock__tick(Entity* entity) {
   PROFILE__BEGIN(CAT_SPAWN_BLOCK__TICK);
-  Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
 
@@ -44,7 +34,7 @@ void CatSpawnBlock__tick(Entity* entity) {
       cat->base.base.tform->pos.x = block->base.tform->pos.x + Math__random(-1, 1);
       cat->base.base.tform->pos.y = -(1.0f / 8);
       cat->base.base.tform->pos.z = block->base.tform->pos.z + Math__random(-1, 1);
-      List__append(g_engine->arena, logic->level->entities, cat);
+      List__append(g_engine->arena, g_engine->game->level->entities, cat);
       self->spawnedCount++;
     }
   }

@@ -1,18 +1,15 @@
 #pragma once
 
-#include "../../engine/common/Types.h"
-
-typedef struct Entity_t Entity_t;
+#include "../Engine.h"  // IWYU pragma: keep
 
 // Define return statuses for behavior tree nodes
 // TODO: add BT_READY state?
 typedef enum { BT_SUCCESS, BT_FAILURE, BT_RUNNING } BTStatus;
 
 // Basic structure for a behavior tree node
-typedef struct BTNode_t BTNode;
 typedef struct BTNode_t {
-  Entity_t* entity;
-  BTStatus (*tick)(BTNode* node);  // Function pointer to the behavior's tick function
+  Entity* entity;
+  BTStatus (*tick)(struct BTNode_t* node);  // Function pointer to the behavior's tick function
 } BTNode;
 
 // This set of nodes provides a wide variety of behaviors and

@@ -1,13 +1,8 @@
 #include "Sprite.h"
 
-#include "../../engine/common/Color.h"
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Preloader.h"
-#include "../Logic.h"
-#include "Entity.h"
+#include "../Game.h"
 
 void Sprite__init(Entity* entity, f32 x, f32 z) {
-  Logic__State* logic = g_engine->logic;
   Sprite* self = (Sprite*)entity;
   Entity__init(entity);
   entity->tform->pos.x = x;
@@ -18,12 +13,12 @@ void Sprite__init(Entity* entity, f32 x, f32 z) {
   entity->render->billboard = true;
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.sprite, sizeof(Material));
+  entity->render->material = Preload__material(&g_engine->materials->sprite, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
-      &logic->models.plane2D,
+      &g_engine->models->plane2D,
       "../assets/models/plane2D.obj");
   entity->render->material->texture = Preload__texture(  //
-      &logic->textures.atlas,
+      &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");
   entity->render->ti = 1;
   entity->render->tw = entity->render->th = 8;

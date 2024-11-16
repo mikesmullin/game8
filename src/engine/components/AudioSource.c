@@ -1,31 +1,26 @@
 #include "AudioSource.h"
 
-#include "../../engine/common/Audio.h"
-#include "../../engine/common/Wav.h"
-#include "../Logic.h"
-
-void AudioSource__play(Entity* entity, WavReader* sound) {
+void AudioSource__play(WavReader* sound, Entity* emitter, Entity* listener) {
   f32 MAX_HEAR_DIST = 15.0f;
-  Player* player = (Player*)g_engine->logic->player;
   // only play if listener is near
-  if (0 != player->base.hear) {
+  if (0 != listener->hear) {
     // calc pan value
     HMM_Vec3 p1_minus_p0, forward, right, up = HMM_V3(0, 1, 0);
     f32 pan_value;
 
-    // Get the direction vector from player to source
+    // Get the direction vector from player1 to source
     p1_minus_p0 = HMM_SubV3(
-        HMM_V3(player->base.tform->pos.x, player->base.tform->pos.y, player->base.tform->pos.z),
-        HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z));
+        HMM_V3(listener->tform->pos.x, listener->tform->pos.y, listener->tform->pos.z),
+        HMM_V3(emitter->tform->pos.x, emitter->tform->pos.y, emitter->tform->pos.z));
 
     // Calculate forward vector (assuming rot0_y is the yaw in radians)
-    f32 rY = player->base.tform->rot.y;
+    f32 rY = listener->tform->rot.y;
     forward.X = HMM_CosF(rY);
     forward.Y = 0;
     forward.Z = -HMM_SinF(rY);
     forward = HMM_NormV3(forward);
 
-    // Calculate the right vector (player's right side)
+    // Calculate the right vector (player1's right side)
     right = HMM_NormV3(HMM_Cross(forward, up));
 
     // Project vector onto the right direction
@@ -39,8 +34,8 @@ void AudioSource__play(Entity* entity, WavReader* sound) {
     // calc distance/dropoff between source and listener, set volume/pan
 
     f32 d1 = HMM_LenV3(HMM_SubV3(
-        HMM_V3(player->base.tform->pos.x, player->base.tform->pos.y, player->base.tform->pos.z),
-        HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z)));
+        HMM_V3(listener->tform->pos.x, listener->tform->pos.y, listener->tform->pos.z),
+        HMM_V3(emitter->tform->pos.x, emitter->tform->pos.y, emitter->tform->pos.z)));
     f32 d2 = Math__map(
         Math__clamp(2, Math__fabsf(d1), MAX_HEAR_DIST),  //
         2,

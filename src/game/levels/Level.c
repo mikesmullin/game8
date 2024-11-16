@@ -1,22 +1,5 @@
 #include "Level.h"
 
-#include "../../engine/common/Bmp.h"
-#include "../../engine/common/Color.h"
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Geometry.h"
-#include "../../engine/common/List.h"
-#include "../../engine/common/Preloader.h"
-#include "../../engine/common/Profiler.h"
-#include "../../engine/common/QuadTree.h"
-#include "../Logic.h"
-#include "../components/MeshRenderer.h"
-#include "../entities/Sprite.h"
-#include "../entities/blocks/BreakBlock.h"
-#include "../entities/blocks/CatSpawnBlock.h"
-#include "../entities/blocks/RedWallBlock.h"
-#include "../entities/blocks/SpawnBlock.h"
-#include "../entities/blocks/WallBlock.h"
-
 Level* Level__alloc() {
   Level* level = Arena__Push(g_engine->arena, sizeof(Level));
   level->bmp = 0;
@@ -74,14 +57,14 @@ void Level__preload(Level* level) {
 }
 
 s32 Level__zsort(void* a, void* b) {
-  Logic__State* logic = g_engine->logic;
+  Player* player1 = (Player*)g_engine->players->head->data;
   Entity* ea = (Entity*)a;
   Entity* eb = (Entity*)b;
 
   HMM_Vec3 cPos = HMM_V3(  //
-      logic->player->base.tform->pos.x,
-      logic->player->base.tform->pos.y,
-      logic->player->base.tform->pos.z);
+      player1->base.base.tform->pos.x,
+      player1->base.base.tform->pos.y,
+      player1->base.base.tform->pos.z);
   HMM_Vec3 aPos = HMM_V3(  //
       ea->tform->pos.x,
       ea->tform->pos.y,
@@ -124,10 +107,9 @@ void Level__tick(Level* level) {
   g_engine->entity_count =  // for perf counters
       level->entities->len +  //
       (0 == level->zentities ? 0 : level->zentities->len) +  //
-      g_engine->logic->ui_entities->len;
-  Logic__State* logic = g_engine->logic;
+      g_engine->game->ui_entities->len;
 
-  Dispatcher__call1(level->cubemap->engine->tick, level->cubemap);
+  Dispatcher__call1(level->cubemap->dispatch->tick, level->cubemap);
 
   // build a QuadTree of all entities
   Arena__Reset(g_engine->frameArena);
@@ -158,7 +140,7 @@ void Level__tick(Level* level) {
       // }
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
-      Dispatcher__call1(entity->engine->tick, entity);
+      Dispatcher__call1(entity->dispatch->tick, entity);
 
       if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
         List__insort(g_engine->frameArena, level->zentities, entity, Level__zsort);
@@ -190,7 +172,7 @@ void Level__render(Level* level) {
       node = node->next;
 
       if (0 == entity->render) continue;
-      Dispatcher__call1(entity->engine->render, entity);
+      Dispatcher__call1(entity->dispatch->render, entity);
     }
     MeshRenderer__renderBatches(level->nzentities);
   }
@@ -201,7 +183,7 @@ void Level__render(Level* level) {
       Entity* entity = node->data;
       node = node->next;
 
-      Dispatcher__call1(entity->engine->render, entity);
+      Dispatcher__call1(entity->dispatch->render, entity);
     }
     MeshRenderer__renderBatches(level->zentities);
   }
@@ -215,13 +197,13 @@ void Level__gui(Level* level) {
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
-    Dispatcher__call1(entity->engine->gui, entity);
+    Dispatcher__call1(entity->dispatch->gui, entity);
     node = node->next;
   }
   node = level->zentities->head;
   for (u32 i = 0; i < level->zentities->len; i++) {
     Entity* entity = node->data;
-    Dispatcher__call1(entity->engine->gui, entity);
+    Dispatcher__call1(entity->dispatch->gui, entity);
     node = node->next;
   }
 

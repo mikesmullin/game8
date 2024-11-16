@@ -1,10 +1,11 @@
 #pragma once
 
-#include "../../../engine/common/Types.h"
+#include "../../Game.h"  // IWYU pragma: keep
 
-typedef struct Entity Entity;
-typedef struct StateGraph StateGraph;
-typedef struct Action Action;
+typedef struct BreakBlock {
+  Block base;
+  StateGraph* sg;
+} BreakBlock;
 
 void BreakBlock__init(Entity* entity, f32 x, f32 y);
 void BreakBlock__callSGAction(StateGraph* sg, Action* action);

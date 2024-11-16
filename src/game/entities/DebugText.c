@@ -1,22 +1,9 @@
 #include "DebugText.h"
 
-#include <string.h>
-
-#include "../../engine/common/Color.h"
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/List.h"
-#include "../../engine/common/Preloader.h"
-#include "../../engine/common/Profiler.h"
-#include "../Logic.h"
-#include "../levels/Level.h"
-#include "Entity.h"
-#include "Sprite.h"
-
 void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color) {
-  Logic__State* logic = g_engine->logic;
   DebugText* self = (DebugText*)entity;
   Entity__init(entity);
-  entity->engine->tick = DEBUG_TEXT__TICK;
+  entity->dispatch->tick = DEBUG_TEXT__TICK;
   entity->tform->pos.x = x;
   entity->tform->pos.y = y;
   entity->tform->pos.z = 0;
@@ -33,12 +20,13 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.render->billboard = false;
 
     // preload assets
-    sprite->base.render->material = Preload__material(&logic->materials.glyph, sizeof(Material));
+    sprite->base.render->material =
+        Preload__material(&g_engine->materials->glyph, sizeof(Material));
     sprite->base.render->material->mesh = Preload__model(  //
-        &logic->models.plane2D,
+        &g_engine->models->plane2D,
         "../assets/models/plane2D.obj");
     sprite->base.render->material->texture = Preload__texture(  //
-        &logic->textures.glyphs0,
+        &g_engine->textures->glyphs0,
         "../assets/textures/glyphs0.bmp");
     sprite->base.render->ti = i < slen ? txt[i] : ' ';
     sprite->base.render->tw = 4, sprite->base.render->th = 6;  // glyph 4x6 pixels
@@ -55,14 +43,13 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
     sprite->base.tform->scale.z = 1;
 
     List__append(g_engine->arena, self->glyphs, sprite);
-    List__insort(g_engine->arena, logic->ui_entities, sprite, Level__zsort);
+    List__insort(g_engine->arena, g_engine->game->ui_entities, sprite, Level__zsort);
   }
 }
 
 void DebugText__tick(Entity* entity) {
   PROFILE__BEGIN(DEBUG_TEXT__TICK);
 
-  Logic__State* logic = g_engine->logic;
   DebugText* self = (DebugText*)entity;
 
   u32 slen = strlen(self->txt);

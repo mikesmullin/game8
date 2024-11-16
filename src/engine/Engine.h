@@ -6,20 +6,57 @@
 #endif
 #include "common/Sokol.h"
 
+// Convenience --------------------------------------------
+
+#include "entities/Entity.h"  // IWYU pragma: keep
+
 //
+
+typedef void (*Dispatcher__call2_t)(u32 id, Entity* inst, void* params);
 
 #include "common/Arena.h"
 #include "common/Audio.h"  // IWYU pragma: keep
+#include "common/BehaviorTree.h"  // IWYU pragma: keep
+#include "common/Bmp.h"  // IWYU pragma: keep
+#include "common/Color.h"  // IWYU pragma: keep
+#include "common/Easing.h"  // IWYU pragma: keep
+#include "common/EventEmitter.h"  // IWYU pragma: keep
 #include "common/HotReload.h"
+#include "common/List.h"
 #include "common/Log.h"  // IWYU pragma: keep
 #include "common/Math.h"  // IWYU pragma: keep
+#include "common/Net.h"  // IWYU pragma: keep
+#include "common/Preloader.h"
+#include "common/Profiler.h"  // IWYU pragma: keep
+#include "common/QuadTree.h"
 #include "common/Sleep.h"  // IWYU pragma: keep
+#include "common/StateGraph.h"  // IWYU pragma: keep
 #include "common/Types.h"
 #include "common/Utils.h"  // IWYU pragma: keep
+#include "common/Wav.h"  // IWYU pragma: keep
+#include "common/Wavefront.h"  // IWYU pragma: keep
+#include "common/Websocket.h"  // IWYU pragma: keep
+
+// Components ----------------------------------------------
+
+#include "components/AudioListener.h"  // IWYU pragma: keep
+#include "components/AudioSource.h"  // IWYU pragma: keep
+#include "components/Camera.h"  // IWYU pragma: keep
+#include "components/Collider.h"  // IWYU pragma: keep
+#include "components/Dispatch.h"  // IWYU pragma: keep
+#include "components/GameInput.h"  // IWYU pragma: keep
+#include "components/Health.h"  // IWYU pragma: keep
+#include "components/MeshRenderer.h"  // IWYU pragma: keep
+#include "components/Render.h"  // IWYU pragma: keep
+#include "components/Rigidbody2D.h"  // IWYU pragma: keep
+#include "components/Transform.h"  // IWYU pragma: keep
 
 typedef struct Engine__State Engine__State;
-typedef struct Logic__State Logic__State;
-typedef struct WavReader WavReader;
+typedef struct Game Game;
+typedef struct PreloadedAudio PreloadedAudio;
+typedef struct PreloadedModels PreloadedModels;
+typedef struct PreloadedTextures PreloadedTextures;
+typedef struct PreloadedMaterials PreloadedMaterials;
 
 typedef struct Engine__State {
   char window_title[255];
@@ -44,7 +81,7 @@ typedef struct Engine__State {
 
   u32 window_width, window_height;
   Arena *arena, *frameArena;
-  Logic__State* logic;
+  Game* game;
   void (*stream_cb1)(float* buffer, int num_frames, int num_channels);
   void (*stream_cb2)(float* buffer, int num_frames, int num_channels);
 
@@ -117,6 +154,12 @@ typedef struct Engine__State {
   u16 draw_count;
 
   WavReader* aSrc;  // current audio source
+  u32 lastUid;
+  List* players;
+  PreloadedAudio* audio;
+  PreloadedModels* models;
+  PreloadedTextures* textures;
+  PreloadedMaterials* materials;
 
 } Engine__State;
 

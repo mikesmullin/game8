@@ -1,6 +1,6 @@
 #pragma once
 
-typedef struct Entity Entity;
+#include "Game.h"  // IWYU pragma: keep
 
 typedef enum DispatchFnId1 /* : u32 */ {
   DISPATCH1_NONE,
@@ -44,4 +44,4 @@ typedef enum DispatchFnId2 /* : u32 */ {
 } DispatchFnId2;
 
 void Dispatcher__call1(DispatchFnId1 id, Entity* inst);
-void Dispatcher__call2(DispatchFnId2 id, Entity* inst, void* params);
+void Dispatcher__call2(u32 id, Entity* inst, void* params);

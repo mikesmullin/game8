@@ -1,42 +1,23 @@
 #include "Game.h"
 
-#include <stdio.h>
-#include <string.h>
-
-#include "../engine/common/Audio.h"
-#include "../engine/common/Color.h"
-#include "../engine/common/Dispatcher.h"
-#include "../engine/common/List.h"
-#include "../engine/common/Preloader.h"
-#include "../engine/common/Profiler.h"
-#include "Logic.h"
-#include "components/MeshRenderer.h"
-#include "entities/DebugText.h"
-#include "entities/NetMgr.h"
-#include "entities/Player.h"
-#include "entities/SkyBox.h"
-#include "levels/Level.h"
-
 void Game__init() {
-  Logic__State* logic = g_engine->logic;
-
   memcpy(g_engine->window_title, "Retro", 6);
   g_engine->window_width = WINDOW_SIZE;
   g_engine->window_height = WINDOW_SIZE;
 
-  logic->level = 0;
-  logic->player = 0;
-  logic->lastUid = 0;
+  g_engine->players = List__alloc(g_engine->arena);
+  g_engine->audio = Arena__Push(g_engine->arena, sizeof(PreloadedAudio));
+  g_engine->models = Arena__Push(g_engine->arena, sizeof(PreloadedModels));
+  g_engine->textures = Arena__Push(g_engine->arena, sizeof(PreloadedTextures));
+  g_engine->materials = Arena__Push(g_engine->arena, sizeof(PreloadedMaterials));
 }
 
 void Game__preload() {
-  Logic__State* logic = g_engine->logic;
+  g_engine->game->ui_entities = List__alloc(g_engine->arena);
 
-  logic->ui_entities = List__alloc(g_engine->arena);
-
-  logic->player = Arena__Push(g_engine->arena, sizeof(Player));
-  Player__init((Entity*)logic->player);
-  logic->camera = logic->player;  // 1st player = main camera
+  Player* player = (Player*)Arena__Push(g_engine->arena, sizeof(Player));
+  Player__init((Entity*)player);
+  List__append(g_engine->arena, g_engine->players, player);
 
   Level* level = Level__alloc();
   Level__init(level);
@@ -52,99 +33,96 @@ void Game__preload() {
   level->ceilCol = 0xaa000000;  // darken
   // level->levelFile = "../assets/textures/level0.bmp";  // DEBUG: single block
   level->levelFile = "../assets/textures/level1.bmp";
-  logic->level = level;
-  Level__preload(logic->level);
+  g_engine->game->level = level;
+  Level__preload(g_engine->game->level);
 
   level->cubemap = Arena__Push(g_engine->arena, sizeof(Entity));
   SkyBox__init(level->cubemap);
 
-  logic->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
+  g_engine->game->dt = Arena__Push(g_engine->arena, sizeof(DebugText));
   char txt[40] = "Hello world!";
-  DebugText__init((Entity*)logic->dt, 0, 0, 40, txt, COLOR_WHITE);
-  List__insort(g_engine->arena, logic->ui_entities, logic->dt, Level__zsort);
+  DebugText__init((Entity*)g_engine->game->dt, 0, 0, 40, txt, COLOR_WHITE);
+  List__insort(g_engine->arena, g_engine->game->ui_entities, g_engine->game->dt, Level__zsort);
 
   // preload assets
   Preload__audio(
-      &logic->audio.pickupCoin,  //
+      &g_engine->audio->pickupCoin,  //
       "../assets/audio/sfx/pickupCoin.wav");
 
   // init network
+  g_engine->game->net = Arena__Push(g_engine->arena, sizeof(NetMgr));
   NetMgr__init();
 }
 
 void Game__reload() {
-  Logic__State* logic = g_engine->logic;
-  if (NULL == logic) return;  // first time will not be defined
+  if (NULL == g_engine->game) return;  // first time will not be defined
 
-  Audio__replay(logic->audio.pickupCoin);
+  Audio__replay(g_engine->audio->pickupCoin);
 }
 
 void Game__tick() {
-  Logic__State* logic = g_engine->logic;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
   // in-game
   NetMgr__tick();
-  Dispatcher__call1(logic->player->base.engine->tick, (Entity*)logic->player);
-  Level__tick(logic->level);
+  Dispatcher__call1(player1->base.base.dispatch->tick, (Entity*)player1);
+  Level__tick(g_engine->game->level);
 }
 
 void Game__render() {
-  Logic__State* logic = g_engine->logic;
-
   // in-game
-  Level__render(logic->level);
+  Level__render(g_engine->game->level);
 
   // PostProcessing();
 }
 
 void Game__gui() {
   PROFILE__BEGIN(GAME__GUI);
-
-  Logic__State* logic = g_engine->logic;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
   // switch current camera to ortho cam at player pos
-  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
+  player1->base.camera.proj.type = ORTHOGRAPHIC_PROJECTION;
 
-  char* c = logic->dt->txt;
+  char* c = g_engine->game->dt->txt;
   char c2[255];
   sprintf(
       c2,
       "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-      logic->player->base.tform->pos.x,
-      logic->player->base.tform->pos.y,
-      logic->player->base.tform->pos.z,
-      logic->player->base.tform->rot.y);
-  memcpy(c, c2, logic->dt->glyphs->len);
+      player1->base.base.tform->pos.x,
+      player1->base.base.tform->pos.y,
+      player1->base.base.tform->pos.z,
+      player1->base.base.tform->rot.y);
+  memcpy(c, c2, g_engine->game->dt->glyphs->len);
   // TODO: fix this fn (somehow only works on mousedown titlebar)
   // mprintf(
   //     &c,
   //     "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-  //     logic->dt->glyphs->len,
-  //     logic->player->base.tform->pos.x,
-  //     logic->player->base.tform->pos.y,
-  //     logic->player->base.tform->pos.z,
+  //     g_engine->game->dt->glyphs->len,
+  //     player1->base.base.tform->pos.x,
+  //     player1->base.base.tform->pos.y,
+  //     player1->base.base.tform->pos.z,
   //     logic->player->base.tform->rot.y);
-  logic->dt->base.tform->pos.x = -77;
-  logic->dt->base.tform->pos.y = -75;
+  g_engine->game->dt->base.tform->pos.x = -77;
+  g_engine->game->dt->base.tform->pos.y = -75;
   // TODO: fix text scaling on window resize
-  logic->dt->base.tform->scale.x = logic->dt->base.tform->scale.y = 6;
+  g_engine->game->dt->base.tform->scale.x = g_engine->game->dt->base.tform->scale.y = 6;
 
-  List__Node* node = logic->ui_entities->head;
-  for (u32 i = 0; i < logic->ui_entities->len; i++) {
+  List__Node* node = g_engine->game->ui_entities->head;
+  for (u32 i = 0; i < g_engine->game->ui_entities->len; i++) {
     Entity* entity = node->data;
     node = node->next;
 
-    Dispatcher__call1(entity->engine->tick, entity);
+    Dispatcher__call1(entity->dispatch->tick, entity);
 
     if (0 == entity->render) continue;
-    Dispatcher__call1(entity->engine->gui, entity);
-    Dispatcher__call1(entity->engine->render, entity);
+    Dispatcher__call1(entity->dispatch->gui, entity);
+    Dispatcher__call1(entity->dispatch->render, entity);
   }
 
-  MeshRenderer__renderBatches(logic->ui_entities);
+  MeshRenderer__renderBatches(g_engine->game->ui_entities);
 
   // switch current camera to perspective cam at player pos
-  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
+  player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
 
   // // TODO: draw debug cursor
   // Bitmap__Set2DPixel(
@@ -157,11 +135,11 @@ void Game__gui() {
 }
 
 void Game__postprocessing() {
-  Logic__State* logic = g_engine->logic;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
   // apply pixelized post-processing effect
-  logic->camera->proj.type = ORTHOGRAPHIC_PROJECTION;
-  Sprite* screen = (Sprite*)logic->screen->head->data;
+  player1->base.camera.proj.type = ORTHOGRAPHIC_PROJECTION;
+  Sprite* screen = (Sprite*)g_engine->game->screen->head->data;
   // f32 w = g_engine->window_width, h = g_engine->window_height;
   // f32 sw = w / SCREEN_SIZE, sh = h / SCREEN_SIZE;
   // f32 u = Math__min(sw, sh);
@@ -169,8 +147,8 @@ void Game__postprocessing() {
   screen->base.tform->rot.x = 0;
   screen->base.tform->rot.y = 0;
   screen->base.tform->rot.z = 180;
-  MeshRenderer__renderBatches(logic->screen);
-  logic->camera->proj.type = PERSPECTIVE_PROJECTION;
+  MeshRenderer__renderBatches(g_engine->game->screen);
+  player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
 }
 
 void Game__shutdown() {

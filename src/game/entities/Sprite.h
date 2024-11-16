@@ -1,7 +1,9 @@
 #pragma once
 
-#include "../../engine/common/Types.h"
+#include "../../engine/Engine.h"  // IWYU pragma: keep
 
-typedef struct Entity Entity;
+typedef struct Sprite {
+  Entity base;
+} Sprite;
 
 void Sprite__init(Entity* entity, f32 x, f32 z);

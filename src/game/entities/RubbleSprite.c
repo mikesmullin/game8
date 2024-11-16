@@ -1,19 +1,10 @@
 #include "RubbleSprite.h"
 
-#include "../../engine/common/Color.h"
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Easing.h"
-#include "../../engine/common/Profiler.h"
-#include "../Logic.h"
-#include "Entity.h"
-#include "Sprite.h"
-
 void RubbleSprite__init(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
   Sprite* sprite = (Sprite*)entity;
   RubbleSprite* self = (RubbleSprite*)sprite;
   Sprite__init(entity, 0, 0);
-  entity->engine->tick = RUBBLE_SPRITE__TICK;
+  entity->dispatch->tick = RUBBLE_SPRITE__TICK;
 
   self->xa = Math__random(0, 1) - 0.5;
   self->ya = Math__random(0, 1);
@@ -23,7 +14,7 @@ void RubbleSprite__init(Entity* entity) {
   entity->render->ti = 7;
   entity->render->useMask = true;
   entity->render->mask = COLOR_BLACK;
-  entity->render->color = logic->level->wallCol;
+  entity->render->color = g_engine->game->level->wallCol;
 }
 
 void RubbleSprite__tick(Entity* entity) {

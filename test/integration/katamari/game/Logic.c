@@ -10,7 +10,7 @@ static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
-  g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
+  g_engine->game = Arena__Push(g_engine->arena, sizeof(Game));
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
   g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
@@ -35,8 +35,6 @@ static void logic_onpreload(void) {
 
 // window, keyboard, mouse events
 void logic_onevent(const sapp_event* event) {
-  Logic__State* logic = g_engine->logic;
-
   // logic->player->input.fwd = false;
   // logic->player->input.left = false;
   // logic->player->input.back = false;
@@ -71,7 +69,6 @@ static void logic_onupdate(void) {
 }
 
 static void logic_onshutdown(void) {
-  LOG_DEBUGF("logic shutdown");
   Game__shutdown();
   Audio__shutdown();
   exit(0);
@@ -89,7 +86,7 @@ void logic_onbootstrap(Engine__State* engine) {
   g_engine->onupdate = logic_onupdate;
   g_engine->onshutdown = logic_onshutdown;
 
-  if (NULL != g_engine->logic) LOG_DEBUGF("Logic dll reloaded.");
+  if (NULL != g_engine->game) LOG_DEBUGF("Logic dll reloaded.");
 
   Game__reload();
 }

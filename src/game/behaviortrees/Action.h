@@ -1,6 +1,5 @@
 #pragma once
 
-typedef struct Entity Entity;
-typedef struct Action Action;
+#include "../Game.h"  // IWYU pragma: keep
 
 void Action__PerformBuffered(Entity* entity, Action* action);

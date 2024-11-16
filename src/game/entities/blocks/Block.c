@@ -1,12 +1,8 @@
 #include "Block.h"
 
-#include "../../Logic.h"
-#include "../Entity.h"
-
 // blocks are 3d models instantiated from level RGB pixel data
 
 void Block__init(Block* block, f32 x, f32 z) {
-  Logic__State* logic = g_engine->logic;
   Entity__init((Entity*)block);
   block->masked = false;
   block->base.tform->pos.x = x;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "../Logic.h"
-#include "../components/AudioSource.h"
-#include "StateGraph.h"
+#include "../../engine/common/StateGraph.h"
+#include "../entities/CatEntity.h"
 
 // cat indexed palette
 // 1 unused
@@ -15,11 +14,11 @@
 // 8 belly
 
 static void subbedActions(StateGraph* sg, Action* action) {
-  if (ACTION_USE == action->type) StateGraph__gotoState(sg, 3);  // meow
+  if (ACTION_USE == action->type) StateGraph__gotoState(sg, 3, CatEntity__getSGState);  // meow
 }
 
 static void idleOnEnter(StateGraph* sg) {
-  StateGraph__gotoState(sg, 1);  // tail
+  StateGraph__gotoState(sg, 1, CatEntity__getSGState);  // tail
 }
 static SGState SGidle = {
     .onEnter = idleOnEnter,
@@ -45,7 +44,7 @@ static void tailKF5(StateGraph* sg) {
   sg->entity->render->ti = 2 * 8 + 6;
 }
 static void tailKF6(StateGraph* sg) {
-  if (Math__urandom2(0, 10) < 1) StateGraph__gotoState(sg, 2);  // blink
+  if (Math__urandom2(0, 10) < 1) StateGraph__gotoState(sg, 2, CatEntity__getSGState);  // blink
 }
 static SGState SGtail = {
     .onEnter = tailOnEnter,
@@ -75,7 +74,10 @@ static void blinkKF4(StateGraph* sg) {  // b eyes closed
   sg->entity->render->ti = 3 * 8 + 3;
 }
 static void blinkKF5(StateGraph* sg) {
-  StateGraph__gotoState(sg, Math__urandom2(0, 10) < 1 ? 3 : 0);  // meow or idle
+  StateGraph__gotoState(
+      sg,
+      Math__urandom2(0, 10) < 1 ? 3 : 0,
+      CatEntity__getSGState);  // meow or idle
 }
 
 static SGState SGblink = {
@@ -99,10 +101,10 @@ static void meowKF2(StateGraph* sg) {  // eyes open, mouth open
 }
 static void meowKF3(StateGraph* sg) {  // eyes closed, mouth open
   sg->entity->render->ti = 4 * 8 + 3;
-  // AudioSource__play(sg->entity, g_engine->logic->audio.meow);
+  // AudioSource__play(g_engine->audio->meow, sg->entity, (Entity*)player1);
 }
 static void meowKF4(StateGraph* sg) {
-  StateGraph__gotoState(sg, 0);  // idle
+  StateGraph__gotoState(sg, 0, CatEntity__getSGState);  // idle
 }
 
 static SGState SGmeow = {

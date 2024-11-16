@@ -1,29 +1,17 @@
 #include "CatEntity.h"
 
-#include "../Logic.h"
-
 // #include "../behaviortrees/BTCat.h"
-#include "../../engine/common/Color.h"
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Preloader.h"
-#include "../../engine/common/Profiler.h"
-#include "../components/Collider.h"
-#include "../components/Rigidbody2D.h"
 #include "../stategraphs/SGCat.h"
-#include "../stategraphs/StateGraph.h"
-#include "Entity.h"
-#include "Sprite.h"
 
 static const f32 CAT_MOVE_SPEED = 0.01f;  // per-second
 static f32 lastTurnWait = 2.0f;
 static f32 sinceLastTurn = 0;
 
 void CatEntity__init(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
   CatEntity* self = (CatEntity*)entity;
   Sprite__init(entity, 0, 0);
-  entity->engine->tick = CAT_ENTITY__TICK;
-  entity->engine->action = CAT_ENTITY__ACTION;
+  entity->dispatch->tick = CAT_ENTITY__TICK;
+  entity->dispatch->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
   self->xa = Math__random(-1, 1);
@@ -54,7 +42,7 @@ void CatEntity__init(Entity* entity) {
 
   // preload assets
   Preload__audio(
-      &logic->audio.meow,  //
+      &g_engine->audio->meow,  //
       "../assets/audio/sfx/meow.wav");
 }
 
@@ -69,7 +57,6 @@ SGState* CatEntity__getSGState(u32 id) {
 }
 
 void CatEntity__action(Entity* entity, void* action) {
-  Logic__State* logic = g_engine->logic;
   CatEntity* self = (CatEntity*)entity;
 
   subbedActions(self->sg, action);
@@ -83,14 +70,14 @@ void CatEntity__tick(Entity* entity) {
   entity->rb->za = self->za * CAT_MOVE_SPEED;
 
   // self->brain->tick(self->brain);
-  StateGraph__tick(self->sg);
+  StateGraph__tick(self->sg, CatEntity__getSGState);
   // static u32 last_ti = 0;
   // if (last_ti != entity->render->ti) {
   //   LOG_DEBUGF("ti %u", entity->render->ti);
   // }
   // last_ti = entity->render->ti;
 
-  Rigidbody2D__move(entity);
+  Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call2);
   PROFILE__END(CAT_ENTITY__TICK);
 }
 

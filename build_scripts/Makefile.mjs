@@ -231,41 +231,52 @@ const compile = async (basename) => {
   const started = performance.now();
   console.log(`compiling ${basename}...`);
   const unit = 'src/app.c';
+  let success = true;
+  let code = null;
+
 
   // discover included translation unit files
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
     const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+    if (0 != r.r?.code) {
+      code = r.r?.code;
+      success = false;
+      break;
+    }
     object_files.push(r.object);
   }
 
-  // compile and link in one step
   const executable = relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`);
-  const r1 = await child_spawn(C_COMPILER_PATH, [
-    ...DEBUG_COMPILER_ARGS,
-    ...C_COMPILER_ARGS,
-    ...C_ENGINE_COMPILER_FLAGS,
-    // ...C_COMPILER_INCLUDES,
-    ...LINKER_LIBS,
-    ...LINKER_LIB_PATHS,
-    ...object_files.filter(
-      logic_hotreload_variants('main'),
-    ),
-    unit,
-    '-o', executable,
-  ], { buffer: true });
+  if (success) {
+    // compile and link in one step
+    const r1 = await child_spawn(C_COMPILER_PATH, [
+      ...DEBUG_COMPILER_ARGS,
+      ...C_COMPILER_ARGS,
+      ...C_ENGINE_COMPILER_FLAGS,
+      // ...C_COMPILER_INCLUDES,
+      ...LINKER_LIBS,
+      ...LINKER_LIB_PATHS,
+      ...object_files.filter(
+        logic_hotreload_variants('main'),
+      ),
+      unit,
+      '-o', executable,
+    ], { buffer: true });
+    code = r1.code;
+    success &= 0 == r1.code;
+    console.log(chalk.grey(r1.cmd));
+    if (r1.stdout) console.log(r1.stdout);
+    if (r1.stderr) console.error(chalk.red(r1.stderr));
+  }
   const ended = performance.now();
 
-  const success = 0 == r1.code;
   const color = success ? 'green' : 'red';
   const log = success ? 'log' : 'error';
-  console.log(chalk.grey(r1.cmd));
-  if (r1.stdout) console.log(r1.stdout);
-  if (r1.stderr) console.error(chalk.red(r1.stderr));
   console[log](chalk[color](`compiling ${basename} ${success ? 'succeeded' : 'failed'}. file: ${executable}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`));
 
-  return r1.code;
+  return code;
 };
 
 function generateRandomString(length) {
@@ -292,6 +303,7 @@ const compile_reload = async (outname) => {
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
     const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'dll', C_DLL_COMPILER_FLAGS);
+    if (0 != r.r?.code) break;
     object_files.push(r.object);
   }
 
@@ -538,21 +550,21 @@ const extract_include_units = async function* (opts) {
       const c_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.c`));
       const { exists: c_exists } = await fs_exists(c_file);
       // console.debug('match', { h_file, c_file });
-      if (h_exists) {
-        if (!opts.seen.has(h_file)) {
-          opts.seen.add(h_file);
-          // yield { c_file: h_file, depth: opts.depth };
-          yield* await extract_include_units({
-            file: h_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
-          });
-        }
-      }
       if (c_exists) {
         if (!opts.seen.has(c_file)) {
           opts.seen.add(c_file);
           yield { c_file, depth: opts.depth };
           yield* await extract_include_units({
             file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
+          });
+        }
+      }
+      if (h_exists) {
+        if (!opts.seen.has(h_file)) {
+          opts.seen.add(h_file);
+          // yield { c_file: h_file, depth: opts.depth };
+          yield* await extract_include_units({
+            file: h_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
           });
         }
       }
@@ -576,7 +588,7 @@ const recompile_object = async (unit, mode = 'main', extra_compiler_flags = []) 
   await fs.mkdir(out_path, { recursive: true });
   const { stat: { mtime: unit_mtime } } = await fs_exists(unit);
   const { stat: { mtime: object_mtime } } = await fs_exists(object);
-  let r1;
+  let r1 = { code: 0 };
   if (unit_mtime > object_mtime) {
     r1 = await child_spawn(C_COMPILER_PATH, [
       ...DEBUG_COMPILER_ARGS,
@@ -591,6 +603,9 @@ const recompile_object = async (unit, mode = 'main', extra_compiler_flags = []) 
     ], { buffer: true });
     console.log(chalk.grey(r1.cmd));
     if (0 != r1.code) {
+      // try {
+      //   await fs.rm(object); // because it gets half-written, otherwise
+      // } catch (e) { }
       console.error(chalk.red(r1.stdout));
       console.error(chalk.red(r1.stderr));
     }
@@ -654,6 +669,7 @@ const test = async () => {
       const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
         const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+        if (0 != r.r?.code) break;
         object_files.push(r.object);
       }
 

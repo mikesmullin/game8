@@ -1,10 +1,5 @@
 #include "Collider.h"
 
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Geometry.h"
-#include "../../engine/common/QuadTree.h"
-#include "../Logic.h"
-
 // TODO: add a boxcircle checker
 
 bool BoxCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
@@ -43,11 +38,8 @@ bool CircleCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
   return false;
 }
 
-bool Collider__check(Entity* entity, f32 x, f32 y) {
+bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher__call2_t cb) {
   if (0 == entity->collider) return false;
-
-  Logic__State* logic = g_engine->logic;
-  Level* level = logic->level;
 
   // use quadtree query to find nearby neighbors
   Rect range = {x, y, 0, 0};
@@ -65,7 +57,7 @@ bool Collider__check(Entity* entity, f32 x, f32 y) {
   u32 matchCount = 0;
   void* matchData[20];  // TODO: don't limit search results?
   // TODO: query can be the radius of the entity, to shorten this code?
-  QuadTreeNode_query(level->qt, range, 20, matchData, &matchCount);
+  QuadTreeNode_query(qt, range, 20, matchData, &matchCount);
   for (u32 i = 0; i < matchCount; i++) {
     Entity* other = (Entity*)matchData[i];
     if (entity == other) continue;
@@ -95,9 +87,9 @@ bool Collider__check(Entity* entity, f32 x, f32 y) {
       if (collisionBefore || collisionAfter) {
         // notify each participant (onenter, onstay, onexit)
         OnCollideParams params = {entity, other, x, y, collisionBefore, collisionAfter, false};
-        Dispatcher__call2(other->collider->collide, other, &params);  // notify target
+        cb(other->collider->collide, other, &params);  // notify target
         if (params.noclip) return false;
-        Dispatcher__call2(entity->collider->collide, entity, &params);  // notify source
+        cb(entity->collider->collide, entity, &params);  // notify source
         if (params.noclip) return false;
       }
       if (collisionAfter) return true;

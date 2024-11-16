@@ -1,22 +1,10 @@
 #include "BreakBlock.h"
 
-#include "../../../engine/common/Dispatcher.h"
-#include "../../../engine/common/List.h"
-#include "../../../engine/common/Preloader.h"
-#include "../../../engine/common/Profiler.h"
-#include "../../Logic.h"
-#include "../../components/AudioSource.h"
-#include "../../levels/Level.h"
-#include "../RubbleSprite.h"
-#include "Block.h"
-#include "WallBlock.h"
-
 void BreakBlock__init(Entity* entity, f32 x, f32 y) {
-  Logic__State* logic = g_engine->logic;
   Block* block = (Block*)entity;
   BreakBlock* self = (BreakBlock*)block;
   WallBlock__init(entity, x, y);
-  entity->engine->action = BREAK_BLOCK__ACTION;
+  entity->dispatch->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
 
   self->sg = Arena__Push(g_engine->arena, sizeof(StateGraph));
@@ -26,33 +14,33 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload assets
-  entity->render->material = Preload__material(&logic->materials.wall, sizeof(Material));
+  entity->render->material = Preload__material(&g_engine->materials->wall, sizeof(Material));
   entity->render->material->mesh = Preload__model(  //
-      &logic->models.box,
+      &g_engine->models->box,
       "../assets/models/box.obj");
   entity->render->material->texture = Preload__texture(  //
-      &logic->textures.atlas,
+      &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");
-  entity->render->ti = logic->level->wallTex + 1;
+  entity->render->ti = g_engine->game->level->wallTex + 1;
   entity->render->tw = entity->render->th = 8;
   entity->render->aw = entity->render->ah = 64;
-  entity->render->color = logic->level->wallCol;
+  entity->render->color = g_engine->game->level->wallCol;
 
   Preload__audio(
-      &logic->audio.bash,  //
+      &g_engine->audio->bash,  //
       "../assets/audio/sfx/bash.wav");
 }
 
 void BreakBlock__action(Entity* entity, void* _action) {
-  Logic__State* logic = g_engine->logic;
   BreakBlock* self = (BreakBlock*)entity;
   Action* action = (Action*)_action;
+  Player* player1 = (Player*)g_engine->players->head->data;
 
   if (ACTION_USE == action->type) {
     if (!(TAG_BROKEN & entity->tags1)) {
       entity->tags1 |= TAG_BROKEN;
       entity->removed = true;
-      AudioSource__play(entity, logic->audio.bash);
+      AudioSource__play(g_engine->audio->bash, entity, (Entity*)player1);
 
       for (u32 i = 0; i < 32; i++) {
         RubbleSprite* rs = Arena__Push(g_engine->arena, sizeof(RubbleSprite));
@@ -60,7 +48,7 @@ void BreakBlock__action(Entity* entity, void* _action) {
         rs->base.base.tform->pos.x = entity->tform->pos.x;
         rs->base.base.tform->pos.y = entity->tform->pos.y;
         rs->base.base.tform->pos.z = entity->tform->pos.z;
-        List__append(g_engine->arena, logic->level->entities, rs);
+        List__append(g_engine->arena, g_engine->game->level->entities, rs);
       }
     }
   }

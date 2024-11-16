@@ -63,6 +63,6 @@ static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
 void Dispatcher__call1(DispatchFnId1 id, Entity* inst) {
   VTABLE_ENGINE1[id](inst);
 }
-void Dispatcher__call2(DispatchFnId2 id, Entity* inst, void* params) {
+void Dispatcher__call2(u32 id, Entity* inst, void* params) {
   VTABLE_ENGINE2[id](inst, params);
 }

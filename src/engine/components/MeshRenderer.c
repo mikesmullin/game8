@@ -1,11 +1,5 @@
 #include "MeshRenderer.h"
 
-#include "../../engine/common/Bmp.h"
-#include "../../engine/common/Color.h"
-#include "../../engine/common/List.h"
-#include "../../engine/common/Wavefront.h"
-#include "../Logic.h"
-
 //
 #include "../../../assets/shaders/atlas.glsl.h"
 
@@ -21,8 +15,6 @@ static void MeshRenderer__loaded(Entity* entity) {
   BmpReader* texture = material->texture;
   if (0 == material->mpTexture && !texture->loaded) return;  // need texture
   material->loaded = true;
-
-  Logic__State* logic = g_engine->logic;
 
   // alloc memory once for all meshRenderer instances, since it would be the same for each
   material->pipe = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
@@ -156,7 +148,7 @@ void MeshRenderer__renderBatches(List* entities) {
   MeshRenderer__loaded(entityZero);
   if (!entityZero->render->material->loaded) return;  // no draw until all assets have loaded
   Material* material = entityZero->render->material;
-  Player* camera = g_engine->logic->camera;
+  CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
   vs_params_t* vs_params = Arena__Push(g_engine->frameArena, sizeof(vs_params_t));
   fs_params_t fs_params;
 
@@ -231,34 +223,33 @@ void MeshRenderer__renderBatches(List* entities) {
     }
 
     // View (Camera)
-    camera = g_engine->logic->camera;
     HMM_Vec3 viewPos;
-    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+    if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       // viewPos = HMM_V3(0, 0, 0);
       viewPos = HMM_V3(  //
           0,
           0,
-          camera->proj.nearZ);
-    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+          player1->camera.proj.nearZ);
+    } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       viewPos = HMM_V3(  //
-          camera->base.tform->pos.x,
-          camera->base.tform->pos.y,
-          camera->base.tform->pos.z);
+          player1->base.tform->pos.x,
+          player1->base.tform->pos.y,
+          player1->base.tform->pos.z);
       if (0 == viewPos.Y) {  //  grounded
-        viewPos.Y = Math__map(camera->bobPhase, -1, 1, 0, -1.0f / 8);
+        viewPos.Y = Math__map(player1->camera.bobPhase, -1, 1, 0, -1.0f / 8);
       }
     }
     // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
     HMM_Vec3 viewRot;
-    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+    if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       // viewRot = HMM_V3(0, 0, 0);
       viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
-    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+    } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       viewRot = HMM_V3(  // Yaw, Pitch, Roll
-          HMM_AngleDeg(camera->base.tform->rot.x),
-          HMM_AngleDeg(camera->base.tform->rot.y),
+          HMM_AngleDeg(player1->base.tform->rot.x),
+          HMM_AngleDeg(player1->base.tform->rot.y),
           // TODO: Why do I have to rotate cam Z?
-          HMM_AngleDeg(camera->base.tform->rot.z + 180));
+          HMM_AngleDeg(player1->base.tform->rot.z + 180));
     }
     HMM_Mat4 view = I;
     // apply rotation to view
@@ -280,11 +271,11 @@ void MeshRenderer__renderBatches(List* entities) {
     //       logic->player->base.tform->rot.y);
 
     HMM_Mat4 projection;
-    if (ORTHOGRAPHIC_PROJECTION == camera->proj.type) {
+    if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       f32 aspect = SCREEN_RG != entityZero->render->rg
                        ? 1.0f
                        : (f32)g_engine->window_width / g_engine->window_height;
-      f32 base_size = SCREEN_SIZE / 2.0f;  // Base size for both hw and hh
+      f32 base_size = player1->camera.screenSize / 2.0f;  // Base size for both hw and hh
       f32 hw, hh;
       if (aspect >= 1.0f) {
         // Wide window, expand horizontal bounds
@@ -303,15 +294,15 @@ void MeshRenderer__renderBatches(List* entities) {
           +hw,
           -hh,
           +hh,
-          camera->proj.nearZ,
-          camera->proj.farZ);
-    } else if (PERSPECTIVE_PROJECTION == camera->proj.type) {
+          player1->camera.proj.nearZ,
+          player1->camera.proj.farZ);
+    } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       f32 aspect = 1.0f;  // square
       projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
-          camera->proj.fov,
+          player1->camera.proj.fov,
           aspect,
-          camera->proj.nearZ,
-          camera->proj.farZ);
+          player1->camera.proj.nearZ,
+          player1->camera.proj.farZ);
     }
 
     g_engine->sg_apply_pipeline(*material->pipe);

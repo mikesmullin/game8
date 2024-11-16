@@ -3,10 +3,7 @@
 // TODO: use deterministic fixed-point math instead
 #include <float.h>
 
-#include "../Logic.h"
-#include "../components/Collider.h"
-
-void Rigidbody2D__move(Entity* entity) {
+void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call2_t cb) {
   if (0 == entity->rb) return;
   if (Math__fabsf(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
   if (Math__fabsf(entity->rb->za) < FLT_MIN) entity->rb->za = 0;
@@ -17,7 +14,7 @@ void Rigidbody2D__move(Entity* entity) {
       f32 xxa = entity->rb->xa;
       f32 xd = xxa * i / xSteps;
       if (entity->tform->pos.y > 1 ||  // flying = noclip
-          !Collider__check(entity, entity->tform->pos.x + xd, entity->tform->pos.z)) {
+          !Collider__check(qt, entity, entity->tform->pos.x + xd, entity->tform->pos.z, cb)) {
         entity->tform->pos.x += xd;
         break;
       } else {
@@ -32,7 +29,7 @@ void Rigidbody2D__move(Entity* entity) {
       f32 zza = entity->rb->za;
       f32 zd = zza * i / zSteps;
       if (entity->tform->pos.y > 1 ||  // flying = noclip
-          !Collider__check(entity, entity->tform->pos.x, entity->tform->pos.z + zd)) {
+          !Collider__check(qt, entity, entity->tform->pos.x, entity->tform->pos.z + zd, cb)) {
         entity->tform->pos.z += zd;
         break;
       } else {

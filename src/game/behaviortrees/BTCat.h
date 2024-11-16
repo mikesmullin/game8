@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../Logic.h"
-#include "BehaviorTree.h"
+#include "../../engine/common/BehaviorTree.h"
+#include "../entities/CatEntity.h"
 
 // common BT Actions:
 // 1. changes state of world (external) or entity (internal)

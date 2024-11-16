@@ -27,8 +27,6 @@ void Audio__preload() {
 }
 
 void Audio__replay(WavReader* r) {
-  Logic__State* logic = g_engine->logic;
-
   // TODO: support gain
   // TODO: support pan
   // TODO: support multiple voices
@@ -38,8 +36,6 @@ void Audio__replay(WavReader* r) {
 }
 
 void Audio__stop() {
-  Logic__State* logic = g_engine->logic;
-
   g_engine->aSrc = NULL;
 }
 
@@ -47,7 +43,6 @@ void Audio__stop() {
 void Audio__stream_cb(f32* buffer, int num_frames, int num_channels) {
   if (!g_engine->useAudio) return;
   ASSERT(1 == num_channels);
-  Logic__State* logic = g_engine->logic;
   if (NULL == g_engine->aSrc) {  // no current audio source
     for (u32 i = 0; i < num_frames; i++) {
       buffer[i] = SILENCE;

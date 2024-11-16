@@ -1,11 +1,13 @@
 #pragma once
 
-#include "../../engine/common/Types.h"
+#include "../Game.h"  // IWYU pragma: keep
 
-typedef struct Arena Arena;
-typedef struct Entity Entity;
-typedef struct SGState SGState;
-typedef struct Action Action;
+typedef struct CatEntity {
+  Sprite base;
+  f32 xa, ya, za;
+  StateGraph* sg;
+  BTNode* brain;
+} CatEntity;
 
 void CatEntity__init(Entity* entity);
 void CatEntity__tick(Entity* entity);

@@ -1,40 +1,26 @@
 #include "Player.h"
 
-#include "../../engine/common/Dispatcher.h"
-#include "../../engine/common/Geometry.h"
-#include "../../engine/common/List.h"
-#include "../../engine/common/Profiler.h"
-#include "../../engine/common/QuadTree.h"
-#include "../Logic.h"
-#include "../behaviortrees/Action.h"
-#include "../components/Rigidbody2D.h"
-#include "../levels/Level.h"
-#include "CatEntity.h"
-#include "Entity.h"
-#include "RubbleSprite.h"
-#include "blocks/BreakBlock.h"
-
 static const f32 PLAYER_WALK_SPEED = 5.0f;  // per-second
 static const f32 PLAYER_STRAFE_MOD = 0.5f;  // percent of walk
 static const f32 PLAYER_FLY_SPEED = 3.0f;  // per-second
 static const f32 PLAYER_LOOK_SPEED = 0.3f;  // deg/sec
 
 void Player__init(Entity* entity) {
-  Logic__State* logic = g_engine->logic;
   Player* self = (Player*)entity;
 
   Entity__init(entity);
 
-  entity->engine->tick = PLAYER_ENTITY__TICK;
+  entity->dispatch->tick = PLAYER_ENTITY__TICK;
 
-  self->joy.xAxis = 0.0f;
-  self->joy.yAxis = 0.0f;
-  self->joy.zAxis = 0.0f;
+  self->input.joy.xAxis = 0.0f;
+  self->input.joy.yAxis = 0.0f;
+  self->input.joy.zAxis = 0.0f;
 
-  self->proj.type = PERSPECTIVE_PROJECTION;
-  self->proj.fov = 45.0f;
-  self->proj.nearZ = 0.1f;
-  self->proj.farZ = 1000.0f;
+  self->base.camera.proj.type = PERSPECTIVE_PROJECTION;
+  self->base.camera.proj.fov = 45.0f;
+  self->base.camera.proj.nearZ = 0.1f;
+  self->base.camera.proj.farZ = 1000.0f;
+  self->base.camera.screenSize = SCREEN_SIZE;
 
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
@@ -51,87 +37,84 @@ void Player__init(Entity* entity) {
 
 void Player__tick(Entity* entity) {
   PROFILE__BEGIN(PLAYER_ENTITY__TICK);
-
-  Logic__State* logic = g_engine->logic;
   Player* self = (Player*)entity;
 
-  if (logic->player->input.use && !logic->mouseCaptured) {
-    logic->player->input.use = false;
+  if (self->input.key.use && !self->input.mouseCaptured) {
+    self->input.key.use = false;
     LOG_DEBUGF("request mouse lock");
     g_engine->sapp_lock_mouse(true);
   }
-  if (logic->player->input.esc && logic->mouseCaptured) {
-    logic->player->input.esc = false;
+  if (self->input.key.esc && self->input.mouseCaptured) {
+    self->input.key.esc = false;
     LOG_DEBUGF("request mouse unlock");
     g_engine->sapp_lock_mouse(false);
   }
   bool ml = g_engine->sapp_mouse_locked();
-  if (ml != logic->mouseCaptured) {
+  if (ml != self->input.mouseCaptured) {
     if (ml) LOG_DEBUGF("response mouse locked");
     if (!ml) LOG_DEBUGF("response mouse unlocked");
   }
-  logic->mouseCaptured = ml;
+  self->input.mouseCaptured = ml;
 
-  if (!logic->mouseCaptured) {
-    logic->player->ptr.x = 0;
-    logic->player->ptr.y = 0;
+  if (!self->input.mouseCaptured) {
+    self->input.ptr.x = 0;
+    self->input.ptr.y = 0;
   } else {
-    if (0 != logic->player->ptr.x) {  // yaw (rotate around Y-axis)
-      logic->player->base.tform->rot.y += logic->player->ptr.x * PLAYER_LOOK_SPEED;
-      logic->player->base.tform->rot.y = Math__rclampf(0, logic->player->base.tform->rot.y, 360.0f);
-      logic->player->ptr.x = 0;
+    if (0 != self->input.ptr.x) {  // yaw (rotate around Y-axis)
+      self->base.base.tform->rot.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot.y = Math__rclampf(0, self->base.base.tform->rot.y, 360.0f);
+      self->input.ptr.x = 0;
     }
 
-    if (0 != logic->player->ptr.y) {  // pitch (rotate around X-axis)
-      logic->player->base.tform->rot.x += logic->player->ptr.y * PLAYER_LOOK_SPEED;
-      logic->player->base.tform->rot.x =
-          Math__clamp(-55.0f, logic->player->base.tform->rot.x, 55.0f);
-      logic->player->ptr.y = 0;
+    if (0 != self->input.ptr.y) {  // pitch (rotate around X-axis)
+      self->base.base.tform->rot.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot.x = Math__clamp(-55.0f, self->base.base.tform->rot.x, 55.0f);
+      self->input.ptr.y = 0;
     }
 
-    if (true == logic->player->input.reload) {  // R
-      logic->player->input.reload = false;
-      logic->level->spawner->firstTick = true;  // tp to spawn
+    if (true == self->input.key.reload) {  // R
+      self->input.key.reload = false;
+      g_engine->game->level->spawner->firstTick = true;  // tp to spawn
     }
 
     // TODO: could implement player camera zoom (also from 1P to 3P)
-    // if (0 != logic->player->ptr.wheely) {
-    //   logic->player->base.tform->pos.z +=
-    //       -logic->player->ptr.wheely * PLAYER_ZOOM_SPEED /* deltaTime*/;
-    //   logic->player->ptr.wheely = 0;
+    // if (0 != self->input.ptr.wheely) {
+    //   self->base.base.tform->pos.z +=
+    //       -self->input.ptr.wheely * PLAYER_ZOOM_SPEED /* deltaTime*/;
+    //   self->input.ptr.wheely = 0;
     // }
 
     // W-S Forward/Backward axis
-    if (logic->player->input.fwd) {
-      self->joy.zAxis = +1.0f;
-    } else if (logic->player->input.back) {
-      self->joy.zAxis = -1.0f;
+    if (self->input.key.fwd) {
+      self->input.joy.zAxis = +1.0f;
+    } else if (self->input.key.back) {
+      self->input.joy.zAxis = -1.0f;
     } else {
-      self->joy.zAxis = 0.0f;
+      self->input.joy.zAxis = 0.0f;
     }
 
     // A-D Left/Right axis
-    if (logic->player->input.right) {
-      self->joy.xAxis = +1.0f;
-    } else if (logic->player->input.left) {
-      self->joy.xAxis = -1.0f;
+    if (self->input.key.right) {
+      self->input.joy.xAxis = +1.0f;
+    } else if (self->input.key.left) {
+      self->input.joy.xAxis = -1.0f;
     } else {
-      self->joy.xAxis = 0.0f;
+      self->input.joy.xAxis = 0.0f;
     }
 
-    if (0 == self->joy.zAxis && 0 == self->joy.xAxis) {
-      logic->player->lastInput = 0;
+    if (0 == self->input.joy.zAxis && 0 == self->input.joy.xAxis) {
+      self->lastInput = 0;
     } else {
-      if (0 == logic->player->lastInput) logic->player->lastInput = g_engine->now;
+      if (0 == self->lastInput) self->lastInput = g_engine->now;
     }
 
     // Q-E Up/Down axis
-    if (logic->player->input.up) {
-      self->joy.yAxis = +1.0f;  // +Y_UP
-    } else if (logic->player->input.down) {
-      self->joy.yAxis = -1.0f;
+    if (self->input.key.up) {
+      self->input.joy.yAxis = +1.0f;  // +Y_UP
+    } else if (self->input.key.down) {
+      self->input.joy.yAxis = -1.0f;
     } else {
-      self->joy.yAxis = 0.0f;
+      self->input.joy.yAxis = 0.0f;
     }
 
     // Direction vectors for movement
@@ -159,36 +142,36 @@ void Player__tick(Entity* entity) {
     // TODO: can manipulate this to simulate slipping/ice
     entity->rb->xa = 0;
     entity->rb->za = 0;
-    if (0 != self->joy.zAxis) {
-      forward = HMM_MulV3F(front, self->joy.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
+    if (0 != self->input.joy.zAxis) {
+      forward = HMM_MulV3F(front, self->input.joy.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
       pos = HMM_AddV3(p1, forward);
       entity->rb->xa += pos.X - entity->tform->pos.x;
       entity->rb->za += pos.Z - entity->tform->pos.z;
     }
 
     // apply left/right motion
-    if (0 != self->joy.xAxis) {
+    if (0 != self->input.joy.xAxis) {
       forward = HMM_MulV3F(
           right,
-          self->joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
+          self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
       pos = HMM_AddV3(p1, forward);
       entity->rb->xa += pos.X - entity->tform->pos.x;
       entity->rb->za += pos.Z - entity->tform->pos.z;
     }
 
     // apply up/down motion
-    if (0 != self->joy.yAxis) {
-      entity->tform->pos.y += self->joy.yAxis * PLAYER_FLY_SPEED * g_engine->deltaTime;
+    if (0 != self->input.joy.yAxis) {
+      entity->tform->pos.y += self->input.joy.yAxis * PLAYER_FLY_SPEED * g_engine->deltaTime;
 
-      entity->tform->pos.y = Math__clamp(0, entity->tform->pos.y, logic->level->height);
+      entity->tform->pos.y = Math__clamp(0, entity->tform->pos.y, g_engine->game->level->height);
     }
 
     static const f32 SQRT_TWO = 1.414214f;
 
-    f32 xm = self->joy.xAxis;
-    f32 zm = self->joy.zAxis;
+    f32 xm = self->input.joy.xAxis;
+    f32 zm = self->input.joy.zAxis;
     f32 d = Math__sqrtf(xm * xm + zm * zm);
-    if (0 != self->joy.zAxis && 0 != self->joy.xAxis) {
+    if (0 != self->input.joy.zAxis && 0 != self->input.joy.xAxis) {
       // normalize diagonal movement, so it is not faster
       entity->rb->xa /= SQRT_TWO;
       entity->rb->za /= SQRT_TWO;
@@ -202,9 +185,8 @@ void Player__tick(Entity* entity) {
       }
       // d *= PLAYER_WALK_SPEED * g_engine->deltaTime * 4.0f;
       // d *=
-      self->bobPhase = HMM_SinF(
-          (g_engine->now - logic->player->lastInput) / 1000.0f * 2.0f * 3.0f *
-          (60 / 29.0f));  // 29bpm
+      self->base.camera.bobPhase = HMM_SinF(
+          (g_engine->now - self->lastInput) / 1000.0f * 2.0f * 3.0f * (60 / 29.0f));  // 29bpm
     }
 
     // LOG_DEBUGF(
@@ -213,10 +195,10 @@ void Player__tick(Entity* entity) {
     //     entity->tform->pos.y,
     //     entity->tform->pos.z,
     //     g_engine->deltaTime);
-    Rigidbody2D__move(entity);
+    Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call2);
 
-    if (logic->player->input.use) {
-      logic->player->input.use = false;
+    if (self->input.key.use) {
+      self->input.key.use = false;
 
       LOG_DEBUGF("use");
 
@@ -234,19 +216,19 @@ void Player__tick(Entity* entity) {
       rs->xa += forward.X, rs->ya = 1, rs->za += forward.Z;
       rs->base.base.render->color = 0x660000ff;
       rs->life = rs->lifeSpan = 4.0f;
-      List__append(g_engine->arena, logic->level->entities, rs);
+      List__append(g_engine->arena, g_engine->game->level->entities, rs);
 
       Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
-      QuadTreeNode_query(logic->level->qt, range, 100, matchData, &matchCount);
+      QuadTreeNode_query(g_engine->game->level->qt, range, 100, matchData, &matchCount);
 
       for (u32 i = 0; i < matchCount; i++) {
         Entity* other = (Entity*)matchData[i];
         if (entity == other) continue;
 
-        if (0 != other->engine && 0 != other->engine->action &&
+        if (0 != other->dispatch && 0 != other->dispatch->action &&
             HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call2(
-              other->engine->action,
+              other->dispatch->action,
               other,
               &(Action){.type = ACTION_USE, .actor = entity, .target = other});
           break;

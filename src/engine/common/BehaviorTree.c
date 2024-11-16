@@ -2,8 +2,6 @@
 
 #include <stdlib.h>  // TODO: remove me
 
-#include "../Logic.h"
-
 // This set of nodes provides a wide variety of behaviors and
 // control flow for a behavior tree.
 

@@ -3,26 +3,20 @@
 #endif
 #include "Logic.h"
 
-#include "../engine/common/Audio.h"
-#include "../engine/common/List.h"
-#include "../engine/common/Profiler.h"
 #include "Game.h"
-#include "entities/Screen.h"
 
 // on init (data only)
 static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
   Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
-  g_engine->logic = Arena__Push(g_engine->arena, sizeof(Logic__State));
+  g_engine->game = Arena__Push(g_engine->arena, sizeof(Game));
 
   Audio__init();
   Game__init();
 }
 
 static void logic_onpreload(void) {
-  Logic__State* logic = g_engine->logic;
-
   // sokol_time.h
   g_engine->stm_setup();
 
@@ -58,8 +52,8 @@ static void logic_onpreload(void) {
   img_desc.label = "depth-image";
   sg_image depth_img = g_engine->sg_make_image(&img_desc);
 
-  logic->pass1 = Arena__Push(g_engine->arena, sizeof(sg_pass));
-  (*logic->pass1) = (sg_pass){
+  g_engine->game->pass1 = Arena__Push(g_engine->arena, sizeof(sg_pass));
+  (*g_engine->game->pass1) = (sg_pass){
       .action = clear,  // copy
       .attachments = g_engine->sg_make_attachments(&(sg_attachments_desc){
           .colors[0].image = color_img,
@@ -69,8 +63,8 @@ static void logic_onpreload(void) {
       .label = "pass1",
   };
 
-  logic->pass2 = Arena__Push(g_engine->arena, sizeof(sg_pass));
-  (*logic->pass2) = (sg_pass){
+  g_engine->game->pass2 = Arena__Push(g_engine->arena, sizeof(sg_pass));
+  (*g_engine->game->pass2) = (sg_pass){
       .action = clear,  // copy
       .label = "pass2",
   };
@@ -81,26 +75,25 @@ static void logic_onpreload(void) {
 
   Entity* screen = Arena__Push(g_engine->arena, sizeof(Sprite));
   Screen__init(screen, color_img.id);
-  logic->screen = List__alloc(g_engine->arena);
-  List__append(g_engine->arena, logic->screen, screen);
+  g_engine->game->screen = List__alloc(g_engine->arena);
+  List__append(g_engine->arena, g_engine->game->screen, screen);
 }
 
 // window, keyboard, mouse events
 static void logic_onevent(const sapp_event* event) {
-  Logic__State* logic = g_engine->logic;
-
+  Player* player1 = (Player*)g_engine->players->head->data;
   // LOG_DEBUGF("event frame_count %llu", event->frame_count);
 
   if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
-    if (KEYCODE_W == event->key_code) logic->player->input.fwd = true;
-    if (KEYCODE_A == event->key_code) logic->player->input.left = true;
-    if (KEYCODE_S == event->key_code) logic->player->input.back = true;
-    if (KEYCODE_D == event->key_code) logic->player->input.right = true;
-    if (KEYCODE_E == event->key_code) logic->player->input.use = true;
-    if (KEYCODE_SPACE == event->key_code) logic->player->input.up = true;
-    if (KEYCODE_TAB == event->key_code) logic->player->input.down = true;
-    if (KEYCODE_R == event->key_code) logic->player->input.reload = true;
-    if (KEYCODE_ESC == event->key_code) logic->player->input.esc = true;
+    if (KEYCODE_W == event->key_code) player1->input.key.fwd = true;
+    if (KEYCODE_A == event->key_code) player1->input.key.left = true;
+    if (KEYCODE_S == event->key_code) player1->input.key.back = true;
+    if (KEYCODE_D == event->key_code) player1->input.key.right = true;
+    if (KEYCODE_E == event->key_code) player1->input.key.use = true;
+    if (KEYCODE_SPACE == event->key_code) player1->input.key.up = true;
+    if (KEYCODE_TAB == event->key_code) player1->input.key.down = true;
+    if (KEYCODE_R == event->key_code) player1->input.key.reload = true;
+    if (KEYCODE_ESC == event->key_code) player1->input.key.esc = true;
 
     // LOG_DEBUGF(
     //     "event keydown"
@@ -114,15 +107,15 @@ static void logic_onevent(const sapp_event* event) {
     //     event->modifiers);
   }
   if (SAPP_EVENTTYPE_KEY_UP == event->type) {
-    if (KEYCODE_W == event->key_code) logic->player->input.fwd = false;
-    if (KEYCODE_A == event->key_code) logic->player->input.left = false;
-    if (KEYCODE_S == event->key_code) logic->player->input.back = false;
-    if (KEYCODE_D == event->key_code) logic->player->input.right = false;
-    if (KEYCODE_E == event->key_code) logic->player->input.use = false;
-    if (KEYCODE_SPACE == event->key_code) logic->player->input.up = false;
-    if (KEYCODE_TAB == event->key_code) logic->player->input.down = false;
-    if (KEYCODE_R == event->key_code) logic->player->input.reload = false;
-    if (KEYCODE_ESC == event->key_code) logic->player->input.esc = false;
+    if (KEYCODE_W == event->key_code) player1->input.key.fwd = false;
+    if (KEYCODE_A == event->key_code) player1->input.key.left = false;
+    if (KEYCODE_S == event->key_code) player1->input.key.back = false;
+    if (KEYCODE_D == event->key_code) player1->input.key.right = false;
+    if (KEYCODE_E == event->key_code) player1->input.key.use = false;
+    if (KEYCODE_SPACE == event->key_code) player1->input.key.up = false;
+    if (KEYCODE_TAB == event->key_code) player1->input.key.down = false;
+    if (KEYCODE_R == event->key_code) player1->input.key.reload = false;
+    if (KEYCODE_ESC == event->key_code) player1->input.key.esc = false;
 
     // LOG_DEBUGF(
     //     "event keyup"
@@ -151,7 +144,7 @@ static void logic_onevent(const sapp_event* event) {
   //     logic->player->kb.esc);
 
   if (SAPP_EVENTTYPE_MOUSE_DOWN == event->type) {
-    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->input.use = true;
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) player1->input.key.use = true;
 
     // LOG_DEBUGF(
     //     "event mousedown"
@@ -159,7 +152,7 @@ static void logic_onevent(const sapp_event* event) {
     //     event->mouse_button);
   }
   if (SAPP_EVENTTYPE_MOUSE_UP == event->type) {
-    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) logic->player->input.use = false;
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) player1->input.key.use = false;
 
     // LOG_DEBUGF(
     //     "event mouseup"
@@ -167,7 +160,7 @@ static void logic_onevent(const sapp_event* event) {
     //     event->mouse_button);
   }
   if (SAPP_EVENTTYPE_MOUSE_SCROLL == event->type) {
-    logic->player->ptr.wheely += event->scroll_y;
+    player1->input.ptr.wheely += event->scroll_y;
 
     // LOG_DEBUGF(
     //     "event mousescroll"
@@ -177,8 +170,8 @@ static void logic_onevent(const sapp_event* event) {
     //     event->scroll_y);
   }
   if (SAPP_EVENTTYPE_MOUSE_MOVE == event->type) {
-    logic->player->ptr.x += event->mouse_dx;
-    logic->player->ptr.y += event->mouse_dy;
+    player1->input.ptr.x += event->mouse_dx;
+    player1->input.ptr.y += event->mouse_dy;
 
     // LOG_DEBUGF(
     //     "event mousemove"
@@ -243,8 +236,6 @@ static void logic_onevent(const sapp_event* event) {
 
 // on physics
 static void logic_onfixedupdate(void) {
-  Logic__State* logic = g_engine->logic;
-
   g_engine->sfetch_dowork();
 
   Game__tick();
@@ -259,17 +250,15 @@ static void logic_onfixedupdate(void) {
 
 // on draw
 static void logic_onupdate(void) {
-  Logic__State* logic = g_engine->logic;
-
   // 1st pass
-  g_engine->sg_begin_pass(logic->pass1);
+  g_engine->sg_begin_pass(g_engine->game->pass1);
   Game__render();
   Game__gui();
   g_engine->sg_end_pass();
 
   // 2nd pass
-  logic->pass2->swapchain = g_engine->sglue_swapchain();
-  g_engine->sg_begin_pass(logic->pass2);
+  g_engine->game->pass2->swapchain = g_engine->sglue_swapchain();
+  g_engine->sg_begin_pass(g_engine->game->pass2);
   Game__postprocessing();
   g_engine->sg_end_pass();
 
@@ -298,7 +287,7 @@ void logic_onbootstrap(Engine__State* engine) {
   g_engine->onupdate = logic_onupdate;
   g_engine->onshutdown = logic_onshutdown;
 
-  if (NULL != g_engine->logic) LOG_DEBUGF("Logic dll reloaded.");
+  if (NULL != g_engine->game) LOG_DEBUGF("Logic dll reloaded.");
 
   Audio__reload();
   Game__reload();

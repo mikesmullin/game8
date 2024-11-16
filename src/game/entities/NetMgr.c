@@ -1,12 +1,5 @@
 #include "NetMgr.h"
 
-#include <string.h>
-
-#include "../../engine/common/Net.h"
-#include "../../engine/common/Websocket.h"
-#include "../Logic.h"
-#include "../messages/Messages.h"
-
 #define DEBUG_STR_LEN (2046)
 
 static void onAccept(Socket* server, Socket* client);
@@ -15,8 +8,7 @@ static void ServerPump(Socket* client);
 static void ClientPump(Socket* client);
 
 void NetMgr__init() {
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   Net__init();
 
@@ -36,8 +28,7 @@ void NetMgr__init() {
 }
 
 void NetMgr__tick() {
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {
     Net__accept(self->listener, onAccept);
@@ -51,8 +42,7 @@ void NetMgr__tick() {
 }
 
 static void onAccept(Socket* server, Socket* client) {
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   client->state = SOCKET_CONNECTED;
   client->sessionState = SESSION_SERVER_HANDSHAKE_AWAIT;
@@ -63,8 +53,7 @@ static void onAccept(Socket* server, Socket* client) {
 }
 
 static void onConnect(Socket* client) {
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   client->state = SOCKET_CONNECTED;
   LOG_DEBUGF("Client connected to %s:%s", client->addr, client->port);
@@ -73,8 +62,7 @@ static void onConnect(Socket* client) {
 static void ServerPump(Socket* client) {
   if (SOCKET_CONNECTED != client->state) return;
 
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   // Read data from client
   Net__read(client);
@@ -119,8 +107,7 @@ static void ServerPump(Socket* client) {
 static void ClientPump(Socket* client) {
   if (SOCKET_CONNECTED != client->state) return;
 
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
   char* debug = Arena__Push(g_engine->frameArena, DEBUG_STR_LEN);
 
   if (SESSION_NONE == client->sessionState) {
@@ -142,8 +129,7 @@ static void ClientPump(Socket* client) {
 }
 
 void NetMgr__shutdown() {
-  Logic__State* logic = g_engine->logic;
-  NetMgr* self = &logic->net;
+  NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {
     for (u32 i = 0; i < self->client_count; i++) {

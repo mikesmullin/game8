@@ -1,31 +1,28 @@
 #include "StateGraph.h"
 
-#include "../Logic.h"
-#include "../entities/CatEntity.h"
-
-void StateGraph__gotoState(StateGraph* sg, u32 state) {
+void StateGraph__gotoState(StateGraph* sg, u32 state, SGGetStateFn getCb) {
   sg->fsm = SGFSM_EXITING;
-  SGState* curState = CatEntity__getSGState(state);
+  SGState* curState = getCb(state);
   if (0 != curState->onExit) curState->onExit(sg);
   sg->currentState = state;
   sg->frame = 0;
 }
 
-void StateGraph__tick(StateGraph* sg) {
+void StateGraph__tick(StateGraph* sg, SGGetStateFn getCb) {
   SGState* curState;
   while (sg->fsm == SGFSM_EXITING || sg->fsm == SGFSM_NULL) {
     sg->fsm = SGFSM_ENTERING;
-    curState = CatEntity__getSGState(sg->currentState);
+    curState = getCb(sg->currentState);
     if (0 != curState->onEnter) curState->onEnter(sg);
 
     if (sg->fsm == SGFSM_UPDATING || sg->fsm == SGFSM_ENTERING) {
       sg->fsm = SGFSM_UPDATING;
-      curState = CatEntity__getSGState(sg->currentState);
+      curState = getCb(sg->currentState);
       if (0 != curState->onUpdate) curState->onUpdate(sg);
     }
   }
 
-  curState = CatEntity__getSGState(sg->currentState);
+  curState = getCb(sg->currentState);
   for (u32 i = 0; i < curState->keyframeCount; i++) {
     SGStateKeyframe* frame = &curState->keyframes[i];
     if (sg->frame == frame->id) {

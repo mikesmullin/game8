@@ -1,8 +1,12 @@
 #pragma once
 
-#include "../../engine/common/Types.h"
+#include "../Game.h"  // IWYU pragma: keep
 
-typedef struct Entity Entity;
+typedef struct Player {
+  CameraEntity base;
+  u32 lastInput;
+  GameInputComponent input;
+} Player;
 
 static const f32 PLAYER_HURT_ANIM_TIME = 0.33;
 
