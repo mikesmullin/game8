@@ -43,5 +43,21 @@ typedef enum DispatchFnId2 /* : u32 */ {
   DISPATCH2__COUNT,
 } DispatchFnId2;
 
+typedef enum DispatchFnId3 /* : u32 */ {
+  DISPATCH3_NONE,
+
+  ATLAS__ONRENDER_LOAD,
+  ATLAS__ONRENDER_ALLOC,
+  ATLAS__ONRENDER_ENTITY,
+  ATLAS__ONRENDER_MATERIAL,
+  PBR__ONRENDER_LOAD,
+  PBR__ONRENDER_ALLOC,
+  PBR__ONRENDER_ENTITY,
+  PBR__ONRENDER_MATERIAL,
+
+  DISPATCH3__COUNT,
+} DispatchFnId3;
+
 void Dispatcher__call1(DispatchFnId1 id, Entity* inst);
 void Dispatcher__call2(u32 id, Entity* inst, void* params);
+void Dispatcher__call3(u32 id, void* params);

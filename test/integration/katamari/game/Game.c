@@ -10,6 +10,19 @@ void Game__init() {
   g_engine->models = Arena__Push(g_engine->arena, sizeof(PreloadedModels));
   g_engine->textures = Arena__Push(g_engine->arena, sizeof(PreloadedTextures));
   g_engine->materials = Arena__Push(g_engine->arena, sizeof(PreloadedMaterials));
+  g_engine->shaders = Arena__Push(g_engine->arena, sizeof(PreloadedShaders));
+  g_engine->shaders->atlas = Arena__Push(g_engine->arena, sizeof(Shader));
+  (*g_engine->shaders->atlas) = (Shader){
+      ATLAS__ONRENDER_ALLOC,
+      ATLAS__ONRENDER_LOAD,
+      ATLAS__ONRENDER_ENTITY,
+      ATLAS__ONRENDER_MATERIAL};
+  g_engine->shaders->pbr = Arena__Push(g_engine->arena, sizeof(Shader));
+  (*g_engine->shaders->pbr) = (Shader){
+      PBR__ONRENDER_ALLOC,
+      PBR__ONRENDER_LOAD,
+      PBR__ONRENDER_ENTITY,
+      PBR__ONRENDER_MATERIAL};
 }
 
 void Game__preload() {

@@ -163,7 +163,7 @@ void Level__render(Level* level) {
 
   List* sky = List__alloc(g_engine->frameArena);
   List__append(g_engine->frameArena, sky, level->cubemap);
-  MeshRenderer__renderBatches(sky);
+  MeshRenderer__renderBatches(sky, Dispatcher__call3);
 
   if (0 != level->nzentities) {
     List__Node* node = level->nzentities->head;
@@ -174,7 +174,7 @@ void Level__render(Level* level) {
       if (0 == entity->render) continue;
       Dispatcher__call1(entity->dispatch->render, entity);
     }
-    MeshRenderer__renderBatches(level->nzentities);
+    MeshRenderer__renderBatches(level->nzentities, Dispatcher__call3);
   }
 
   if (0 != level->zentities) {
@@ -185,7 +185,7 @@ void Level__render(Level* level) {
 
       Dispatcher__call1(entity->dispatch->render, entity);
     }
-    MeshRenderer__renderBatches(level->zentities);
+    MeshRenderer__renderBatches(level->zentities, Dispatcher__call3);
   }
 
   PROFILE__END(LEVEL__RENDER);

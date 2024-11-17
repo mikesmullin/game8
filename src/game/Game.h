@@ -21,6 +21,10 @@ typedef struct PreloadedTextures {
   BmpReader *atlas, *glyphs0, *sky;
 } PreloadedTextures;
 
+typedef struct PreloadedShaders {
+  Shader *atlas, *pbr;
+} PreloadedShaders;
+
 typedef struct PreloadedMaterials {
   Material *wall, *sprite, *glyph, *cubemap, *screen;
 } PreloadedMaterials;

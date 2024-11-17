@@ -12,4 +12,5 @@ void Cube__init(Entity* entity) {
       &g_engine->models->cube,
       "../test/fixtures/assets/models/",
       "cube.obj");
+  entity->render->material->shader = g_engine->shaders->pbr;
 }

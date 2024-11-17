@@ -1,11 +1,11 @@
 #include "MeshRenderer.h"
 
-//
-#include "../../../assets/shaders/atlas.glsl.h"
+#include "../shaders/Atlas.h"  // IWYU pragma: keep
+#include "../shaders/PBR.h"  // IWYU pragma: keep
 
 #define MAX_BATCH_ELEMENTS 128
 
-static void MeshRenderer__loaded(Entity* entity) {
+static void MeshRenderer__loaded(Entity* entity, MeshRenderer__cb0 cb) {
   if (NULL == entity->render) return;  // need component
   if (NULL == entity->render->material) return;  // need material
   Material* material = entity->render->material;
@@ -16,141 +16,19 @@ static void MeshRenderer__loaded(Entity* entity) {
   if (0 == material->mpTexture && !texture->loaded) return;  // need texture
   material->loaded = true;
 
-  // alloc memory once for all meshRenderer instances, since it would be the same for each
-  material->pipe = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
-  material->bind = Arena__Push(g_engine->arena, sizeof(sg_bindings));
-
-  // Allocate an image handle, but don't actually initialize the image yet,
-  // this happens later when the asynchronous file load has finished.
-  // Any draw calls containing such an incomplete image handle
-  // will be silently dropped.
-  if (0 == material->mpTexture) {
-    material->bind->fs.images[SLOT__texture1] = g_engine->sg_alloc_image();
-  } else {
-    material->bind->fs.images[SLOT__texture1] = (sg_image){.id = material->mpTexture};
-  }
-  material->bind->fs.samplers[SLOT_texture1_smp] = g_engine->sg_alloc_sampler();
-  g_engine->sg_init_sampler(
-      material->bind->fs.samplers[SLOT_texture1_smp],
-      &(sg_sampler_desc){
-          .wrap_u = SG_WRAP_REPEAT,
-          .wrap_v = SG_WRAP_REPEAT,
-          .min_filter = SG_FILTER_NEAREST,
-          .mag_filter = SG_FILTER_NEAREST,
-          .compare = SG_COMPAREFUNC_NEVER,
-      });
-
-  // create shader from code-generated sg_shader_desc
-  sg_shader shd = g_engine->sg_make_shader(atlas_shader_desc(g_engine->sg_query_backend()));
-
-  // create a pipeline object (default render states are fine for triangle)
-  (*material->pipe) = g_engine->sg_make_pipeline(&(sg_pipeline_desc){
-      .shader = shd,
-      // if the vertex layout doesn't have gaps, don't need to provide strides and offsets
-      .layout =
-          {
-              .attrs =
-                  {
-                      [ATTR_vs_aPos].format = SG_VERTEXFORMAT_FLOAT3,  //
-                      [ATTR_vs_aTexCoord].format = SG_VERTEXFORMAT_FLOAT2,  //
-                  },
-          },
-      .depth =
-          {
-              .compare = SG_COMPAREFUNC_LESS_EQUAL,
-              // enable depth buffer only for non-transparent layers
-              .write_enabled = entity->render->rg == WORLD_UNSORT_RG,
-          },
-      .colors[0] =
-          {
-              .blend =
-                  {// Enable blending only for transparency layers
-                   .enabled = entity->render->rg != WORLD_UNSORT_RG,
-                   //  source color (the fragment's color) will be multiplied by its alpha.
-                   .src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
-                   .dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-                   // destination color (the existing color in the framebuffer)
-                   // will be multiplied by (1 - src_alpha),
-                   // providing the transparency effect.
-                   .src_factor_alpha = SG_BLENDFACTOR_SRC_ALPHA,
-                   .dst_factor_alpha = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
-                   // add the source and destination colors together
-                   // after applying the blend factors.
-                   .op_rgb = SG_BLENDOP_ADD,
-                   .op_alpha = SG_BLENDOP_ADD},
-          },
-      .cull_mode = SG_CULLMODE_BACK,
-      .sample_count = 1,  // because rendering to texture
-      .label = "mesh-pipeline",
-  });
-
-  f32 vertices[mesh->faces->len * 3 /*points (tri)*/ * 5 /*v3 pos + v2 uv*/];
-  u32 i = 0;
-  List__Node* c = mesh->faces->head;
-  for (u32 t = 0; t < mesh->faces->len; t++) {
-    Wavefront__Face* f = c->data;
-    c = c->next;
-
-    // TODO: use indexed list in GL, instead
-    for (u32 y = 0; y < 3; y++) {
-      v3* p = List__get(mesh->vertices, f->vertex_idx[y] - 1);
-      vertices[i++] = p->x;
-      vertices[i++] = p->y;
-      vertices[i++] = p->z;
-      v2* uv = List__get(mesh->texcoords, f->texcoord_idx[y] - 1);
-      vertices[i++] = uv->x;
-      vertices[i++] = uv->y;
-      // v3* n = List__get(mesh->normals, f->normal_idx[y]);
-    }
-  }
-  material->bind->vertex_buffers[0] = g_engine->sg_make_buffer(&(sg_buffer_desc){
-      .data = SG_RANGE(vertices),  //
-      .label = "mesh-vertices"  //
-  });
-
-  if (0 == material->mpTexture) {
-    u32 pixels[material->texture->w * material->texture->h];  // ABGR
-    u32 ii = 0, mask, color;
-    for (u32 y = 0; y < material->texture->h; y++) {
-      for (u32 x = 0; x < material->texture->w; x++) {
-        mask = entity->render->useMask ? entity->render->mask : COLOR_PINK;
-        color = Bmp__Get2DPixel(texture, x, y, mask);
-        pixels[ii++] = color;
-      }
-    }
-
-    g_engine->sg_init_image(
-        material->bind->fs.images[SLOT__texture1],
-        &(sg_image_desc){
-            .width = material->texture->w,
-            .height = material->texture->h,
-            .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
-            .data.subimage[0][0] = {
-                .ptr = pixels,
-                .size = material->texture->w * material->texture->h * 4,
-            }});
-  }
-
-  // g_engine->sg_update_buffer(logic->meshRenderer.bind->vertex_buffers[0], &SG_RANGE(vertices));
-  //   g_engine->sg_update_image(
-  //       logic->meshRenderer.bind->fs.images[SLOT__texture1],
-  //       &(sg_image_data){
-  //           .subimage[0][0] = {
-  //               .ptr = pixels,
-  //               .size = material->texture->w * material->texture->h * 4,
-  //           }});
+  cb(material->shader->onalloc, &(OnRenderParams1){.entity = entity, .material = material});
 }
 
-void MeshRenderer__renderBatches(List* entities) {
+void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
   if (0 == entities->len) return;
   Entity* entityZero = entities->head->data;
   // all entities in given list are expected to share the same material
-  MeshRenderer__loaded(entityZero);
+  MeshRenderer__loaded(entityZero, cb);
   if (!entityZero->render->material->loaded) return;  // no draw until all assets have loaded
+
   Material* material = entityZero->render->material;
   CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
-  vs_params_t* vs_params = Arena__Push(g_engine->frameArena, sizeof(vs_params_t));
-  fs_params_t fs_params;
+  cb(material->shader->onload, &(OnRenderParams2){.material = material});
 
   // TODO: move to OrbitalCameraComponent
   // f32 r = g_engine->stm_sec(g_engine->stm_now());
@@ -215,11 +93,8 @@ void MeshRenderer__renderBatches(List* entities) {
               entity->tform->scale.y,
               entity->tform->scale.z)));
 
-      vs_params->models[b] = model;
-      vs_params->batch[b][0] = entity->render->ti;
-      vs_params->batch[b][1] = entity->render->color;
-      vs_params->batch[b][2] = entity->render->po;
-      vs_params->batch[b][3] = 0;
+      cb(material->shader->onentity,
+         &(OnRenderParams3){.b = b, .entity = entity, .material = material, .model = model});
     }
 
     // View (Camera)
@@ -305,33 +180,13 @@ void MeshRenderer__renderBatches(List* entities) {
           player1->camera.proj.farZ);
     }
 
-    g_engine->sg_apply_pipeline(*material->pipe);
-    g_engine->sg_apply_bindings(material->bind);
-
-    vs_params->view = view;
-    vs_params->projection = projection;
-    vs_params->billboard = entityZero->render->billboard ? 1 : 0;
-    vs_params->camPos[0] = viewPos.X;
-    vs_params->camPos[1] = viewPos.Y;
-    vs_params->camPos[2] = viewPos.Z;
-
-    fs_params.ip = entityZero->render->indexedPalette ? 1 : 0;
-    fs_params.pi = entityZero->render->pi;
-    fs_params.tw = entityZero->render->tw;
-    fs_params.th = entityZero->render->th;
-    fs_params.aw = entityZero->render->aw;  // material->texture->w
-    fs_params.ah = entityZero->render->ah;  // material->texture->h
-    fs_params.useMask = entityZero->render->useMask ? 1 : 0;
-    fs_params.mask = entityZero->render->mask;
-    fs_params.fog =  //
-        entityZero->render->rg != UI_ZSORT_RG &&  //
-                entityZero->render->rg != SKY_RG &&  //
-                entityZero->render->rg != SCREEN_RG
-            ? 1
-            : 0;
-
-    g_engine->sg_apply_uniforms(SG_SHADERSTAGE_VS, SLOT_vs_params, &SG_RANGE(*vs_params));
-    g_engine->sg_apply_uniforms(SG_SHADERSTAGE_FS, SLOT_fs_params, &SG_RANGE(fs_params));
+    cb(material->shader->onmaterial,
+       &(OnRenderParams4){
+           .entity = entityZero,
+           .material = material,
+           .view = view,
+           .projection = projection,
+           .viewPos = viewPos});
 
     g_engine->sg_draw(0, material->mesh->faces->len * 3 /*points(tri)*/, batch->len);
   }

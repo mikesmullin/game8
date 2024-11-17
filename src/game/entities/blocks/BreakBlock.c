@@ -19,6 +19,7 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
       &g_engine->models->box,
       "../assets/models/",
       "box.obj");
+  entity->render->material->shader = g_engine->shaders->atlas;
   entity->render->material->texture = Preload__texture(  //
       &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");

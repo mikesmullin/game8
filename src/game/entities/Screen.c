@@ -14,6 +14,7 @@ void Screen__init(Entity* entity, u32 mpTexture) {
       &g_engine->models->screen2D,
       "../assets/models/",
       "screen2D.obj");
+  sprite->base.render->material->shader = g_engine->shaders->atlas;
   sprite->base.render->ti = 0;
   sprite->base.render->tw = SCREEN_SIZE, sprite->base.render->th = SCREEN_SIZE;
   sprite->base.render->aw = SCREEN_SIZE, sprite->base.render->ah = SCREEN_SIZE;

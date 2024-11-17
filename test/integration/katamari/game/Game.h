@@ -9,6 +9,7 @@
 
 // Entities ----------------------------------------------
 
+#include "Dispatcher.h"  // IWYU pragma: keep
 #include "entities/Cube.h"  // IWYU pragma: keep
 
 typedef struct PreloadedAudio {
@@ -22,6 +23,10 @@ typedef struct PreloadedModels {
 typedef struct PreloadedTextures {
   // BmpReader *atlas, *glyphs0, *sky;
 } PreloadedTextures;
+
+typedef struct PreloadedShaders {
+  Shader *atlas, *pbr;
+} PreloadedShaders;
 
 typedef struct PreloadedMaterials {
   Material* red;

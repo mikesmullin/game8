@@ -57,6 +57,7 @@ typedef struct PreloadedAudio PreloadedAudio;
 typedef struct PreloadedModels PreloadedModels;
 typedef struct PreloadedTextures PreloadedTextures;
 typedef struct PreloadedMaterials PreloadedMaterials;
+typedef struct PreloadedShaders PreloadedShaders;
 
 typedef struct Engine__State {
   char window_title[255];
@@ -160,6 +161,7 @@ typedef struct Engine__State {
   PreloadedModels* models;
   PreloadedTextures* textures;
   PreloadedMaterials* materials;
+  PreloadedShaders* shaders;
 
 } Engine__State;
 

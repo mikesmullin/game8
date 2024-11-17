@@ -14,9 +14,20 @@ void CatEntity__action(Entity* entity, void* action);
 void CatEntity__collide(Entity* entity, void* action);
 void RedWallBlock__action(Entity* entity, void* action);
 
+void Atlas__onrender_load(void* params);
+void Atlas__onrender_alloc(void* params);
+void Atlas__onrender_entity(void* params);
+void Atlas__onrender_material(void* params);
+void PBR__onrender_load(void* params);
+void PBR__onrender_alloc(void* params);
+void PBR__onrender_entity(void* params);
+void PBR__onrender_material(void* params);
+
 static void Dispatch__None1(Entity* inst) {
 }
 static void Dispatch__None2(Entity* inst, void* params) {
+}
+static void Dispatch__None3(void* params) {
 }
 
 static void (*VTABLE_ENGINE1[])(Entity*) = {
@@ -57,6 +68,19 @@ static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
     RedWallBlock__action,
 };
 
+static void (*VTABLE_ENGINE3[])(void*) = {
+    Dispatch__None3,
+
+    Atlas__onrender_load,
+    Atlas__onrender_alloc,
+    Atlas__onrender_entity,
+    Atlas__onrender_material,
+    PBR__onrender_load,
+    PBR__onrender_alloc,
+    PBR__onrender_entity,
+    PBR__onrender_material,
+};
+
 // static / switch / tag / conditional dispatch
 // a hot-reload safe, simple alternative to polymorphism
 // works because all fns are known at compile-time
@@ -65,4 +89,7 @@ void Dispatcher__call1(DispatchFnId1 id, Entity* inst) {
 }
 void Dispatcher__call2(u32 id, Entity* inst, void* params) {
   VTABLE_ENGINE2[id](inst, params);
+}
+void Dispatcher__call3(u32 id, void* params) {
+  VTABLE_ENGINE3[id](params);
 }
