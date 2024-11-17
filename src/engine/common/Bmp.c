@@ -5,7 +5,7 @@
 
 #include "../Engine.h"
 
-#define MAX_FILE_SIZE 1024 * 1024 * 1  // 1MB
+#define MAX_FILE_SIZE 1024 * 1024 * 50  // MB
 static void response_callback(const sfetch_response_t* response);
 
 #pragma pack(push, 1)

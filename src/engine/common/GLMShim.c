@@ -15,6 +15,13 @@ void glms_v3_add(v3 a, v3 b, v3* dest) {
   dest->z = a.z + b.z;
 }
 
+// Subtracts two v3
+void glms_v3_sub(v3 a, v3 b, v3* dest) {
+  dest->x = a.x - b.x;
+  dest->y = a.y - b.y;
+  dest->z = a.z - b.z;
+}
+
 // Scales a vec3 by a scalar value
 void glms_v3_scale(v3 v, f32 scale, v3* dest) {
   dest->x = v.x * scale;

@@ -27,7 +27,7 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
         "../assets/models/",
         "plane2D.obj");
     sprite->base.render->material->shader = g_engine->shaders->atlas;
-    sprite->base.render->material->texture = Preload__texture(  //
+    sprite->base.render->material->texture0 = Preload__texture(  //
         &g_engine->textures->glyphs0,
         "../assets/textures/glyphs0.bmp");
     sprite->base.render->ti = i < slen ? txt[i] : ' ';

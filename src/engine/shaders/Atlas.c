@@ -6,7 +6,6 @@
 void Atlas__onrender_load(void* _params) {
   OnRenderParams1* params = _params;
   Wavefront* mesh = params->material->mesh;
-  BmpReader* texture = params->material->texture;
 
   // alloc memory once for all meshRenderer instances, since it would be the same for each
   params->material->pipe = Arena__Push(g_engine->arena, sizeof(sg_pipeline));
@@ -16,11 +15,10 @@ void Atlas__onrender_load(void* _params) {
   // this happens later when the asynchronous file load has finished.
   // Any draw calls containing such an incomplete image handle
   // will be silently dropped.
-  if (0 == params->material->mpTexture) {
+  if (0 == params->material->tex0) {
     params->material->bind->fs.images[SLOT__texture1] = g_engine->sg_alloc_image();
   } else {
-    params->material->bind->fs.images[SLOT__texture1] =
-        (sg_image){.id = params->material->mpTexture};
+    params->material->bind->fs.images[SLOT__texture1] = (sg_image){.id = params->material->tex0};
   }
   params->material->bind->fs.samplers[SLOT_texture1_smp] = g_engine->sg_alloc_sampler();
   g_engine->sg_init_sampler(
@@ -101,13 +99,13 @@ void Atlas__onrender_load(void* _params) {
       .label = "atlas-vertices"  //
   });
 
-  if (0 == params->material->mpTexture) {
-    u32 pixels[params->material->texture->w * params->material->texture->h];  // ABGR
+  if (0 == params->material->tex0) {
+    u32 pixels[params->material->texture0->w * params->material->texture0->h];  // ABGR
     u32 ii = 0, mask, color;
-    for (u32 y = 0; y < params->material->texture->h; y++) {
-      for (u32 x = 0; x < params->material->texture->w; x++) {
+    for (u32 y = 0; y < params->material->texture0->h; y++) {
+      for (u32 x = 0; x < params->material->texture0->w; x++) {
         mask = params->entity->render->useMask ? params->entity->render->mask : COLOR_PINK;
-        color = Bmp__Get2DPixel(texture, x, y, mask);
+        color = Bmp__Get2DPixel(params->material->texture0, x, y, mask);
         pixels[ii++] = color;
       }
     }
@@ -115,12 +113,12 @@ void Atlas__onrender_load(void* _params) {
     g_engine->sg_init_image(
         params->material->bind->fs.images[SLOT__texture1],
         &(sg_image_desc){
-            .width = params->material->texture->w,
-            .height = params->material->texture->h,
+            .width = params->material->texture0->w,
+            .height = params->material->texture0->h,
             .pixel_format = SG_PIXELFORMAT_RGBA8,  // has transparency
             .data.subimage[0][0] = {
                 .ptr = pixels,
-                .size = params->material->texture->w * params->material->texture->h * 4,
+                .size = params->material->texture0->w * params->material->texture0->h * 4,
             }});
   }
 
@@ -130,15 +128,15 @@ void Atlas__onrender_load(void* _params) {
   //       &(sg_image_data){
   //           .subimage[0][0] = {
   //               .ptr = pixels,
-  //               .size = params->material->texture->w * params->material->texture->h * 4,
+  //               .size = params->material->texture0->w * params->material->texture0->h * 4,
   //           }});
 }
 
 void Atlas__onrender_alloc(void* _params) {
   OnRenderParams2* params = _params;
-  vs_params_t* vs_params = params->material->vs_params =
+  vs_params_t* vs_params = params->material->uniforms1 =
       Arena__Push(g_engine->frameArena, sizeof(vs_params_t));
-  fs_params_t* fs_params = params->material->fs_params =
+  fs_params_t* fs_params = params->material->uniforms2 =
       Arena__Push(g_engine->frameArena, sizeof(fs_params_t));
 
   g_engine->sg_apply_pipeline(*params->material->pipe);
@@ -147,8 +145,8 @@ void Atlas__onrender_alloc(void* _params) {
 
 void Atlas__onrender_entity(void* _params) {
   OnRenderParams3* params = _params;
-  vs_params_t* vs_params = params->material->vs_params;
-  fs_params_t* fs_params = params->material->fs_params;
+  vs_params_t* vs_params = params->material->uniforms1;
+  fs_params_t* fs_params = params->material->uniforms2;
 
   vs_params->models[params->b] = params->model;
   vs_params->batch[params->b][0] = params->entity->render->ti;
@@ -159,8 +157,8 @@ void Atlas__onrender_entity(void* _params) {
 
 void Atlas__onrender_material(void* _params) {
   OnRenderParams4* params = _params;
-  vs_params_t* vs_params = params->material->vs_params;
-  fs_params_t* fs_params = params->material->fs_params;
+  vs_params_t* vs_params = params->material->uniforms1;
+  fs_params_t* fs_params = params->material->uniforms2;
 
   vs_params->view = params->view;
   vs_params->projection = params->projection;

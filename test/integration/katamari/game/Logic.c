@@ -9,11 +9,11 @@
 static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
-  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 3);
+  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 1000);
   g_engine->game = Arena__Push(g_engine->arena, sizeof(Game));
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
-  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
+  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 500);  // MB
 
   Audio__init();
   Game__init();
@@ -27,6 +27,28 @@ static void logic_onpreload(void) {
   g_engine->sfetch_setup(&(sfetch_desc_t){
       .logger.func = g_engine->slog_func,
   });
+
+  // sokol_gfx.h
+  g_engine->sg_setup(&(sg_desc){
+      .environment = g_engine->sglue_environment(),  //
+      .logger.func = g_engine->slog_func,  //
+  });
+  g_engine->sg_enable_frame_stats();
+
+  // multi-pass rendering
+  sg_pass_action clear = {
+      .colors[0] =
+          {
+              .load_action = SG_LOADACTION_CLEAR,  // always clear
+              .clear_value = {0.1f, 0.1f, 0.1f, 1.0f},  // black
+          },
+  };
+
+  g_engine->game->pass1 = Arena__Push(g_engine->arena, sizeof(sg_pass));
+  (*g_engine->game->pass1) = (sg_pass){
+      .action = clear,  // copy
+      .label = "pass1",
+  };
 
   // preload assets
   Audio__preload();
@@ -61,16 +83,22 @@ static void logic_onfixedupdate(void) {
 // on draw
 static void logic_onupdate(void) {
   // 1st pass
+  g_engine->game->pass1->swapchain = g_engine->sglue_swapchain();
+  g_engine->sg_begin_pass(g_engine->game->pass1);
   Game__render();
-  Game__gui();
+  g_engine->sg_end_pass();
 
-  // 2nd pass
-  Game__postprocessing();
+  g_engine->sg_commit();
+
+  sg_frame_stats stats = g_engine->sg_query_frame_stats();
+  g_engine->draw_count = stats.num_draw;
 }
 
 static void logic_onshutdown(void) {
   Game__shutdown();
+  g_engine->sg_shutdown();
   Audio__shutdown();
+  g_engine->sfetch_shutdown();
   exit(0);
 }
 

@@ -2,4 +2,4 @@
 
 #include "../Game.h"  // IWYU pragma: keep
 
-void Screen__init(Entity* entity, u32 mpTexture);
+void Screen__init(Entity* entity, u32 tex0);

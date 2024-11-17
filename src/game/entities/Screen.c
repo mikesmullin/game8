@@ -1,6 +1,6 @@
 #include "Screen.h"
 
-void Screen__init(Entity* entity, u32 mpTexture) {
+void Screen__init(Entity* entity, u32 tex0) {
   Sprite* sprite = (Sprite*)entity;
   Sprite__init(entity, 0, 0);
   sprite->base.tform->pos.y = 0;
@@ -19,9 +19,9 @@ void Screen__init(Entity* entity, u32 mpTexture) {
   sprite->base.render->tw = SCREEN_SIZE, sprite->base.render->th = SCREEN_SIZE;
   sprite->base.render->aw = SCREEN_SIZE, sprite->base.render->ah = SCREEN_SIZE;
   sprite->base.render->useMask = false;
-  sprite->base.render->material->mpTexture = mpTexture;
+  sprite->base.render->material->tex0 = tex0;
 
-  // entity->render->material->texture = Preload__texture(  //
+  // entity->render->material->texture0 = Preload__texture(  //
   //     &logic->textures.atlas,
   //     "../assets/textures/atlas.bmp");
   // entity->render->ti = 1;

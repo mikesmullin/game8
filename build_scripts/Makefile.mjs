@@ -851,6 +851,12 @@ const test = async () => {
       await run('main', args);
       break;
     case 'test':
+      await clean();
+      await copy_dlls();
+      console.log('--shaders--');
+      code = await shaders('hlsl5:glsl430');
+      if (0 != code) process.exit(code);
+      console.log('--tests--');
       code = await test();
       if (0 != code) process.exit(code);
       break;

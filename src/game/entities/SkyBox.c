@@ -31,7 +31,7 @@ void SkyBox__init(Entity* entity) {
       "../assets/models/",
       "skybox.obj");
   entity->render->material->shader = g_engine->shaders->atlas;
-  entity->render->material->texture = Preload__texture(  //
+  entity->render->material->texture0 = Preload__texture(  //
       &g_engine->textures->sky,
       "../assets/textures/sky.bmp");
 }

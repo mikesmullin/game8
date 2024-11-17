@@ -68,7 +68,7 @@
       //"problemMatcher": "$gcc", // better to leave it off and let clangd update vscode problems list
       "presentation": {
         "echo": false,
-        "reveal": "silent",
+        "reveal": "always",
         "focus": false,
         "panel": "shared",
         "showReuseMessage": false,

@@ -35,16 +35,15 @@ typedef struct Shader {
   u32 /*VTABLE_ENGINE3*/ onload, onalloc, onentity, onmaterial;
 } Shader;
 
-// TODO: kindof misnomer; contains mesh + texture + shader + bindings
 typedef struct Material {
   bool loaded;
   Wavefront* mesh;
-  BmpReader* texture;
-  u32 mpTexture;  // resource id for gpu texture (ie. multi-pass rendering)
+  BmpReader *texture0, *texture1, *texture2, *texture3, *texture4, *texture5, *texture6;
   sg_pipeline* pipe;
   sg_bindings* bind;
-  void *vs_params, *fs_params;
   Shader* shader;
+  u32 tex0;  // resource id for gpu texture buffers
+  void *uniforms1, *uniforms2;
 } Material;
 
 typedef enum RenderGroup {

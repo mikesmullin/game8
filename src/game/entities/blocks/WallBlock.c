@@ -15,7 +15,7 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
       "../assets/models/",
       "box.obj");
   entity->render->material->shader = g_engine->shaders->atlas;
-  entity->render->material->texture = Preload__texture(  //
+  entity->render->material->texture0 = Preload__texture(  //
       &g_engine->textures->atlas,
       "../assets/textures/atlas.bmp");
   entity->render->ti = g_engine->game->level->wallTex;

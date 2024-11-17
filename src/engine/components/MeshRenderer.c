@@ -12,8 +12,15 @@ static void MeshRenderer__loaded(Entity* entity, MeshRenderer__cb0 cb) {
   if (material->loaded) return;  // only do once
   Wavefront* mesh = material->mesh;
   if (!mesh->loaded) return;  // need model
-  BmpReader* texture = material->texture;
-  if (0 == material->mpTexture && !texture->loaded) return;  // need texture
+  // need all textures
+  if (0 == material->tex0 && 0 != material->texture0 && !material->texture0->loaded) return;
+  if (0 != material->texture1 && !material->texture1->loaded) return;
+  if (0 != material->texture2 && !material->texture2->loaded) return;
+  if (0 != material->texture3 && !material->texture3->loaded) return;
+  if (0 != material->texture4 && !material->texture4->loaded) return;
+  if (0 != material->texture5 && !material->texture5->loaded) return;
+  if (0 != material->texture6 && !material->texture6->loaded) return;
+  BmpReader* texture = material->texture0;
   material->loaded = true;
 
   cb(material->shader->onalloc, &(OnRenderParams1){.entity = entity, .material = material});
@@ -63,12 +70,12 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
     c = c->next;
 
     cc = batch->head;
+    HMM_Vec3 modelPos;
     for (u32 b = 0; b < batch->len; b++) {
       Entity* entity = cc->data;
       cc = cc->next;
 
       // Model
-      HMM_Vec3 modelPos;
       modelPos = HMM_V3(  //
           -entity->tform->pos.x,  // move object to camera
           -entity->tform->pos.y,
@@ -134,16 +141,16 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
     // apply translation to view
     view = HMM_MulM4(view, HMM_Translate(viewPos));
 
-    //   LOG_DEBUGF(
-    //       "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
-    //       modelPos.X,
-    //       modelPos.Y,
-    //       modelPos.Z,
-    //       entity->tform->rot.y,
-    //       viewPos.X,
-    //       viewPos.Y,
-    //       viewPos.Z,
-    //       logic->player->base.tform->rot.y);
+    // LOG_DEBUGF(
+    //     "modelPos %f %f %f rot %f viewPos %f %f %f rot %f",  //
+    //     modelPos.X,
+    //     modelPos.Y,
+    //     modelPos.Z,
+    //     entityZero->tform->rot.y,
+    //     viewPos.X,
+    //     viewPos.Y,
+    //     viewPos.Z,
+    //     player1->base.tform->rot.y);
 
     HMM_Mat4 projection;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {

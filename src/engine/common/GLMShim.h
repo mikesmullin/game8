@@ -27,6 +27,7 @@ typedef struct m4 {
 
 f32 glms_v3_dot(v3 a, v3 b);
 void glms_v3_add(v3 a, v3 b, v3* dest);
+void glms_v3_sub(v3 a, v3 b, v3* dest);
 void glms_v3_scale(v3 v, f32 scale, v3* dest);
 void glms_v3_normalize(v3* dest);
 void glms_v3_cross(v3 a, v3 b, v3* dest);

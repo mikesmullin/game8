@@ -21,7 +21,7 @@ typedef struct PreloadedModels {
 } PreloadedModels;
 
 typedef struct PreloadedTextures {
-  // BmpReader *atlas, *glyphs0, *sky;
+  BmpReader *albedo, *normal, *metalness, *roughness, *specularBRDF_LUT, *specular, *irradiance;
 } PreloadedTextures;
 
 typedef struct PreloadedShaders {
@@ -34,6 +34,8 @@ typedef struct PreloadedMaterials {
 
 typedef struct Game {
   bool playedSfxOnce, testComplete;
+  List* entities;
+  sg_pass* pass1;
 } Game;
 
 void Game__init();

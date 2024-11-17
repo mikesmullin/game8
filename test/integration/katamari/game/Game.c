@@ -9,6 +9,7 @@ void Game__init() {
   g_engine->audio = Arena__Push(g_engine->arena, sizeof(PreloadedAudio));
   g_engine->models = Arena__Push(g_engine->arena, sizeof(PreloadedModels));
   g_engine->textures = Arena__Push(g_engine->arena, sizeof(PreloadedTextures));
+  g_engine->textures->albedo = 0;
   g_engine->materials = Arena__Push(g_engine->arena, sizeof(PreloadedMaterials));
   g_engine->shaders = Arena__Push(g_engine->arena, sizeof(PreloadedShaders));
   g_engine->shaders->atlas = Arena__Push(g_engine->arena, sizeof(Shader));
@@ -23,20 +24,47 @@ void Game__init() {
       PBR__ONRENDER_LOAD,
       PBR__ONRENDER_ENTITY,
       PBR__ONRENDER_MATERIAL};
+
+  g_engine->game->entities = List__alloc(g_engine->arena);
 }
 
 void Game__preload() {
-  // preload assets
-  g_engine->audio->pickupCoin = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
+  CameraEntity* player1 = (CameraEntity*)Arena__Push(g_engine->arena, sizeof(CameraEntity));
+  Entity__init((Entity*)player1);
+  player1->base.tform->pos.x = 0.0f;
+  player1->base.tform->pos.y = 0.0f;
+  player1->base.tform->pos.z = 0.0f;
+  player1->camera.proj.type = PERSPECTIVE_PROJECTION;
+  player1->camera.proj.fov = 45.0f;
+  player1->camera.proj.nearZ = 0.1f;
+  player1->camera.proj.farZ = 1000.0f;
+  player1->camera.screenSize = SCREEN_SIZE;
+  player1->camera.bobPhase = 0;
+  List__append(g_engine->arena, g_engine->players, player1);
 
   Cube* cube = (Cube*)Arena__Push(g_engine->arena, sizeof(Cube));
   Cube__init((Entity*)cube);
+  cube->base.tform->pos.x = 0.0f;
+  cube->base.tform->pos.y = 0.0f;
+  cube->base.tform->pos.z = 0.0f;
+  cube->base.tform->scale.x = 1.0f;
+  cube->base.tform->scale.y = 1.0f;
+  cube->base.tform->scale.z = 1.0f;
+  cube->base.tform->rot.x = 0.0f;
+  cube->base.tform->rot.y = 0.0f;
+  cube->base.tform->rot.z = 0.0f;
+  List__append(g_engine->arena, g_engine->game->entities, cube);
+
+  // preload assets
+  g_engine->audio->pickupCoin = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
 }
 
 void Game__reload() {
 }
 
 void Game__tick() {
+  Arena__Reset(g_engine->frameArena);
+
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;
     Audio__replay(g_engine->audio->pickupCoin);
@@ -49,6 +77,17 @@ void Game__tick() {
 }
 
 void Game__render() {
+  CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
+  player1->base.tform->pos.x = 0.0f;
+  player1->base.tform->pos.y = 0.0f;
+  player1->base.tform->pos.z = 5.0f;  //mwave(3000, 1.50f, 6.0f);
+
+  Cube* cube = g_engine->game->entities->head->data;
+  cube->base.tform->rot.x = mwave(1000, 0.0f, 180.0f);
+  cube->base.tform->rot.y = mwave(3000, 0.0f, 180.0f);
+  cube->base.tform->rot.z = mwave(7000, 0.0f, 180.0f);
+
+  MeshRenderer__renderBatches(g_engine->game->entities, Dispatcher__call);
 }
 
 void Game__gui() {
