@@ -44,16 +44,26 @@ void Game__preload() {
 
   Cube* cube = (Cube*)Arena__Push(g_engine->arena, sizeof(Cube));
   Cube__init((Entity*)cube);
-  cube->base.tform->pos.x = 0.0f;
-  cube->base.tform->pos.y = 0.0f;
-  cube->base.tform->pos.z = 0.0f;
-  cube->base.tform->scale.x = 1.0f;
-  cube->base.tform->scale.y = 1.0f;
-  cube->base.tform->scale.z = 1.0f;
-  cube->base.tform->rot.x = 0.0f;
-  cube->base.tform->rot.y = 0.0f;
-  cube->base.tform->rot.z = 0.0f;
   List__append(g_engine->arena, g_engine->game->entities, cube);
+  cube->base.render->color = COLOR_RED;
+  cube->base.tform->pos.y = 0.5f;
+
+  u32 sq = 30;
+  f32 s = 1.0f / 4, ss = s * 4;
+  f32 hw = sq * ss / 2;
+  for (u32 y = 0; y < sq; y++) {
+    for (u32 x = 0; x < sq; x++) {
+      Cube* cube = (Cube*)Arena__Push(g_engine->arena, sizeof(Cube));
+      Cube__init((Entity*)cube);
+      List__append(g_engine->arena, g_engine->game->entities, cube);
+      cube->base.tform->scale.x = s;
+      cube->base.tform->scale.y = s;
+      cube->base.tform->scale.z = s;
+      cube->base.tform->pos.x = -hw + (x * ss), cube->base.tform->pos.z = -hw + (y * ss);
+      cube->base.tform->pos.y = s / 2;
+      cube->base.render->color = COLOR_WHITE;
+    }
+  }
 
   // preload assets
   g_engine->audio->pickupCoin = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
@@ -65,6 +75,7 @@ void Game__reload() {
 void Game__tick() {
   Arena__Reset(g_engine->frameArena);
   g_engine->entity_count = g_engine->game->entities->len;
+  // CameraEntity* player1 = g_engine->players->head->data;
 
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;
@@ -79,14 +90,16 @@ void Game__tick() {
 
 void Game__render() {
   CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
-  player1->base.tform->pos.x = 0.0f;
-  player1->base.tform->pos.y = 0.0f;
-  player1->base.tform->pos.z = 5.0f;  //mwave(3000, 1.50f, 6.0f);
+  player1->base.tform->pos.x = 0.0f;  // mwave(1000, -5.0f, 5.0f);
+  player1->base.tform->pos.y = mwave(3000, 0.0f, 4.0f);
+  player1->base.tform->pos.z = mwave(7000, 2.0f, 10.0f);
+  player1->base.tform->rot.x = mwave(11000, -15.0f, 15.0f);
+  player1->base.tform->rot.y = mwave(11000, -15.0f, 15.0f);
 
   Cube* cube = g_engine->game->entities->head->data;
-  cube->base.tform->rot.x = mwave(1000, 0.0f, 180.0f);
-  cube->base.tform->rot.y = mwave(3000, 0.0f, 180.0f);
-  cube->base.tform->rot.z = mwave(7000, 0.0f, 180.0f);
+  // cube->base.tform->rot.x = mwave(1000, 0.0f, 180.0f);
+  // cube->base.tform->rot.y = mwave(3000, 0.0f, 180.0f);
+  // cube->base.tform->rot.z = mwave(7000, 0.0f, 180.0f);
 
   MeshRenderer__renderBatches(g_engine->game->entities, Dispatcher__call);
 }

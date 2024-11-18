@@ -59,7 +59,8 @@ void main()
 	mat4 modelMatrix = models[gl_InstanceIndex];
     vout.color = batch[gl_InstanceIndex].x;
 
-    vout.position = vec3(modelMatrix * vec4(position, 1.0f));
+    // vout.position = vec3(modelMatrix * vec4(position, 1.0f));
+    vout.position = position;
     vout.texcoord = vec2(texcoord.x, 1.0f-texcoord.y);
 
     // Pass tangent space basis vectors (for normal mapping).
