@@ -197,10 +197,15 @@ const shaders = async (out_type) => {
   const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
   for (const shaderFile of shaderFiles) {
     const relPath = path.relative(path.join(workspaceFolder), shaderFile);
-    const r1 = await child_spawn(SDHC_PATH, ['-i',
-      relPath, '-o', `${relPath}.h`,
-      '-l', out_type]);
-    if (0 !== r1.code) return r1.code;
+    const h_file = `${relPath}.h`;
+    const { exists: glsl_exists, stat: { mtime: glsl_mtime } } = await fs_exists(relPath);
+    const { exists: h_exists, stat: { mtime: h_mtime } } = await fs_exists(h_file);
+    if (glsl_mtime > h_mtime) {
+      const r1 = await child_spawn(SDHC_PATH, ['-i',
+        relPath, '-o', h_file,
+        '-l', out_type]);
+      if (0 !== r1.code) return r1.code;
+    }
   }
   return 0;
 };
@@ -239,6 +244,7 @@ const compile = async (basename) => {
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
+    if (m.h_file) continue;
     const r = await recompile_object(relWs(workspaceFolder, m.c_file));
     if (0 != r.r?.code) {
       code = r.r?.code;
@@ -302,6 +308,7 @@ const compile_reload = async (outname) => {
   // ie. we have a naming convention .h may have a matching .c
   const object_files = [];
   for await (const m of extract_include_units({ file: unit })) {
+    if (m.h_file) continue;
     const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'dll', C_DLL_COMPILER_FLAGS);
     if (0 != r.r?.code) break;
     object_files.push(r.object);
@@ -546,14 +553,14 @@ const extract_include_units = async function* (opts) {
       const dname2 = path.dirname(include);
       const bname = path.basename(include, '.h');
       const h_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.h`));
-      const { exists: h_exists } = await fs_exists(h_file);
+      const { exists: h_exists, stat: { mtime: h_mtime } } = await fs_exists(h_file);
       const c_file = relWs(path.resolve(cwd, dname1, dname2, `${bname}.c`));
-      const { exists: c_exists } = await fs_exists(c_file);
+      const { exists: c_exists, stat: { mtime: c_mtime } } = await fs_exists(c_file);
       // console.debug('match', { h_file, c_file });
       if (c_exists) {
         if (!opts.seen.has(c_file)) {
           opts.seen.add(c_file);
-          yield { c_file, depth: opts.depth };
+          yield { c_file, c_mtime, depth: opts.depth };
           yield* await extract_include_units({
             file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
           });
@@ -562,7 +569,7 @@ const extract_include_units = async function* (opts) {
       if (h_exists) {
         if (!opts.seen.has(h_file)) {
           opts.seen.add(h_file);
-          // yield { c_file: h_file, depth: opts.depth };
+          yield { h_file: h_file, h_mtime, depth: opts.depth };
           yield* await extract_include_units({
             file: h_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
           });
@@ -586,10 +593,15 @@ const recompile_object = async (unit, mode = 'main', extra_compiler_flags = []) 
   let object = relWs(path.join(out_path, `${basename}.o`));
   object = logic_hotreload_variants(mode)(object);
   await fs.mkdir(out_path, { recursive: true });
-  const { stat: { mtime: unit_mtime } } = await fs_exists(unit);
+  let u_file = unit;
+  let { stat: { mtime: u_mtime } } = await fs_exists(unit);
+  for await (const m of extract_include_units({ file: unit })) {
+    if (m.h_mtime > u_mtime) { u_file = m.h_file; u_mtime = m.h_mtime; }
+  }
   const { stat: { mtime: object_mtime } } = await fs_exists(object);
   let r1 = { code: 0 };
-  if (unit_mtime > object_mtime) {
+  if (u_mtime > object_mtime) {
+    // console.debug({ u_file, u_mtime, object_mtime });
     r1 = await child_spawn(C_COMPILER_PATH, [
       ...DEBUG_COMPILER_ARGS,
       ...C_COMPILER_ARGS,
@@ -668,6 +680,7 @@ const test = async () => {
       // ie. we have a naming convention .h may have a matching .c
       const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
+        if (m.h_file) continue;
         const r = await recompile_object(relWs(workspaceFolder, m.c_file));
         if (0 != r.r?.code) break;
         object_files.push(r.object);
@@ -851,8 +864,8 @@ const test = async () => {
       await run('main', args);
       break;
     case 'test':
-      await clean();
-      await copy_dlls();
+      // await clean();
+      // await copy_dlls();
       console.log('--shaders--');
       code = await shaders('hlsl5:glsl430');
       if (0 != code) process.exit(code);
@@ -865,6 +878,7 @@ const test = async () => {
       analyze = '--analyze' == analyze;
       let i = 0;
       for await (const unit of extract_include_units({ file, analyze })) {
+        if (m.h_file) continue;
         console.log(indent(unit.depth, unit.c_file));
         i++;
       }

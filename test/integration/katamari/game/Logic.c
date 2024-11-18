@@ -40,7 +40,7 @@ static void logic_onpreload(void) {
       .colors[0] =
           {
               .load_action = SG_LOADACTION_CLEAR,  // always clear
-              .clear_value = {0.1f, 0.1f, 0.1f, 1.0f},  // black
+              .clear_value = {1.0f, 1.0f, 1.0f, 1.0f},  // black
           },
   };
 
