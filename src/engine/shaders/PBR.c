@@ -505,7 +505,8 @@ void PBR__onrender_entity(void* _params) {
   TransformUniforms_t* TransformUniforms = params->material->uniforms1;
   ShadingUniforms_t* ShadingUniforms = params->material->uniforms2;
 
-  TransformUniforms->modelMatrix = params->model;
+  TransformUniforms->models[params->b] = params->model;
+  TransformUniforms->batch[params->b][0] = params->entity->render->color;
 }
 
 void PBR__onrender_material(void* _params) {

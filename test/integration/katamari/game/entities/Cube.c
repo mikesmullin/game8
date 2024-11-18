@@ -14,6 +14,7 @@ void Cube__init(Entity* entity) {
       "cube.obj");
   entity->render->material->shader = g_engine->shaders->pbr;
   // entity->render->material->shader = g_engine->shaders->atlas;
+  entity->render->color = COLOR_LIME;
   entity->render->material->texture0 = Preload__texture(  //
       &g_engine->textures->albedo,
       "../test/fixtures/assets/textures/test_A.bmp");

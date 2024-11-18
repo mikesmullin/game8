@@ -35,11 +35,15 @@ in vec3 tangent;
 in vec3 bitangent;
 in vec2 texcoord;
 
+#define MAX_BATCH_ELEMENTS 128
+
 uniform TransformUniforms
 {
-	mat4 modelMatrix;
 	mat4 viewMatrix;
 	mat4 projectionMatrix;
+
+    mat4 models[MAX_BATCH_ELEMENTS];
+    ivec4 batch[MAX_BATCH_ELEMENTS];
 };
 
 out Vertex
@@ -47,10 +51,14 @@ out Vertex
 	vec3 position;
 	vec2 texcoord;
 	mat3 tangentBasis;
+    flat uint color;
 } vout;
 
 void main()
 {
+	mat4 modelMatrix = models[gl_InstanceIndex];
+    vout.color = batch[gl_InstanceIndex].x;
+
     vout.position = vec3(modelMatrix * vec4(position, 1.0f));
     vout.texcoord = vec2(texcoord.x, 1.0f-texcoord.y);
 
@@ -105,6 +113,7 @@ in Vertex
 	vec3 position;
 	vec2 texcoord;
 	mat3 tangentBasis;
+    flat uint color;
 } vin;
 
 out vec4 FragColor;
@@ -175,10 +184,28 @@ vec3 fresnelSchlick(vec3 F0, float cosTheta)
 	return F0 + (vec3(1.0) - F0) * pow(1.0 - cosTheta, 5.0);
 }
 
+vec4 u32ToVec4(uint color) {
+    // Extract each color component by shifting and masking
+    float r = float(color & 0xFF) / 255.0;        // Red is in the lowest byte
+    float g = float((color >> 8) & 0xFF) / 255.0; // Green is in the second byte
+    float b = float((color >> 16) & 0xFF) / 255.0; // Blue is in the third byte
+    float a = float((color >> 24) & 0xFF) / 255.0; // Alpha is in the highest byte
+
+    // Return as a vec4 (r, g, b, a)
+    return vec4(r, g, b, a);
+}
+
 void main()
 {
     // Sample input textures to get shading model params.
-    vec3 albedo = texture(albedoTexture, vin.texcoord).rgb;
+    
+    vec3 albedo;
+    if (0 != vin.color) {
+        albedo = u32ToVec4(vin.color).rgb;
+    }
+    else {
+        albedo = texture(albedoTexture, vin.texcoord).rgb;
+    }
     float metalness = texture(metalnessTexture, vin.texcoord).r;
     float roughness = texture(roughnessTexture, vin.texcoord).r;
 
