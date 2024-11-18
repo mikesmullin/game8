@@ -157,6 +157,7 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
 };
 
 const all = async (autorun) => {
+  // console.log("--clean--");
   // await clean();
   await copy_dlls();
   console.log('--shaders--');
@@ -172,6 +173,7 @@ const all = async (autorun) => {
 };
 
 const web = async () => {
+  // console.log("--clean--");
   // await clean();
   await copy_dlls();
   const code1 = await shaders('glsl300es');
@@ -838,6 +840,7 @@ const test = async () => {
       web();
       break;
     case 'clean':
+      console.log("--clean--");
       await clean();
       break;
     case 'copy_dlls':

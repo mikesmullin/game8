@@ -516,12 +516,9 @@ void PBR__onrender_material(void* _params) {
   TransformUniforms->viewMatrix = params->view;
   TransformUniforms->projectionMatrix = params->projection;
 
-  f32 s1 = mwave(1000 / 8, -0.05, 0.05);
-  f32 s = mwave(2000, 0.95f, 0.99f);
-  LOG_DEBUGF("s %f", s);
-  ShadingUniforms->lights_direction[0][0] = s1;  // -X_RIGHT
+  ShadingUniforms->lights_direction[0][0] = 0.0f;  // -X_RIGHT
   ShadingUniforms->lights_direction[0][1] = 0.0f;  // -Y_UP
-  ShadingUniforms->lights_direction[0][2] = s;  // -Z_FWD
+  ShadingUniforms->lights_direction[0][2] = 0.95f;  // -Z_FWD
   ShadingUniforms->lights_radiance[0][0] = 1.0f;
   ShadingUniforms->lights_radiance[0][1] = 1.0f;
   ShadingUniforms->lights_radiance[0][2] = 1.0f;

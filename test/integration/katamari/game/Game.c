@@ -64,6 +64,7 @@ void Game__reload() {
 
 void Game__tick() {
   Arena__Reset(g_engine->frameArena);
+  g_engine->entity_count = g_engine->game->entities->len;
 
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;
