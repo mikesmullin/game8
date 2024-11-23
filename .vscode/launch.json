@@ -10,8 +10,6 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/main.exe",
       "args": [
-        "-server",
-        "localhost:9000",
         "-reload"
       ],
       "stopAtEntry": false,
@@ -36,8 +34,7 @@
       "request": "launch",
       "program": "${workspaceFolder}/build/katamari.exe",
       "args": [
-        "-server",
-        "localhost:9000"
+        "-reload"
       ],
       "stopAtEntry": false,
       "cwd": "${workspaceFolder}/build",

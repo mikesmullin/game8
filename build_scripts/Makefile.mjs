@@ -36,8 +36,9 @@ const C_COMPILER_ARGS = [
   // '-m64', // generate 64-bit executable
 
   // ignore specific warnings
-  '-Wno-microsoft-enum-forward-reference',
-  '-Wno-deprecated-non-prototype',
+  // '-Wno-microsoft-enum-forward-reference',
+  // '-Wno-deprecated-non-prototype',
+  '@clang_options.rsp',
 ];
 const C_COMPILER_INCLUDES = [
 ];

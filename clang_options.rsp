@@ -1,0 +1,2 @@
+-Wno-microsoft-enum-forward-reference
+-Wno-deprecated-non-prototype
