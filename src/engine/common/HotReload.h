@@ -2,8 +2,6 @@
 
 #include "Types.h"
 
-#define LOGIC_FILENAME "src\\game\\Logic.c.dll"
-
 #ifdef __EMSCRIPTEN__
 #define HOT_RELOAD__EXPORT
 #endif

@@ -167,8 +167,8 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
 
   // hot-reload support
   if (g_engine->useHotReload) {
-    g_engine->fm = (FileMonitor){.directory = "src/game", .fileName = "Logic.c.dll"};
-    ASSERT_CONTEXT(HotReload__load(LOGIC_FILENAME), "Failed to load Logic.dll");
+    g_engine->fm = (FileMonitor){.directory = "./", .fileName = "Logic.dll"};
+    ASSERT_CONTEXT(HotReload__load(g_engine->fm.fileName), "Failed to load Logic.dll");
   }
 
   g_engine->onbootstrap(g_engine);
@@ -205,7 +205,7 @@ void Engine__sokol_init(void) {
 void Engine__sokol_frame(void) {
   if (g_engine->useHotReload) {
     // check for fs changes
-    char path[32] = "src/game/";
+    char path[32] = "";
     char file[31];
     if (2 == HotReload__CheckMonitor(&g_engine->fm, file)) {
       strcat_s(path, 32, file);

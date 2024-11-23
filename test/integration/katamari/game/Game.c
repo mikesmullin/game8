@@ -74,6 +74,7 @@ void Game__preload() {
 }
 
 void Game__reload() {
+  Audio__reload();
 }
 
 void Game__tick() {

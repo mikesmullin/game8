@@ -36,7 +36,7 @@ u8 HotReload__load(const char* file) {
         NULL);
 
     // Print the formatted error message
-    LOG_DEBUGF("ERROR loading %s: %s", LOGIC_FILENAME, (char*)errorMessage);
+    LOG_DEBUGF("ERROR loading %s: %s", file, (char*)errorMessage);
 
     // Free the buffer allocated by FormatMessage
     LocalFree(errorMessage);
@@ -73,7 +73,7 @@ u8 HotReload__unload(void) {
         NULL);
 
     // Print the formatted error message
-    printf("ERROR freeing %s: %s\n", LOGIC_FILENAME, (char*)errorMessage);
+    printf("ERROR freeing logic dll: %s\n", (char*)errorMessage);
 
     // Free the buffer allocated by FormatMessage
     LocalFree(errorMessage);

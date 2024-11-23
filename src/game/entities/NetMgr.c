@@ -1,11 +1,6 @@
 #include "NetMgr.h"
 
-#ifdef ENGINE__TEST
-#include DEPINJ__GAME_H
-#else
-#include "../Game.h"
-#endif
-
+#include DEPINJ(GAME_H, "../Game.h")
 #include "../messages/Message.h"
 
 #define DEBUG_STR_LEN (2046)

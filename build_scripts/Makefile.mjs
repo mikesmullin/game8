@@ -85,13 +85,22 @@ const COMPILER_TRANSLATION_UNITS_UNIT_TESTS = [
 const COMPILER_TRANSLATION_UNITS_INTEGRATION_TESTS = [
   relWs(workspaceFolder, 'test', 'integration', '**', 'app.c'),
 ];
+// const COMPILER_TRANSLATION_UNITS_LOGIC_C = [
+//   relWs(workspaceFolder, 'src', '**', 'Logic.c'),
+//   relWs(workspaceFolder, 'test', 'integration', '**', 'Logic.c'),
+// ];
 
 const EDITOR_INCLUDES = [
   // `-I${relBuild(workspaceFolder, 'vendor', 'emsdk', 'upstream', 'emscripten', 'cache', 'sysroot', 'include')}`,
 ];
 
+const DEFAULT_LOGIC_C = 'src/game/Logic.c';
+const DEFAULT_LOGIC_DLL = 'tmp/Logic.dll';
+
 const nixPath = (p) =>
   path.posix.normalize(p.replace(/\\/g, '/'));
+const winPath = (p) =>
+  path.posix.normalize(p.replace(/\//g, '\\\\'));
 
 const generate_clangd_compile_commands = async () => {
   console.log('scanning directory...');
@@ -183,7 +192,7 @@ const all = async (autorun) => {
   const code2 = await compile('main');
   if (0 != code2) return code2;
   console.log('--dll--');
-  const code3 = await compile_reload("src/game/Logic.c.dll");
+  const code3 = await compile_reload(DEFAULT_LOGIC_C, DEFAULT_LOGIC_DLL);
   if (0 != code3) return code3;
   if (autorun) await run('main');
 };
@@ -212,7 +221,7 @@ const copy_dlls = async () => {
 };
 
 const shaders = async (out_type) => {
-  const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl').replace(/\\/g, '/'));
+  const shaderFiles = await glob(nixPath(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl')));
   for (const shaderFile of shaderFiles) {
     const relPath = path.relative(path.join(workspaceFolder), shaderFile);
     const h_file = `${relPath}.h`;
@@ -233,7 +242,7 @@ const clean = async () => {
   await fs.rm(path.join(workspaceFolder, BUILD_PATH), { recursive: true, force: true });
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH));
 
-  const shaderFiles = await glob(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl.h').replace(/\\/g, '/'));
+  const shaderFiles = await glob(nixPath(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl.h')));
   for (const shaderFile of shaderFiles) {
     await fs.rm(shaderFile, { force: true });
   }
@@ -282,7 +291,7 @@ const compile = async (basename) => {
       // ...C_COMPILER_INCLUDES,
       ...LINKER_LIBS,
       ...LINKER_LIB_PATHS,
-      ...object_files.filter(
+      ...object_files.map(
         logic_hotreload_variants('main'),
       ),
       unit,
@@ -313,13 +322,12 @@ function generateRandomString(length) {
   return result;
 }
 
-const compile_reload = async (outname) => {
+const compile_reload = async (unit, outname) => {
   const started = performance.now();
   console.log(`recompiling...`);
 
   await fs.mkdir(path.join(workspaceFolder, BUILD_PATH, 'tmp'), { recursive: true });
 
-  const unit = 'src/game/Logic.c';
   await fs.mkdir(absBuild(path.dirname(unit)), { recursive: true });
 
   // discover included translation unit files
@@ -371,9 +379,10 @@ const compile_reload = async (outname) => {
     ...LINKER_LIBS,
     ...LINKER_LIB_PATHS,
     '-shared',
-    ...object_files.filter(
+    ...object_files.map(
       logic_hotreload_variants('dll'),
     ),
+    unit,
     '-o', dst,
   ], { buffer: true });
   const ended = performance.now();
@@ -395,39 +404,38 @@ const compile_reload = async (outname) => {
   if (ANALYZE) await child_spawn(ANALYZER, ['--stop', analyzer_out_path, analyzer_bin]);
   if (ANALYZE) await child_spawn(ANALYZER, ['--analyze', analyzer_bin]);
 
-  // swap lib
-  let target2;
-  try {
-    await fs.stat(path.join(workspaceFolder, BUILD_PATH, target));
-    target2 = target.replace('.tmp', '');
-    // try {
-    //   await fs.rename(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, 'tmp', target2));
-    // } catch (e) {
-    // }
-
-    if (target != target2) {
-      await fs.cp(path.join(workspaceFolder, BUILD_PATH, target), path.join(workspaceFolder, BUILD_PATH, target2));
+  // once .dll is finished writing to disk, copy it into place (so it will be loaded)
+  let target2 = target.replace('tmp/', '');
+  if (target != target2) {
+    let out_target = path.join(workspaceFolder, BUILD_PATH, target);
+    let out_target2 = path.join(workspaceFolder, BUILD_PATH, target2);
+    try {
+      await fs.cp(out_target, out_target2);
+    } catch (e) {
+      console.log(chalk.red('copy failed.'), e);
     }
-  } catch (e) {
-    console.log(chalk.red('copy failed.'), e);
   }
 
   console[log](chalk[color](`compiling DLL ${0 == r1.code ? 'succeeded' : 'failed'}. file: ${target2}, elapsed: ${((ended - started) / 1000).toFixed(2)}s`));
   return r1.code;
 };
 
-const watch = async () => {
-  console.log(`watching...`);
-  const watcher = fs.watch(path.join(workspaceFolder, 'src'), { recursive: true });
+const watch = async (base = 'src') => {
+  console.log(chalk.grey('watching ') + chalk.cyan(base + '/') + chalk.grey('...'));
+
+  const logic_c = (await glob(nixPath(relWs(workspaceFolder, base, '**', 'Logic.c'))))[0];
+  console.log(chalk.grey('found: ') + chalk.yellow(logic_c));
+
+  const watcher = fs.watch(path.join(workspaceFolder, base), { recursive: true });
   let timer;
   let wait = false;
   for await (const event of watcher) {
-    console.debug('event', event);
     clearTimeout(timer);
     if (!wait) {
       timer = setTimeout(async () => {
         wait = true;
-        await compile_reload(`src/game/${generateRandomString(16)}.dll.tmp`);
+        console.debug(`${event.eventType} ${chalk.yellow(event.filename)}`);
+        await compile_reload(logic_c, `tmp/${generateRandomString(16)}.dll`);
         wait = false;
       }, 250);
     }
@@ -477,11 +485,11 @@ const compile_web = async (basename) => {
   const unit_files = [];
   let candidates, noncandidates;
   for (const u of COMPILER_TRANSLATION_UNITS_WEB) {
-    candidates = await glob(relWs(absWs(u)).replace(/\\/g, '/'));
+    candidates = await glob(nixPath(relWs(absWs(u))));
     nextFile:
     for (const file of candidates) {
       for (const nu of COMPILER_TRANSLATION_UNITS_WEB_EXCLUDE) {
-        noncandidates = await glob(relWs(absWs(nu)).replace(/\\/g, '/'));
+        noncandidates = await glob(nixPath(relWs(absWs(nu))));
         for (const nonFile of noncandidates) {
           if (file == nonFile) continue nextFile;
         }
@@ -507,7 +515,7 @@ const compile_web = async (basename) => {
   // copy static assets
   const dest = path.join(workspaceFolder, BUILD_PATH);
   for (const u of COMPILER_TRANSLATION_UNITS_WEB_COPY) {
-    for (const src of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+    for (const src of await glob(nixPath(relWs(absWs(u))))) {
       await fs.copyFile(src, path.join(dest, path.basename(src)));
     }
   }
@@ -556,7 +564,7 @@ const extract_include_units = async function* (opts) {
   if (undefined == opts.analyze) opts.analyze = false;
   const dname1 = path.dirname(opts.file);
 
-  opts.seen.add(opts.file);
+  opts.seen.add(nixPath(opts.file));
   const rl = readline.createInterface({
     input: createReadStream(opts.file),
     crlfDelay: Infinity, // Handle both \n and \r\n newlines
@@ -567,6 +575,7 @@ const extract_include_units = async function* (opts) {
   for await (const line of rl) {
     while (null != (m = RX_INCLUDE1.exec(line))) {
       const [, include] = m;
+      // if (line.includes('nofollow')) continue;
       const cwd = process.cwd();
       const dname2 = path.dirname(include);
       const bname = path.basename(include, '.h');
@@ -576,8 +585,8 @@ const extract_include_units = async function* (opts) {
       const { exists: c_exists, stat: { mtime: c_mtime } } = await fs_exists(c_file);
       // console.debug('match', { h_file, c_file });
       if (c_exists) {
-        if (!opts.seen.has(c_file)) {
-          opts.seen.add(c_file);
+        if (!opts.seen.has(nixPath(c_file))) {
+          opts.seen.add(nixPath(c_file));
           yield { c_file, c_mtime, depth: opts.depth };
           yield* await extract_include_units({
             file: c_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
@@ -585,8 +594,8 @@ const extract_include_units = async function* (opts) {
         }
       }
       if (h_exists) {
-        if (!opts.seen.has(h_file)) {
-          opts.seen.add(h_file);
+        if (!opts.seen.has(nixPath(h_file))) {
+          opts.seen.add(nixPath(h_file));
           yield { h_file: h_file, h_mtime, depth: opts.depth };
           yield* await extract_include_units({
             file: h_file, depth: opts.depth + 1, seen: opts.seen, analyze: opts.analyze
@@ -597,8 +606,8 @@ const extract_include_units = async function* (opts) {
     if (opts.analyze) {
       while (null != (m = RX_INCLUDE2.exec(line))) {
         const [, include] = m;
-        if (opts.seen.has(include)) continue;
-        opts.seen.add(include);
+        if (opts.seen.has(nixPath(include))) continue;
+        opts.seen.add(nixPath(include));
         yield { c_file: `<${include}>`, depth: opts.depth };
       }
     }
@@ -668,7 +677,7 @@ const test = async () => {
   }
 
   for (const u of [...COMPILER_TRANSLATION_UNITS_UNIT_TESTS, ...COMPILER_TRANSLATION_UNITS_INTEGRATION_TESTS]) {
-    for (let unit of await glob(relWs(absWs(u)).replace(/\\/g, '/'))) {
+    for (let unit of await glob(nixPath(relWs(absWs(u))))) {
       const result = {};
       result.execCmd = '';
       result.execCode = 0, result.execOut = '', result.execErr = '';
@@ -727,6 +736,14 @@ const test = async () => {
       const test_out_path = path.join(workspaceFolder, BUILD_PATH);
       const executable = relWs(path.join(test_out_path, `${basename}${isWin ? '.exe' : ''}`));
       await fs.mkdir(test_out_path, { recursive: true });
+
+      // dll
+
+      const logic_c = (await glob(nixPath(relWs(dname, '**', 'Logic.c'))))[0];
+      const code3 = await compile_reload(logic_c, DEFAULT_LOGIC_DLL);
+
+      // main
+
       const r1 = await child_spawn(C_COMPILER_PATH, [
         ...DEBUG_COMPILER_ARGS,
         ...C_COMPILER_ARGS,
@@ -736,16 +753,14 @@ const test = async () => {
         // ...LINKER_LIB_PATHS,
         ...object_files.filter(
           logic_hotreload_variants('main'),
-        )
-          // TODO: there may be a better alternative to this
-          .filter(k => !k.includes('src\\game\\Game\\Game.o')),
+        ),
         unit,
         '-o', executable,
       ], { buffer: true });
       result.compileCmd = r1.cmd;
       result.compileCode = r1.code, result.compileOut = r1.stdout, result.compileErr = r1.stderr;
       const ended1 = performance.now();
-      result.compileLap = ended1 - started1; // ms
+      result.compileLap = ended1 - started1; // ms      
       overall.compileLap += result.compileLap;
 
       if (0 != result.compileLap > 1000) {
@@ -896,10 +911,11 @@ const test = async () => {
       await generate_clangd_compile_commands();
       break;
     case 'reload':
-      await compile_reload("src/game/Logic.c.dll");
+      await compile_reload(DEFAULT_LOGIC_C, DEFAULT_LOGIC_DLL);
       break;
     case 'watch':
-      await watch();
+      let [, , , base] = process.argv;
+      await watch(base);
       break;
     case 'loop':
       await all_loop();
@@ -923,7 +939,7 @@ const test = async () => {
       analyze = '--analyze' == analyze;
       let i = 0;
       for await (const unit of extract_include_units({ file, analyze })) {
-        if (m.h_file) continue;
+        if (unit.h_file) continue;
         console.log(indent(unit.depth, unit.c_file));
         i++;
       }

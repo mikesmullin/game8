@@ -114,7 +114,10 @@ void logic_onbootstrap(Engine__State* engine) {
   g_engine->onupdate = logic_onupdate;
   g_engine->onshutdown = logic_onshutdown;
 
-  if (NULL != g_engine->game) LOG_DEBUGF("Logic dll reloaded.");
+  if (NULL != g_engine->game) {
+    LOG_DEBUGF("Logic dll reloaded");
+    Audio__replay(g_engine->audio->pickupCoin);
+  }
 
   Game__reload();
 }
