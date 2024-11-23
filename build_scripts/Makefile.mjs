@@ -25,6 +25,7 @@ const relBuild = (...args) => path.relative(path.join(workspaceFolder, BUILD_PAT
 const relWs = (...args) => path.relative(path.join(workspaceFolder), path.join(...args));
 const repeat = (n, s) => new Array(n).fill(s).join('');
 const indent = (n, s) => s.replace(/^/gm, repeat(n, '  '));
+const isEmpty = (v) => v == null || v == undefined || ('string' == typeof v && '' == v.trim());
 const DEBUG_COMPILER_ARGS = [
   '-O0',
   // export debug symbols (x86dbg understands both; turn these on when debugging, leave off for faster compile)
@@ -132,13 +133,17 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
     stdio = ['ignore', 'pipe', 'pipe'];
   }
   const cwd = opts.cwd || process.cwd();
-  const child = spawn(cmd, args, { stdio, cwd });
+  const child = opts.child = spawn(cmd, args, { stdio, cwd });
+  opts.kill = (signal) => {
+    console.log(chalk[opts.color](opts.prefix + ' * ') + 'sending SIGTERM');
+    child.kill();
+  };
   child.stdout.setEncoding('utf8');
   child.stdout.on('data', (data) => {
     outBuf += data.toString();
     if (!buf) {
       outBuf = outBuf.replace(/(.+\r?\n)/g, (m, m1) => {
-        process.stdout.write(chalk[opts.color](opts.prefix) + m1);
+        process.stdout.write(chalk[opts.color](opts.prefix + ' | ') + m1);
         return '';
       });
     }
@@ -148,7 +153,7 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
     errBuf += data.toString();
     if (!buf) {
       errBuf = errBuf.replace(/(.+\r?\n)/g, (m, m1) => {
-        process.stderr.write(chalk[opts.color](opts.prefix) + m1);
+        process.stderr.write(chalk[opts.color](opts.prefix + ' | ') + m1);
         return '';
       });
     }
@@ -700,7 +705,15 @@ const test = async () => {
       const object_files = [];
       for await (const m of extract_include_units({ file: unit })) {
         if (m.h_file) continue;
-        const r = await recompile_object(relWs(workspaceFolder, m.c_file));
+        let r1, r2
+        const relFile = (file) => path.relative(
+          relWs(workspaceFolder, path.dirname(m.c_file)),
+          relWs(workspaceFolder, path.dirname(unit), file)
+        );
+        const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'main', [
+          '-DENGINE__TEST',
+          `-DDEPINJ__GAME_H=${JSON.stringify(relFile('game/Game.h'))}`,
+        ]);
         if (0 != r.r?.code) break;
         object_files.push(r.object);
       }
@@ -722,7 +735,9 @@ const test = async () => {
         // ...LINKER_LIB_PATHS,
         ...object_files.filter(
           logic_hotreload_variants('main'),
-        ),
+        )
+          // TODO: there may be a better alternative to this
+          .filter(k => !k.includes('src\\game\\Game\\Game.o')),
         unit,
         '-o', executable,
       ], { buffer: true });
@@ -772,15 +787,31 @@ const test = async () => {
             const args2a = result.runInsts[0].split(/\s+/g);
             const args2b = result.runInsts[1].split(/\s+/g);
             const args2c = result.runInsts[2].split(/\s+/g);
-            const p2a = child_spawn(relBuild(executable), args2a, { printCmd: true, color: 'cyan', prefix: 'proc#0 | ', buffer: false, cwd: absBuild() });
-            const p2b = child_spawn(relBuild(executable), args2b, { printCmd: true, color: 'yellow', prefix: 'proc#1 | ', buffer: false, cwd: absBuild() });
-            const p2c = child_spawn(relBuild(executable), args2c, { printCmd: true, color: 'magenta', prefix: 'proc#2 | ', buffer: false, cwd: absBuild() });
-            const r2a = await p2a;
-            const r2b = await p2b;
-            const r2c = await p2c;
+            let oa, ob, oc;
+            const p2a = child_spawn(relBuild(executable), args2a, oa = { printCmd: true, color: 'cyan', prefix: 'proc#0', buffer: false, cwd: absBuild() });
+            const p2b = child_spawn(relBuild(executable), args2b, ob = { printCmd: true, color: 'yellow', prefix: 'proc#1', buffer: false, cwd: absBuild() });
+            const p2c = child_spawn(relBuild(executable), args2c, oc = { printCmd: true, color: 'magenta', prefix: 'proc#2', buffer: false, cwd: absBuild() });
+            let completed = 0, done, p = new Promise((a) => { done = a; });
+            let r2a, r2b, r2c;
+            p2a.then((v) => {
+              r2a = v;
+              if (0 !== v.code && null !== v.code) { result.execCode = v.code; ob.kill(); oc.kill(); }
+              if (3 == ++completed) done();
+            });
+            p2b.then((v) => {
+              r2b = v;
+              if (0 !== v.code && null !== v.code) { result.execCode = v.code; oa.kill(); oc.kill(); }
+              if (3 == ++completed) done();
+            });
+            p2c.then((v) => {
+              r2c = v;
+              if (null == result.execCode) result.execCode = v.code;
+              if (0 !== v.code && null !== v.code) { oa.kill(); ob.kill(); }
+              if (3 == ++completed) done();
+            });
+            await p;
 
-            result.execCmd = r2c.cmd;
-            result.execCode = r2c.code, result.execOut = r2c.stdout, result.execErr = r2c.stderr;
+            result.execCmd = r2c.cmd, result.execOut = r2c.stdout, result.execErr = r2c.stderr;
           }
           else {
             // no args
@@ -804,19 +835,19 @@ const test = async () => {
       if (result.pass) {
         overall.passes++;
         console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode} `)));
-        if (result.execOut) {
+        if (!isEmpty(result.execOut)) {
           console.log(chalk.green(indent(2, result.execOut)));
         }
       }
       else if (result.fail) {
         overall.fails++;
         console.error(chalk.red(indent(1, `process failed. code: ${result.execCode} `)));
-        if (result.execOut) {
+        if (!isEmpty(result.execOut)) {
           console.error(chalk.red(indent(2, result.execOut)));
         }
       }
 
-      if (result.execErr) {
+      if (!isEmpty(result.execErr)) {
         console.log(chalk.red(indent(2, result.execErr)));
       }
 

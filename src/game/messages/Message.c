@@ -1,5 +1,8 @@
 #include "Message.h"
 
+#include "../../engine/common/Log.h"
+#include "../../engine/common/Utils.h"
+
 void Message__Parse(u32 len, u8** ptr) {
   u8* start = (*ptr);
   u8* end = start + len;

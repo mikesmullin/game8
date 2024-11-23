@@ -8,7 +8,6 @@ void Engine__init() {
   g_engine->useVideo = true;
   g_engine->useAudio = true;
   g_engine->useInput = true;
-  g_engine->useNet = true;
   g_engine->useTime = true;
   g_engine->useHotReload = false;
   g_engine->useConsole = false;
@@ -117,10 +116,6 @@ void Engine__cli(int argc, char* argv[]) {
       g_engine->useInput = false;
     } else if (String__isEqual("-input", argv[i])) {
       g_engine->useInput = true;
-    } else if (String__isEqual("-nonet", argv[i])) {
-      g_engine->useNet = false;
-    } else if (String__isEqual("-net", argv[i])) {
-      g_engine->useNet = true;
     } else if (String__isEqual("-notime", argv[i])) {
       g_engine->useTime = false;
     } else if (String__isEqual("-time", argv[i])) {

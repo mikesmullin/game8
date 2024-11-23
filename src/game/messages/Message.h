@@ -1,7 +1,6 @@
 #pragma once
 
-#include "../Game.h"  // IWYU pragma: keep
-
+#include "../../engine/common/Types.h"
 typedef enum MessageId /* : u32 */ {
   MSG_NONE,
   MSG_MOVE_REQ,

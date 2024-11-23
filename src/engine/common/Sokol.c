@@ -341,27 +341,23 @@ u64 wstm_laptime(u64* last_time) {
 extern void sfetch_setup(const sfetch_desc_t* desc);
 
 void wsfetch_setup(const sfetch_desc_t* desc) {
-  if (!g_engine->useNet) return;
   return sfetch_setup(desc);
 }
 
 extern void sfetch_dowork(void);
 
 void wsfetch_dowork(void) {
-  if (!g_engine->useNet) return;
   sfetch_dowork();
 }
 
 extern void sfetch_shutdown(void);
 
 void wsfetch_shutdown(void) {
-  if (!g_engine->useNet) return;
   sfetch_shutdown();
 }
 
 extern sfetch_handle_t sfetch_send(const sfetch_request_t* request);
 
 sfetch_handle_t wsfetch_send(const sfetch_request_t* request) {
-  if (!g_engine->useNet) return (sfetch_handle_t){};
   return sfetch_send(request);
 }

@@ -1,5 +1,13 @@
 #include "NetMgr.h"
 
+#ifdef ENGINE__TEST
+#include DEPINJ__GAME_H
+#else
+#include "../Game.h"
+#endif
+
+#include "../messages/Message.h"
+
 #define DEBUG_STR_LEN (2046)
 
 static void onAccept(Socket* server, Socket* client);

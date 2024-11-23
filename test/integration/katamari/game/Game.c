@@ -67,6 +67,10 @@ void Game__preload() {
 
   // preload assets
   g_engine->audio->pickupCoin = Wav__Read("../assets/audio/sfx/pickupCoin.wav");
+
+  // init network
+  g_engine->game->net = Arena__Push(g_engine->arena, sizeof(NetMgr));
+  NetMgr__init();
 }
 
 void Game__reload() {
@@ -76,6 +80,8 @@ void Game__tick() {
   Arena__Reset(g_engine->frameArena);
   g_engine->entity_count = g_engine->game->entities->len;
   // CameraEntity* player1 = g_engine->players->head->data;
+
+  NetMgr__tick();
 
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;
@@ -111,4 +117,5 @@ void Game__postprocessing() {
 }
 
 void Game__shutdown() {
+  NetMgr__shutdown();
 }

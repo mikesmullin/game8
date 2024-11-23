@@ -61,8 +61,7 @@ typedef struct PreloadedShaders PreloadedShaders;
 
 typedef struct Engine__State {
   char window_title[255];
-  bool isMaster, useVideo, useAudio, useInput, useNet, useTime, useHotReload, useConsole,
-      usePerfLog;
+  bool isMaster, useVideo, useAudio, useInput, useTime, useHotReload, useConsole, usePerfLog;
   char *listenHost, *listenPort, *connectHost, *connectPort;
 
   void (*onbootstrap)(Engine__State* engine);

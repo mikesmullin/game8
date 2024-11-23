@@ -1,8 +1,9 @@
 #pragma once
 
-#include "../Game.h"  // IWYU pragma: keep
+// #include "../Game.h"  // IWYU pragma: keep
+#include "../../engine/Engine.h"  // IWYU pragma: keep
 
-#define MAX_CLIENTS (1)
+#define MAX_CLIENTS (2)
 
 typedef struct NetMgr {
   Socket* listener;

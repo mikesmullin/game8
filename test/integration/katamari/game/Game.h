@@ -9,6 +9,7 @@
 
 // Entities ----------------------------------------------
 
+#include "../../../../src/game/entities/NetMgr.h"  // IWYU pragma: keep
 #include "Dispatcher.h"  // IWYU pragma: keep
 #include "entities/Cube.h"  // IWYU pragma: keep
 
@@ -32,10 +33,13 @@ typedef struct PreloadedMaterials {
   Material* red;
 } PreloadedMaterials;
 
+typedef struct NetMgr NetMgr;
+
 typedef struct Game {
   bool playedSfxOnce, testComplete;
   List* entities;
   sg_pass* pass1;
+  NetMgr* net;
 } Game;
 
 void Game__init();
