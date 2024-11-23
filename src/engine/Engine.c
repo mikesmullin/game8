@@ -11,6 +11,8 @@ void Engine__init() {
   g_engine->useNet = true;
   g_engine->useTime = true;
   g_engine->useHotReload = false;
+  g_engine->useConsole = false;
+  g_engine->usePerfLog = true;
 
   // wrappers
   g_engine->log = Log__out;
@@ -75,6 +77,34 @@ void Engine__cli(int argc, char* argv[]) {
   for (u32 i = 0; i < argc; i++) {
     if (String__isEqual("-server", argv[i])) {
       g_engine->isMaster = true;
+
+      char* start = argv[++i];
+      u32 len = strlen(start);
+      u32 d = msindexOf(':', start, len);
+
+      g_engine->listenHost = malloc(d + 1);
+      mscp(g_engine->listenHost, start, d);
+
+      g_engine->listenPort = malloc(len - d + 1);
+      mscp(g_engine->listenPort, (char*)start + d + 1, len - 1 - d);
+      LOG_DEBUGF("Will listen on %s:%s", g_engine->listenHost, g_engine->listenPort);
+    } else if (String__isEqual("-connect", argv[i])) {
+      g_engine->isMaster = false;
+
+      char* start = argv[++i];
+      u32 len = strlen(start);
+      u32 d = msindexOf(':', start, len);
+
+      g_engine->connectHost = malloc(d + 1);
+      mscp(g_engine->connectHost, start, d);
+
+      g_engine->connectPort = malloc(len - d + 1);
+      mscp(g_engine->connectPort, (char*)start + d + 1, len - 1 - d);
+      LOG_DEBUGF("Will connect to %s:%s", g_engine->connectHost, g_engine->connectPort);
+    } else if (String__isEqual("-noconsole", argv[i])) {
+      g_engine->useConsole = false;
+    } else if (String__isEqual("-console", argv[i])) {
+      g_engine->useConsole = true;
     } else if (String__isEqual("-novideo", argv[i])) {
       g_engine->useVideo = false;
     } else if (String__isEqual("-video", argv[i])) {
@@ -108,6 +138,10 @@ void Engine__cli(int argc, char* argv[]) {
       g_engine->useHotReload = false;
     } else if (String__isEqual("-reload", argv[i])) {
       g_engine->useHotReload = true;
+    } else if (String__isEqual("-noperf", argv[i])) {
+      g_engine->usePerfLog = false;
+    } else if (String__isEqual("-perf", argv[i])) {
+      g_engine->usePerfLog = true;
     }
   }
 }
@@ -115,6 +149,7 @@ void Engine__cli(int argc, char* argv[]) {
 // --- Engine + Sokol integration ---
 
 int Engine__main(int argc, char* argv[]) {
+  Log__init();
   sapp_desc desc = Engine__sokol_main(argc, argv);
   if (g_engine->useVideo) {
     sapp_run(&desc);
@@ -159,6 +194,8 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
       .logger.func = wslog_func,
       .win32_console_utf8 = true,
       .win32_console_attach = true,
+      // NOTICE: sokol doesn't seem to work as intended here
+      .win32_console_create = g_engine->useConsole,
   };
 }
 
@@ -191,48 +228,55 @@ void Engine__sokol_frame(void) {
   static u64 lastTick;
   g_engine->deltaTime = g_engine->stm_sec(g_engine->stm_laptime(&lastTick));
 
-  u64 startPhysics = g_engine->stm_now(), costPhysics;
-  g_engine->onfixedupdate();
-  costPhysics = g_engine->stm_ms(g_engine->stm_laptime(&startPhysics));
+  if (!g_engine->usePerfLog) {
+    g_engine->onfixedupdate();
+    g_engine->onupdate();
+  } else {
+    u64 startPhysics, costPhysics;
+    startPhysics = g_engine->stm_now();
+    g_engine->onfixedupdate();
+    costPhysics = g_engine->stm_ms(g_engine->stm_laptime(&startPhysics));
 
-  u64 startRender = g_engine->stm_now(), costRender;
-  g_engine->onupdate();
-  costRender = g_engine->stm_ms(g_engine->stm_laptime(&startRender));
+    u64 startRender, costRender;
+    startRender = g_engine->stm_now();
+    g_engine->onupdate();
+    costRender = g_engine->stm_ms(g_engine->stm_laptime(&startRender));
 
-  // performance stats
-  static f64 accumulator2 = 0.0f;
-  static const f32 FPS_LOG_TIME_STEP = 1.0f;  // every second
-  static u16 frames = 0;
-  accumulator2 += g_engine->deltaTime;
-  frames++;
-  if (accumulator2 >= FPS_LOG_TIME_STEP) {
-    static char title[100];
-    sprintf(
-        title,
-        "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB E %u D %u",
-        g_engine->window_title,
-        frames,  // FPS = measured/counted frames per second
-        costPhysics,  // P = cost of last physics in ms
-        costRender,  // R = cost of last render in ms
-        // pFPS = potential frames per second (if it wasn't fixed)
-        1000 / (costPhysics + costRender + 1),  // +1 avoids div/0
-        // A = Arena memory used/capacity
-        ((u64)((g_engine->arena->pos - g_engine->arena->buf) -
-               (g_engine->frameArena->end - g_engine->frameArena->pos))) /
-            1024 / 1024,
-        ((u64)(g_engine->arena->end - g_engine->arena->buf)) / 1024 / 1024,
-        g_engine->entity_count,
-        g_engine->draw_count);
+    // performance stats
+    static f64 accumulator2 = 0.0f;
+    static const f32 FPS_LOG_TIME_STEP = 1.0f;  // every second
+    static u16 frames = 0;
+    accumulator2 += g_engine->deltaTime;
+    frames++;
+    if (accumulator2 >= FPS_LOG_TIME_STEP) {
+      static char title[100];
+      sprintf(
+          title,
+          "%s | FPS %u P %llu R %llu pFPS %llu A %llu/%lluMB E %u D %u",
+          g_engine->window_title,
+          frames,  // FPS = measured/counted frames per second
+          costPhysics,  // P = cost of last physics in ms
+          costRender,  // R = cost of last render in ms
+          // pFPS = potential frames per second (if it wasn't fixed)
+          1000 / (costPhysics + costRender + 1),  // +1 avoids div/0
+          // A = Arena memory used/capacity
+          ((u64)((g_engine->arena->pos - g_engine->arena->buf) -
+                 (g_engine->frameArena->end - g_engine->frameArena->pos))) /
+              1024 / 1024,
+          ((u64)(g_engine->arena->end - g_engine->arena->buf)) / 1024 / 1024,
+          g_engine->entity_count,
+          g_engine->draw_count);
 
-    if (g_engine->useVideo) {
-      g_engine->sapp_update_window_title(title);
-    } else {
-      LOG_DEBUGF("%s", title);
-    }
-    frames = 0;
+      if (g_engine->useVideo) {
+        g_engine->sapp_update_window_title(title);
+      } else {
+        LOG_DEBUGF("%s", title);
+      }
+      frames = 0;
 
-    while (accumulator2 >= FPS_LOG_TIME_STEP) {
-      accumulator2 -= FPS_LOG_TIME_STEP;
+      while (accumulator2 >= FPS_LOG_TIME_STEP) {
+        accumulator2 -= FPS_LOG_TIME_STEP;
+      }
     }
   }
 }

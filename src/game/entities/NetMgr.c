@@ -15,13 +15,13 @@ void NetMgr__init() {
   if (g_engine->isMaster) {
     // Server
     self->listener = Net__Socket__alloc();
-    Net__Socket__init(self->listener, LISTEN_ADDR, LISTEN_PORT, SERVER_SOCKET);
+    Net__Socket__init(self->listener, g_engine->listenHost, g_engine->listenPort, SERVER_SOCKET);
     LOG_DEBUGF("Server listen on %s:%s", self->listener->addr, self->listener->port);
     Net__listen(self->listener);
   } else {
     // Client
     self->client = Net__Socket__alloc();
-    Net__Socket__init(self->client, CONNECT_ADDR, LISTEN_PORT, CLIENT_SOCKET);
+    Net__Socket__init(self->client, g_engine->connectHost, g_engine->connectPort, CLIENT_SOCKET);
     LOG_DEBUGF("Client connecting to %s:%s", self->client->addr, self->client->port);
     Net__connect(self->client, onConnect);
   }

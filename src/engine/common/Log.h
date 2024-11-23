@@ -2,6 +2,7 @@
 
 #include "../Engine.h"  // IWYU pragma: keep
 
+void Log__init(void);
 void Log__out(const char* line, ...);
 void Log__abort(const char* line, ...);
 

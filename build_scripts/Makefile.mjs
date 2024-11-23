@@ -121,11 +121,11 @@ const generate_clangd_compile_commands = async () => {
 
 const child_spawn = async (cmd, args = [], opts = {}) => {
   const invocation = `${opts.stdin ? `type ${opts.stdin} | ` : ''}${cmd} ${args.join(' ')}${opts.stdout ? ` > ${opts.stdout}` : ''}`;
-  if (!opts.buffer) {
-    console.log(invocation);
+  if (opts.printCmd || !opts.buffer) {
+    console.log(chalk.gray(indent(1, invocation)));
   }
-  let stdio = ['inherit', 'inherit', 'inherit'];
   let buf = false, outBuf = '', errBuf = '';
+  let stdio = ['inherit', 'pipe', 'pipe'];
   if (opts.buffer) {
     buf = true;
     delete opts.buffer;
@@ -133,16 +133,26 @@ const child_spawn = async (cmd, args = [], opts = {}) => {
   }
   const cwd = opts.cwd || process.cwd();
   const child = spawn(cmd, args, { stdio, cwd });
-  if (buf) {
-    child.stdout.setEncoding('utf8');
-    child.stdout.on('data', (data) => {
-      outBuf += data.toString();
-    });
-    child.stderr.setEncoding('utf8');
-    child.stderr.on('data', (data) => {
-      errBuf += data.toString();
-    });
-  }
+  child.stdout.setEncoding('utf8');
+  child.stdout.on('data', (data) => {
+    outBuf += data.toString();
+    if (!buf) {
+      outBuf = outBuf.replace(/(.+\r?\n)/g, (m, m1) => {
+        process.stdout.write(chalk[opts.color](opts.prefix) + m1);
+        return '';
+      });
+    }
+  });
+  child.stderr.setEncoding('utf8');
+  child.stderr.on('data', (data) => {
+    errBuf += data.toString();
+    if (!buf) {
+      errBuf = errBuf.replace(/(.+\r?\n)/g, (m, m1) => {
+        process.stderr.write(chalk[opts.color](opts.prefix) + m1);
+        return '';
+      });
+    }
+  });
   const code = await new Promise((ok) => {
     child.on('close', (code) => {
       if (code !== 0) {
@@ -678,6 +688,13 @@ const test = async () => {
       }
       overall.ran++;
 
+      if (result.description) {
+        console.log(`\n${overall.ran}) ${result.description}`);
+      }
+      else {
+        console.log(`\n${overall.ran}) ${result.basename} `);
+      }
+
       // discover included translation unit files
       // ie. we have a naming convention .h may have a matching .c
       const object_files = [];
@@ -713,64 +730,7 @@ const test = async () => {
       result.compileCode = r1.code, result.compileOut = r1.stdout, result.compileErr = r1.stderr;
       const ended1 = performance.now();
       result.compileLap = ended1 - started1; // ms
-      if (0 == result.compileCode) {
-        if (isNix || isMac) {
-          await fs.chmod(executable, 0o755); // chmod +x
-        }
-
-        if (overall.norun) {
-        } else {
-          // execute test
-          const started2 = performance.now();
-          if (result.runInsts?.length == 1) {
-            // use args specified in test
-            const args2a = result.runInsts[0].split(/\s+/g);
-            const p2a = child_spawn(relBuild(executable), args2a, { buffer: true, cwd: absBuild() });
-            const r2a = await p2a;
-            result.execCmd = r2a.cmd;
-            result.execCode = r2a.code, result.execOut = r2a.stdout, result.execErr = r2a.stderr;
-          }
-          else if (result.runInsts?.length == 3) {
-            // launch three, wait for all, only consider result of third
-            const args2a = result.runInsts[0].split(/\s+/g);
-            const args2b = result.runInsts[1].split(/\s+/g);
-            const args2c = result.runInsts[2].split(/\s+/g);
-            const p2a = child_spawn(relBuild(executable), args2a, { buffer: true, cwd: absBuild() });
-            const p2b = child_spawn(relBuild(executable), args2b, { buffer: true, cwd: absBuild() });
-            const p2c = child_spawn(relBuild(executable), args2c, { buffer: true, cwd: absBuild() });
-            const r2a = await p2a;
-            const r2b = await p2b;
-            const r2c = await p2c;
-
-            result.execCmd = r2c.cmd;
-            result.execCode = r2c.code, result.execOut = r2c.stdout, result.execErr = r2c.stderr;
-          }
-          else {
-            // no args
-            const r2 = await child_spawn(relBuild(executable), [], { buffer: true, cwd: absBuild() });
-            result.execCmd = r2.cmd;
-            result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
-          }
-
-          const ended2 = performance.now();
-          result.execLap = ended2 - started2; // ms
-        }
-      }
-
       overall.compileLap += result.compileLap;
-      overall.execLap += result.execLap;
-      overall.lap += overall.compileLap + overall.execLap;
-      result.pass = true, result.fail = false, result.skip = false;
-      if (0 != result.compileCode || 0 != result.execCode) {
-        result.pass = false, result.fail = true, result.skip = false;
-      }
-
-      if (result.description) {
-        console.log(`\n${overall.ran}) ${result.description}`);
-      }
-      else {
-        console.log(`\n${overall.ran}) ${result.basename} `);
-      }
 
       if (0 != result.compileLap > 1000) {
         console.log(chalk.yellow(indent(1, `Compilation took ${result.compileLap.toFixed(2)} ms!`)));
@@ -790,7 +750,57 @@ const test = async () => {
         }
       }
 
-      console.error(chalk.gray(indent(1, result.execCmd)));
+      if (0 == result.compileCode) {
+        if (isNix || isMac) {
+          await fs.chmod(executable, 0o755); // chmod +x
+        }
+
+        if (overall.norun) {
+        } else {
+          // execute test
+          const started2 = performance.now();
+          if (result.runInsts?.length == 1) {
+            // use args specified in test
+            const args2a = result.runInsts[0].split(/\s+/g);
+            const p2a = child_spawn(relBuild(executable), args2a, { printCmd: true, buffer: true, cwd: absBuild() });
+            const r2a = await p2a;
+            result.execCmd = r2a.cmd;
+            result.execCode = r2a.code, result.execOut = r2a.stdout, result.execErr = r2a.stderr;
+          }
+          else if (result.runInsts?.length == 3) {
+            // launch three, wait for all, only consider result of third
+            const args2a = result.runInsts[0].split(/\s+/g);
+            const args2b = result.runInsts[1].split(/\s+/g);
+            const args2c = result.runInsts[2].split(/\s+/g);
+            const p2a = child_spawn(relBuild(executable), args2a, { printCmd: true, color: 'cyan', prefix: 'proc#0 | ', buffer: false, cwd: absBuild() });
+            const p2b = child_spawn(relBuild(executable), args2b, { printCmd: true, color: 'yellow', prefix: 'proc#1 | ', buffer: false, cwd: absBuild() });
+            const p2c = child_spawn(relBuild(executable), args2c, { printCmd: true, color: 'magenta', prefix: 'proc#2 | ', buffer: false, cwd: absBuild() });
+            const r2a = await p2a;
+            const r2b = await p2b;
+            const r2c = await p2c;
+
+            result.execCmd = r2c.cmd;
+            result.execCode = r2c.code, result.execOut = r2c.stdout, result.execErr = r2c.stderr;
+          }
+          else {
+            // no args
+            const r2 = await child_spawn(relBuild(executable), [], { printCmd: true, buffer: true, cwd: absBuild() });
+            result.execCmd = r2.cmd;
+            result.execCode = r2.code, result.execOut = r2.stdout, result.execErr = r2.stderr;
+          }
+
+          const ended2 = performance.now();
+          result.execLap = ended2 - started2; // ms
+        }
+      }
+
+      overall.execLap += result.execLap;
+      overall.lap += overall.compileLap + overall.execLap;
+      result.pass = true, result.fail = false, result.skip = false;
+      if (0 != result.compileCode || 0 != result.execCode) {
+        result.pass = false, result.fail = true, result.skip = false;
+      }
+
       if (result.pass) {
         overall.passes++;
         console.log(chalk.green(indent(1, `process succeeded. code: ${result.execCode} `)));

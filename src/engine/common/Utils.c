@@ -197,3 +197,29 @@ bool String__isEqual(char* a, char* b) {
 void* mmemcp(void* dst, const void* src, size_t sz) {
   return memcpy(dst, src, sz);
 }
+
+s32 msindexOf(char delim, char* s, u32 len) {
+  for (u32 i = 0; i < len; i++) {
+    if (0 == s[i]) break;
+    if (delim == s[i]) return i;
+  }
+  return -1;
+}
+
+// void mssplit2(char delim, char* s, u32 len, char* a, char* b) {
+//   bool x;
+//   for (u32 i = 0; i < len; i++) {
+//     if (0 == s[i]) break;
+//     if (delim == s[i]) x = true;
+//     if (!x) {
+//       a[i] = s[i];
+//     } else {
+//       b[i] = s[i];
+//     }
+//   }
+// }
+
+void mscp(char* dst, char* src, u32 len) {
+  mmemcp(dst, src, len + 1);
+  dst[len] = 0;  // null terminator
+}

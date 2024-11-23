@@ -157,6 +157,16 @@ void Net__Socket__init(Socket* sock, char* addr, char* port, u32 opts) {
       "socket create failed with error: %ld",
       WSAGetLastError());
 
+  // Disable Nagle's algorithm (prevent send buffering)
+  BOOL noDelay = TRUE;  // TRUE means disable
+  int result2 = setsockopt(
+      sock->_win_socket,
+      IPPROTO_TCP,
+      TCP_NODELAY,
+      (const char*)&noDelay,
+      sizeof(noDelay));
+  ASSERT_CONTEXT(result2 != SOCKET_ERROR, "setsockopt failed with error: %d\n", WSAGetLastError());
+
 #endif
 }
 
@@ -225,6 +235,16 @@ void Net__accept(Socket* socket, void (*acceptCb)(Socket*, Socket*)) {
   // Set the incoming socket to non-blocking
   u_long mode = 1;  // 1 to enable non-blocking
   ioctlsocket(csocket->_win_socket, FIONBIO, &mode);
+
+  // Disable Nagle's algorithm (prevent send buffering)
+  BOOL noDelay = TRUE;  // TRUE means disable
+  int result2 = setsockopt(
+      socket->_win_socket,
+      IPPROTO_TCP,
+      TCP_NODELAY,
+      (const char*)&noDelay,
+      sizeof(noDelay));
+  ASSERT_CONTEXT(result2 != SOCKET_ERROR, "setsockopt failed with error: %d\n", WSAGetLastError());
 #endif
 
 #ifdef __EMSCRIPTEN__

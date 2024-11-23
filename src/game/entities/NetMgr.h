@@ -2,9 +2,6 @@
 
 #include "../Game.h"  // IWYU pragma: keep
 
-#define LISTEN_ADDR "0.0.0.0"
-#define LISTEN_PORT "9000"
-#define CONNECT_ADDR "127.0.0.1"
 #define MAX_CLIENTS (1)
 
 typedef struct NetMgr {

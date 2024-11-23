@@ -12,3 +12,6 @@ void hexdump(const void* data, u32 len, char* out, u32 maxLen);
 
 bool String__isEqual(char* a, char* b);
 void* mmemcp(void* dst, const void* src, size_t sz);
+s32 msindexOf(char delim, char* s, u32 len);
+// void mssplit2(char delim, char* s, u32 len, char* a, char* b);
+void mscp(char* dst, char* src, u32 len);

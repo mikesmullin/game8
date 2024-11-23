@@ -2,6 +2,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+void Log__init(void) {
+  // disable buffering
+  setvbuf(stdout, NULL, _IONBF, 0);
+  setvbuf(stderr, NULL, _IONBF, 0);
+}
+
 void Log__out(const char* line, ...) {
   va_list myargs;
   va_start(myargs, line);
