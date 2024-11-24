@@ -1,5 +1,8 @@
 #include "Dispatcher.h"
 
+static void Dispatch__None(void* params) {
+}
+
 void Atlas__onrender_load(void* params);
 void Atlas__onrender_alloc(void* params);
 void Atlas__onrender_entity(void* params);
@@ -9,8 +12,7 @@ void PBR__onrender_alloc(void* params);
 void PBR__onrender_entity(void* params);
 void PBR__onrender_material(void* params);
 
-static void Dispatch__None(void* params) {
-}
+void Player__tick(void* entity);
 
 static void (*VTABLE_ENGINE[])(void*) = {
     Dispatch__None,
@@ -23,6 +25,8 @@ static void (*VTABLE_ENGINE[])(void*) = {
     PBR__onrender_alloc,
     PBR__onrender_entity,
     PBR__onrender_material,
+
+    Player__tick,
 };
 
 // static / switch / tag / conditional dispatch

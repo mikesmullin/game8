@@ -5,6 +5,8 @@ void Game__init() {
   g_engine->window_width = WINDOW_SIZE;
   g_engine->window_height = WINDOW_SIZE;
 
+  g_engine->game->w = g_engine->game->d = g_engine->game->h = 100.0f;
+
   g_engine->players = List__alloc(g_engine->arena);
   g_engine->audio = Arena__Push(g_engine->arena, sizeof(PreloadedAudio));
   g_engine->models = Arena__Push(g_engine->arena, sizeof(PreloadedModels));
@@ -29,17 +31,17 @@ void Game__init() {
 }
 
 void Game__preload() {
-  CameraEntity* player1 = (CameraEntity*)Arena__Push(g_engine->arena, sizeof(CameraEntity));
-  Entity__init((Entity*)player1);
-  player1->base.tform->pos.x = 0.0f;
-  player1->base.tform->pos.y = 0.0f;
-  player1->base.tform->pos.z = 0.0f;
-  player1->camera.proj.type = PERSPECTIVE_PROJECTION;
-  player1->camera.proj.fov = 45.0f;
-  player1->camera.proj.nearZ = 0.1f;
-  player1->camera.proj.farZ = 1000.0f;
-  player1->camera.screenSize = SCREEN_SIZE;
-  player1->camera.bobPhase = 0;
+  Player* player1 = (Player*)Arena__Push(g_engine->arena, sizeof(Player));
+  Player__init((Entity*)player1);
+  player1->base.base.tform->pos.x = 0.0f;
+  player1->base.base.tform->pos.y = 0.0f;
+  player1->base.base.tform->pos.z = 0.0f;
+  player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
+  player1->base.camera.proj.fov = 45.0f;
+  player1->base.camera.proj.nearZ = 0.1f;
+  player1->base.camera.proj.farZ = 1000.0f;
+  player1->base.camera.screenSize = SCREEN_SIZE;
+  player1->base.camera.bobPhase = 0;
   List__append(g_engine->arena, g_engine->players, player1);
 
   Cube* cube = (Cube*)Arena__Push(g_engine->arena, sizeof(Cube));
@@ -84,6 +86,11 @@ void Game__tick() {
 
   NetMgr__tick();
 
+  Player__tick(g_engine->players->head->data);
+
+  Rect boundary = {0.0f, 0.0f, g_engine->game->w, g_engine->game->d};
+  g_engine->game->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
+
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;
     Audio__replay(g_engine->audio->pickupCoin);
@@ -97,11 +104,11 @@ void Game__tick() {
 
 void Game__render() {
   CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
-  player1->base.tform->pos.x = 0.0f;  // mwave(1000, -5.0f, 5.0f);
-  player1->base.tform->pos.y = mwave(3000, 0.0f, 4.0f);
-  player1->base.tform->pos.z = mwave(7000, 2.0f, 10.0f);
-  player1->base.tform->rot.x = mwave(11000, -15.0f, 15.0f);
-  player1->base.tform->rot.y = mwave(11000, -15.0f, 15.0f);
+  // player1->base.tform->pos.x = 0.0f;  // mwave(1000, -5.0f, 5.0f);
+  // player1->base.tform->pos.y = mwave(3000, 0.0f, 4.0f);
+  // player1->base.tform->pos.z = mwave(7000, 2.0f, 10.0f);
+  // player1->base.tform->rot.x = mwave(11000, -15.0f, 15.0f);
+  // player1->base.tform->rot.y = mwave(11000, -15.0f, 15.0f);
 
   Cube* cube = g_engine->game->entities->head->data;
   // cube->base.tform->rot.x = mwave(1000, 0.0f, 180.0f);

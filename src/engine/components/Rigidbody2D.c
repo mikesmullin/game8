@@ -3,7 +3,7 @@
 // TODO: use deterministic fixed-point math instead
 #include <float.h>
 
-void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call2_t cb) {
+void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) {
   if (0 == entity->rb) return;
   if (Math__fabsf(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
   if (Math__fabsf(entity->rb->za) < FLT_MIN) entity->rb->za = 0;

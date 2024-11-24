@@ -69,6 +69,19 @@ void Engine__init() {
   g_engine->sfetch_dowork = wsfetch_dowork;
   g_engine->sfetch_shutdown = wsfetch_shutdown;
   g_engine->sfetch_send = wsfetch_send;
+
+  g_engine->Net__init = Net__init;
+  g_engine->Net__Socket__alloc = Net__Socket__alloc;
+  g_engine->Net__Socket__init = Net__Socket__init;
+  g_engine->Net__listen = Net__listen;
+  g_engine->Net__accept = Net__accept;
+  g_engine->Net__connect = Net__connect;
+  g_engine->Net__read = Net__read;
+  g_engine->Net__write = Net__write;
+  g_engine->Net__shutdown = Net__shutdown;
+  g_engine->Net__close = Net__close;
+  g_engine->Net__free = Net__free;
+  g_engine->Net__destroy = Net__destroy;
 }
 
 void Engine__cli(int argc, char* argv[]) {

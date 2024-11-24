@@ -56,21 +56,158 @@ static void logic_onpreload(void) {
 }
 
 // window, keyboard, mouse events
-void logic_onevent(const sapp_event* event) {
-  // logic->player->input.fwd = false;
-  // logic->player->input.left = false;
-  // logic->player->input.back = false;
-  // logic->player->input.right = false;
-  // logic->player->input.use = false;
-  // logic->player->input.up = false;
-  // logic->player->input.down = false;
-  // logic->player->input.reload = false;
-  // logic->player->input.esc = false;
-  // logic->player->input.use = false;
+static void logic_onevent(const sapp_event* event) {
+  Player* player1 = (Player*)g_engine->players->head->data;
+  // LOG_DEBUGF("event frame_count %llu", event->frame_count);
 
-  // logic->player->ptr.wheely = 0;
-  // logic->player->ptr.x = 0;
-  // logic->player->ptr.y = 0;
+  if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
+    if (KEYCODE_W == event->key_code) player1->input.key.fwd = true;
+    if (KEYCODE_A == event->key_code) player1->input.key.left = true;
+    if (KEYCODE_S == event->key_code) player1->input.key.back = true;
+    if (KEYCODE_D == event->key_code) player1->input.key.right = true;
+    if (KEYCODE_E == event->key_code) player1->input.key.use = true;
+    if (KEYCODE_SPACE == event->key_code) player1->input.key.up = true;
+    if (KEYCODE_TAB == event->key_code) player1->input.key.down = true;
+    if (KEYCODE_R == event->key_code) player1->input.key.reload = true;
+    if (KEYCODE_ESC == event->key_code) player1->input.key.esc = true;
+
+    // LOG_DEBUGF(
+    //     "event keydown"
+    //     " char_code %u"
+    //     " key_code %u"
+    //     " key_repeat %u"
+    //     " modifiers %u",
+    //     event->char_code,
+    //     event->key_code,
+    //     event->key_repeat,
+    //     event->modifiers);
+  }
+  if (SAPP_EVENTTYPE_KEY_UP == event->type) {
+    if (KEYCODE_W == event->key_code) player1->input.key.fwd = false;
+    if (KEYCODE_A == event->key_code) player1->input.key.left = false;
+    if (KEYCODE_S == event->key_code) player1->input.key.back = false;
+    if (KEYCODE_D == event->key_code) player1->input.key.right = false;
+    if (KEYCODE_E == event->key_code) player1->input.key.use = false;
+    if (KEYCODE_SPACE == event->key_code) player1->input.key.up = false;
+    if (KEYCODE_TAB == event->key_code) player1->input.key.down = false;
+    if (KEYCODE_R == event->key_code) player1->input.key.reload = false;
+    if (KEYCODE_ESC == event->key_code) player1->input.key.esc = false;
+
+    // LOG_DEBUGF(
+    //     "event keyup"
+    //     " char_code %u"
+    //     " key_code %u"
+    //     " key_repeat %u"
+    //     " modifiers %u",
+    //     event->char_code,
+    //     event->key_code,
+    //     event->key_repeat,
+    //     event->modifiers);
+  }
+
+  // LOG_DEBUGF(
+  //     "kbState "
+  //     "w %u a %u s %u d %u e %u sp %u ctl %u "
+  //     "r %u esc %u",
+  //     logic->player->kb.fwd,
+  //     logic->player->kb.left,
+  //     logic->player->kb.back,
+  //     logic->player->kb.right,
+  //     logic->player->kb.use,
+  //     logic->player->kb.up,
+  //     logic->player->kb.down,
+  //     logic->player->kb.reload,
+  //     logic->player->kb.esc);
+
+  if (SAPP_EVENTTYPE_MOUSE_DOWN == event->type) {
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) player1->input.key.use = true;
+
+    // LOG_DEBUGF(
+    //     "event mousedown"
+    //     " mouse_button %u",
+    //     event->mouse_button);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_UP == event->type) {
+    if (SAPP_MOUSEBUTTON_LEFT == event->mouse_button) player1->input.key.use = false;
+
+    // LOG_DEBUGF(
+    //     "event mouseup"
+    //     " mouse_button %u",
+    //     event->mouse_button);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_SCROLL == event->type) {
+    player1->input.ptr.wheely += event->scroll_y;
+
+    // LOG_DEBUGF(
+    //     "event mousescroll"
+    //     " scroll_x %f"
+    //     " scroll_y %f",
+    //     event->scroll_x,
+    //     event->scroll_y);
+  }
+  if (SAPP_EVENTTYPE_MOUSE_MOVE == event->type) {
+    player1->input.ptr.x += event->mouse_dx;
+    player1->input.ptr.y += event->mouse_dy;
+
+    // LOG_DEBUGF(
+    //     "event mousemove"
+    //     " mouse_dx %f"
+    //     " mouse_dy %f"
+    //     " mouse_x %f"
+    //     " mouse_y %f",
+    //     event->mouse_dx,
+    //     event->mouse_dy,
+    //     event->mouse_x,
+    //     event->mouse_y);
+  }
+
+  // switch (event->type) {
+  //   case SAPP_EVENTTYPE_TOUCHES_BEGAN:
+  //   case SAPP_EVENTTYPE_TOUCHES_MOVED:
+  //   case SAPP_EVENTTYPE_TOUCHES_ENDED:
+  //   case SAPP_EVENTTYPE_TOUCHES_CANCELLED:
+  //     LOG_DEBUGF("event touch*. num_touches: %u", event->num_touches);
+  //     break;
+  // }
+
+  // LOG_DEBUGF(
+  //     "mState "
+  //     "x %d y %d wheely %3.3f btn1 %u",
+  //     logic->player->ptr.x,
+  //     logic->player->ptr.y,
+  //     logic->player->ptr.wheely,
+  //     logic->player->ptr.btn1);
+
+  switch (event->type) {
+    case SAPP_EVENTTYPE_FOCUSED:
+      LOG_DEBUGF("event focused");
+      break;
+    case SAPP_EVENTTYPE_UNFOCUSED:
+      LOG_DEBUGF("event unfocused");
+      break;
+    case SAPP_EVENTTYPE_RESIZED:
+      LOG_DEBUGF("event resized %u %u", event->window_width, event->window_height);
+      g_engine->window_width = event->window_width;
+      g_engine->window_height = event->window_height;
+      break;
+    case SAPP_EVENTTYPE_ICONIFIED:
+      LOG_DEBUGF("event iconified/minimized");
+      break;
+    case SAPP_EVENTTYPE_RESTORED:
+      LOG_DEBUGF("event restored");
+      break;
+    case SAPP_EVENTTYPE_SUSPENDED:
+      LOG_DEBUGF("event suspended");
+      break;
+    case SAPP_EVENTTYPE_RESUMED:
+      LOG_DEBUGF("event resumed");
+      break;
+    case SAPP_EVENTTYPE_QUIT_REQUESTED:
+      LOG_DEBUGF("event quit_requested");
+      break;
+    default:
+      break;
+  }
 }
 
 // on physics

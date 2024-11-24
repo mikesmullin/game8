@@ -12,7 +12,7 @@
 
 //
 
-typedef void (*Dispatcher__call2_t)(u32 id, Entity* inst, void* params);
+typedef void (*Dispatcher__call_t)(u32 id, void* params);
 
 #include "common/Arena.h"
 #include "common/Audio.h"  // IWYU pragma: keep
@@ -144,6 +144,19 @@ typedef struct Engine__State {
   void (*sfetch_dowork)(void);
   void (*sfetch_shutdown)(void);
   sfetch_handle_t (*sfetch_send)(const sfetch_request_t* request);
+
+  void (*Net__init)();
+  Socket* (*Net__Socket__alloc)();
+  void (*Net__Socket__init)(Socket* sock, char* addr, char* port, u32 opts);
+  void (*Net__listen)(Socket* socket);
+  void (*Net__accept)(Socket* socket, void (*acceptCb)(Socket*, Socket*));
+  void (*Net__connect)(Socket* socket, void (*connectCb)(Socket*));
+  void (*Net__read)(Socket* socket);
+  void (*Net__write)(Socket* socket, u32 len, const u8* data);
+  void (*Net__shutdown)(Socket* socket);
+  void (*Net__close)(Socket* socket);
+  void (*Net__free)(Socket* socket);
+  void (*Net__destroy)();
 
   u64 now;
   f32 deltaTime;

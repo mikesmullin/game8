@@ -14,6 +14,8 @@ typedef enum DispatchFnId /* : u32 */ {
   PBR__ONRENDER_ENTITY,
   PBR__ONRENDER_MATERIAL,
 
+  PLAYER__TICK,
+
   DISPATCH__COUNT,
 } DispatchFnId;
 

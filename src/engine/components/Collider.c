@@ -38,7 +38,7 @@ bool CircleCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
   return false;
 }
 
-bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher__call2_t cb) {
+bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher__call_t cb) {
   if (0 == entity->collider) return false;
 
   // use quadtree query to find nearby neighbors
@@ -87,9 +87,9 @@ bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher_
       if (collisionBefore || collisionAfter) {
         // notify each participant (onenter, onstay, onexit)
         OnCollideParams params = {entity, other, x, y, collisionBefore, collisionAfter, false};
-        cb(other->collider->collide, other, &params);  // notify target
+        cb(other->collider->collide, &params);  // notify target
         if (params.noclip) return false;
-        cb(entity->collider->collide, entity, &params);  // notify source
+        cb(entity->collider->collide, &params);  // notify source
         if (params.noclip) return false;
       }
       if (collisionAfter) return true;

@@ -12,6 +12,7 @@
 #include "../../../../src/game/entities/NetMgr.h"  // IWYU pragma: keep
 #include "Dispatcher.h"  // IWYU pragma: keep
 #include "entities/Cube.h"  // IWYU pragma: keep
+#include "entities/Player.h"  // IWYU pragma: keep
 
 typedef struct PreloadedAudio {
   WavReader* pickupCoin;
@@ -40,6 +41,8 @@ typedef struct Game {
   List* entities;
   sg_pass* pass1;
   NetMgr* net;
+  QuadTreeNode* qt;
+  f32 w, d, h;
 } Game;
 
 void Game__init();
