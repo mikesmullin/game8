@@ -6,6 +6,7 @@ typedef struct Player {
   CameraEntity base;
   u32 lastInput;
   GameInputComponent input;
+  Entity* model;
 } Player;
 
 void Player__init(Entity* entity);

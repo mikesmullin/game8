@@ -5,6 +5,8 @@ static const f32 PLAYER_STRAFE_MOD = 0.5f;  // percent of walk
 static const f32 PLAYER_FLY_SPEED = 3.0f;  // per-second
 static const f32 PLAYER_LOOK_SPEED = 0.3f;  // deg/sec
 
+static const f32 PLAYER_MOVE_FORCE = 0.50f;
+
 void Player__init(Entity* entity) {
   Player* self = (Player*)entity;
 
@@ -29,6 +31,71 @@ void Player__init(Entity* entity) {
   entity->collider = (ColliderComponent*)collider;
 
   entity->hear = Arena__Push(g_engine->arena, sizeof(AudioListenerComponent));
+}
+
+static void ApplyRollingPhysics(Player* player) {
+  Cube* cube = (Cube*)player->model;
+  Rigidbody2DComponent* rb = cube->base.rb;
+
+  v3 scaled;
+
+  // Normalize joystick input to a direction
+  v3 forceDirection = {player->input.joy.xAxis, 0.0f, -player->input.joy.zAxis};
+
+  if (glms_v3_len(forceDirection) > 0.01f) {
+    glms_v3_normalize(&forceDirection);
+
+    // Apply force to the cube to start rolling
+    v3 appliedForce;
+    glms_v3_scale(
+        forceDirection,
+        PLAYER_MOVE_FORCE * rb->mass,
+        &appliedForce);  // Scale by mass for realistic acceleration
+    glms_v3_scale(appliedForce, g_engine->deltaTime, &scaled);
+    glms_v3_add(rb->velocity, scaled, &rb->velocity);
+
+    // Simulate angular velocity (rolling torque)
+    v3 rollingTorque;
+    glms_v3_cross(forceDirection, (v3){0.0f, 1.0f, 0.0f}, &rollingTorque);  // Assume Y is up
+    glms_v3_scale(rollingTorque, g_engine->deltaTime, &scaled);
+    glms_v3_add(rb->angularVelocity, scaled, &rb->angularVelocity);
+  }
+
+  // Apply friction to gradually slow down the cube
+  glms_v3_scale(rb->velocity, 1.0f - cube->friction * g_engine->deltaTime, &rb->velocity);
+  glms_v3_scale(
+      rb->angularVelocity,
+      1.0f - cube->friction * g_engine->deltaTime,
+      &rb->angularVelocity);
+
+  // Integrate velocity into position
+  glms_v3_scale(rb->velocity, 0.2f * g_engine->deltaTime, &scaled);
+  glms_v3_add(cube->base.tform->pos, scaled, &cube->base.tform->pos);
+
+  // camera follows cube
+  player->base.base.tform->pos.x = cube->base.tform->pos.x;
+  player->base.base.tform->pos.y = cube->base.tform->pos.y + 3.0f;
+  player->base.base.tform->pos.z = cube->base.tform->pos.z + 10.0f;
+
+  // Integrate angular velocity into rotation
+  v4 rotationDelta;
+  glms_q_fromAxis(
+      rb->angularVelocity,
+      glms_v3_len(rb->angularVelocity) * g_engine->deltaTime,
+      &rotationDelta);
+
+  glms_q_mul(cube->base.tform->rot4, rotationDelta, &cube->base.tform->rot4);
+
+  // LOG_DEBUGF(
+  //     "Player Cube move %f %f %f rot %f %f %f %f",
+  //     cube->base.tform->pos.x,
+  //     cube->base.tform->pos.y,
+  //     cube->base.tform->pos.z,
+
+  //     cube->base.tform->rot4.x,
+  //     cube->base.tform->rot4.y,
+  //     cube->base.tform->rot4.z,
+  //     cube->base.tform->rot4.w);
 }
 
 void Player__tick(void* _entity) {
@@ -58,14 +125,14 @@ void Player__tick(void* _entity) {
     self->input.ptr.y = 0;
   } else {
     if (0 != self->input.ptr.x) {  // yaw (rotate around Y-axis)
-      self->base.base.tform->rot.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot.y = Math__rclampf(0, self->base.base.tform->rot.y, 360.0f);
+      self->base.base.tform->rot3.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot3.y = Math__rclampf(0, self->base.base.tform->rot3.y, 360.0f);
       self->input.ptr.x = 0;
     }
 
     if (0 != self->input.ptr.y) {  // pitch (rotate around X-axis)
-      self->base.base.tform->rot.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot.x = Math__clamp(-55.0f, self->base.base.tform->rot.x, 55.0f);
+      self->base.base.tform->rot3.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot3.x = Math__clamp(-55.0f, self->base.base.tform->rot3.x, 55.0f);
       self->input.ptr.y = 0;
     }
 
@@ -102,86 +169,24 @@ void Player__tick(void* _entity) {
       self->input.joy.yAxis = 0.0f;
     }
 
-    // Direction vectors for movement
-    HMM_Vec3 forward, right, front;
-
-    // Convert yaw to radians for direction calculation
-    f32 yaw_radians = HMM_AngleDeg(entity->tform->rot.y);
-
-    // Calculate the front vector based on yaw only (for movement along the XZ plane)
-    //   front.X = HMM_SinF(yaw_radians);
-    //   front.Y = 0.0f;
-    //   front.Z = HMM_CosF(yaw_radians);
-    //   front = HMM_NormV3(front);
-    HMM_Vec3 F = HMM_V3(0.0f, 0.0f, -1.0f);  // -Z_FWD
-    HMM_Vec3 U = HMM_V3(0.0f, 1.0f, 0.0f);  // +Y_UP
-    front = HMM_RotateV3AxisAngle_LH(F, U, yaw_radians);
-
-    // Calculate the right vector (perpendicular to the front vector)
-    right = HMM_Cross(front, U);
-    right = HMM_NormV3(right);
-
-    // apply forward/backward motion
-    HMM_Vec3 p1 = HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z);
-    HMM_Vec3 pos;
-    // TODO: can manipulate this to simulate slipping/ice
-    entity->rb->xa = 0;
-    entity->rb->za = 0;
-    if (0 != self->input.joy.zAxis) {
-      forward = HMM_MulV3F(front, self->input.joy.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
-      pos = HMM_AddV3(p1, forward);
-      entity->rb->xa += pos.X - entity->tform->pos.x;
-      entity->rb->za += pos.Z - entity->tform->pos.z;
-    }
-
-    // apply left/right motion
-    if (0 != self->input.joy.xAxis) {
-      forward = HMM_MulV3F(
-          right,
-          self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
-      pos = HMM_AddV3(p1, forward);
-      entity->rb->xa += pos.X - entity->tform->pos.x;
-      entity->rb->za += pos.Z - entity->tform->pos.z;
-    }
-
     // apply up/down motion
     if (0 != self->input.joy.yAxis) {
       entity->tform->pos.y += self->input.joy.yAxis * PLAYER_FLY_SPEED * g_engine->deltaTime;
 
       entity->tform->pos.y = Math__clamp(0, entity->tform->pos.y, g_engine->game->h);
     }
-
-    static const f32 SQRT_TWO = 1.414214f;
-
-    f32 xm = self->input.joy.xAxis;
-    f32 zm = self->input.joy.zAxis;
-    f32 d = Math__sqrtf(xm * xm + zm * zm);
-    if (0 != self->input.joy.zAxis && 0 != self->input.joy.xAxis) {
-      // normalize diagonal movement, so it is not faster
-      entity->rb->xa /= SQRT_TWO;
-      entity->rb->za /= SQRT_TWO;
-    }
-
-    // headbob
-    if (d != 0) {
-      if (xm != 0 && zm != 0) {
-        // normalize diagonal movement, so it is not faster
-        d /= SQRT_TWO;
-      }
-      // d *= PLAYER_WALK_SPEED * g_engine->deltaTime * 4.0f;
-      // d *=
-      self->base.camera.bobPhase = HMM_SinF(
-          (g_engine->now - self->lastInput) / 1000.0f * 2.0f * 3.0f * (60 / 29.0f));  // 29bpm
-    }
-
-    // LOG_DEBUGF(
-    //     "Player move %f %f %f dT %f",
-    //     entity->tform->pos.x,
-    //     entity->tform->pos.y,
-    //     entity->tform->pos.z,
-    //     g_engine->deltaTime);
-    Rigidbody2D__move(g_engine->game->qt, entity, Dispatcher__call);
   }
+
+  ApplyRollingPhysics(self);
+
+  Rigidbody2D__move(g_engine->game->qt, entity, Dispatcher__call);
+
+  // LOG_DEBUGF(
+  //     "Player move %f %f %f dT %f",
+  //     self->model->tform->pos.x,
+  //     self->model->tform->pos.y,
+  //     self->model->tform->pos.z,
+  //     g_engine->deltaTime);
 
   PROFILE__END(PLAYER__TICK);
 }

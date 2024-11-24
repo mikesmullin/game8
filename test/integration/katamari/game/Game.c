@@ -34,8 +34,8 @@ void Game__preload() {
   Player* player1 = (Player*)Arena__Push(g_engine->arena, sizeof(Player));
   Player__init((Entity*)player1);
   player1->base.base.tform->pos.x = 0.0f;
-  player1->base.base.tform->pos.y = 0.0f;
-  player1->base.base.tform->pos.z = 0.0f;
+  player1->base.base.tform->pos.y = 3.0f;
+  player1->base.base.tform->pos.z = 10.0f;
   player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
   player1->base.camera.proj.fov = 45.0f;
   player1->base.camera.proj.nearZ = 0.1f;
@@ -49,6 +49,7 @@ void Game__preload() {
   List__append(g_engine->arena, g_engine->game->entities, cube);
   cube->base.render->color = COLOR_RED;
   cube->base.tform->pos.y = 0.5f;
+  player1->model = (Entity*)cube;
 
   u32 sq = 30;
   f32 s = 1.0f / 4, ss = s * 4;

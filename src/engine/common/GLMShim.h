@@ -25,13 +25,19 @@ typedef struct m4 {
   vec4 a, b, c, d;
 } m4;
 
+// void glms_q_toEuler(v4 q, v3* dst);
+void glms_q_fromAxis(v3 axis, f32 angle, v4* dst);
+void glms_q_mul(v4 q1, v4 q2, v4* dst);
+// void glms_v4_add(v4 q1, v4 q2, v4* dst);
+
+f32 glms_v3_len(v3 a);
 f32 glms_v3_dot(v3 a, v3 b);
 void glms_v3_add(v3 a, v3 b, v3* dest);
 void glms_v3_sub(v3 a, v3 b, v3* dest);
 void glms_v3_scale(v3 v, f32 scale, v3* dest);
 void glms_v3_normalize(v3* dest);
 void glms_v3_cross(v3 a, v3 b, v3* dest);
-f32 glms_v3_distance(v3* a, v3* b);
+f32 glms_v3_distance(v3 a, v3 b);
 
 f32 glms_rad(f32 degrees);
 void glms_vec3_copy(vec3 src, vec3 dest);

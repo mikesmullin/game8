@@ -11,9 +11,10 @@ static void ServerPump(Socket* client);
 static void ClientPump(Socket* client);
 
 void NetMgr__init() {
-  NetMgr* self = g_engine->game->net;
-
   g_engine->Net__init();
+
+  NetMgr* self = g_engine->game->net;
+  // #define self ((NetMgr*)g_engine->game->net)
 
   if (g_engine->isMaster) {
     // Server
@@ -36,10 +37,13 @@ void NetMgr__init() {
     LOG_DEBUGF("Client connecting to %s:%s", self->client->addr, self->client->port);
     g_engine->Net__connect(self->client, onConnect);
   }
+
+#undef self
 }
 
 void NetMgr__tick() {
-  NetMgr* self = g_engine->game->net;
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
 
   if (g_engine->isMaster) {
     g_engine->Net__accept(self->listener, onAccept);
@@ -50,10 +54,12 @@ void NetMgr__tick() {
   } else {
     ClientPump(self->client);
   }
+#undef self
 }
 
 static void onAccept(Socket* server, Socket* client) {
-  NetMgr* self = g_engine->game->net;
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
 
   client->state = SOCKET_CONNECTED;
   client->sessionState = SESSION_SERVER_HANDSHAKE_AWAIT;
@@ -61,19 +67,25 @@ static void onAccept(Socket* server, Socket* client) {
 
   // remember all incoming connections
   self->clients[self->client_count++] = client;
+
+#undef self
 }
 
 static void onConnect(Socket* client) {
-  NetMgr* self = g_engine->game->net;
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
 
   client->state = SOCKET_CONNECTED;
   LOG_DEBUGF("Client connected to %s:%s", client->addr, client->port);
+
+#undef self
 }
 
 static void ServerPump(Socket* client) {
-  if (SOCKET_CONNECTED != client->state) return;
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
 
-  NetMgr* self = g_engine->game->net;
+  if (SOCKET_CONNECTED != client->state) return;
 
   // Read data from client
   g_engine->Net__read(client);
@@ -113,12 +125,16 @@ static void ServerPump(Socket* client) {
       }
     }
   }
+
+#undef self
 }
 
 static void ClientPump(Socket* client) {
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
+
   if (SOCKET_CONNECTED != client->state) return;
 
-  NetMgr* self = g_engine->game->net;
   char* debug = Arena__Push(g_engine->frameArena, DEBUG_STR_LEN);
 
   if (SESSION_NONE == client->sessionState) {
@@ -137,10 +153,12 @@ static void ClientPump(Socket* client) {
     hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
     LOG_DEBUGF("Client recv. len: %u, data:\n%s", client->buf.len, debug);
   }
+#undef self
 }
 
 void NetMgr__shutdown() {
-  NetMgr* self = g_engine->game->net;
+// NetMgr* self = g_engine->game->net;
+#define self ((NetMgr*)g_engine->game->net)
 
   if (g_engine->isMaster) {
     for (u32 i = 0; i < self->client_count; i++) {
@@ -162,4 +180,6 @@ void NetMgr__shutdown() {
 
   LOG_DEBUGF("network shutdown");
   g_engine->Net__destroy();
+
+#undef self
 }

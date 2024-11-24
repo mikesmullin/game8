@@ -2,7 +2,73 @@
 
 #include <string.h>
 
+#include "Log.h"
 #include "Math.h"
+
+// void glms_q_toEuler(v4 q, v3* dst) {
+//   // Roll (Z-axis rotation)
+//   f32 sinr_cosp = 2.0f * (q.w * q.x + q.y * q.z);
+//   f32 cosr_cosp = 1.0f - 2.0f * (q.x * q.x + q.y * q.y);
+//   dst->z = atan2f(sinr_cosp, cosr_cosp);
+
+//   // Pitch (X-axis rotation)
+//   f32 sinp = 2.0f * (q.w * q.y - q.z * q.x);
+//   if (fabsf(sinp) >= 1.0f)
+//     // Use 90 degrees if out of range
+//     dst->x = copysignf(Math__PI32 / 2.0f, sinp);
+//   else
+//     dst->x = asinf(sinp);
+
+//   // Yaw (Y-axis rotation)
+//   f32 siny_cosp = 2.0f * (q.w * q.z + q.x * q.y);
+//   f32 cosy_cosp = 1.0f - 2.0f * (q.y * q.y + q.z * q.z);
+//   dst->y = atan2f(siny_cosp, cosy_cosp);
+// }
+
+void glms_q_fromAxis(v3 axis, f32 angle, v4* dst) {
+  // Normalize the axis vector
+  f32 length = Math__sqrtf(axis.x * axis.x + axis.y * axis.y + axis.z * axis.z);
+  if (length < 1e-6f) {  // Avoid division by zero
+    dst->x = dst->y = dst->z = 0.0f, dst->w = 1.0f;  // Identity quaternion
+    return;
+  }
+  f32 invLength = 1.0f / length;
+  axis.x *= invLength;
+  axis.y *= invLength;
+  axis.z *= invLength;
+
+  // Compute sine and cosine of half the angle
+  f32 halfAngle = angle * 0.5f;
+  f32 sinHalfAngle = Math__sinf(halfAngle);
+  f32 cosHalfAngle = Math__cosf(halfAngle);
+
+  // Create the quaternion
+  dst->x = axis.x * sinHalfAngle;
+  dst->y = axis.y * sinHalfAngle;
+  dst->z = axis.z * sinHalfAngle;
+  dst->w = cosHalfAngle;
+}
+
+void glms_q_mul(v4 q1, v4 q2, v4* dst) {
+  v4 cp = {q1.x, q1.y, q1.z, q1.w};
+  dst->x = cp.w * q2.x + cp.x * q2.w + cp.y * q2.z - cp.z * q2.y;
+  dst->y = cp.w * q2.y - cp.x * q2.z + cp.y * q2.w + cp.z * q2.x;
+  dst->z = cp.w * q2.z + cp.x * q2.y - cp.y * q2.x + cp.z * q2.w;
+  dst->w = cp.w * q2.w - cp.x * q2.x - cp.y * q2.y - cp.z * q2.z;
+}
+
+// void glms_v4_add(v4 q1, v4 q2, v4* dst) {
+//   dst->x = q1.x + q2.x;
+//   dst->y = q1.y + q2.y;
+//   dst->z = q1.z + q2.z;
+//   dst->w = q1.w + q2.w;
+// }
+
+// ---
+
+f32 glms_v3_len(v3 a) {
+  return glms_v3_dot(a, a);
+}
 
 f32 glms_v3_dot(v3 a, v3 b) {
   return a.x * b.x + a.y * b.y + a.z * b.z;
@@ -39,11 +105,9 @@ void glms_v3_normalize(v3* dest) {
   }
 }
 
-f32 glms_v3_distance(v3* a, v3* b) {
-  v3 d = {
-      b->x - a->x,  //
-      b->y - a->y,
-      b->z - a->z};
+f32 glms_v3_distance(v3 a, v3 b) {
+  v3 d;
+  glms_v3_sub(b, a, &d);
   f32 len = Math__sqrtf(d.x * d.x + d.y * d.y + d.z * d.z);
   return len;
 }

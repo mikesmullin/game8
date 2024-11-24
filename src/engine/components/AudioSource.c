@@ -14,7 +14,7 @@ void AudioSource__play(WavReader* sound, Entity* emitter, Entity* listener) {
         HMM_V3(emitter->tform->pos.x, emitter->tform->pos.y, emitter->tform->pos.z));
 
     // Calculate forward vector (assuming rot0_y is the yaw in radians)
-    f32 rY = listener->tform->rot.y;
+    f32 rY = listener->tform->rot3.y;
     forward.X = HMM_CosF(rY);
     forward.Y = 0;
     forward.Z = -HMM_SinF(rY);

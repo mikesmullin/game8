@@ -23,8 +23,9 @@ f32 Math__floor(f32 a);
 
 // --- <math.h> wrapper ---
 
-f32 Math__sinf(f32 n);
 f32 Math__sqrtf(f32 n);
+f32 Math__sinf(f32 n);
+f32 Math__cosf(f32 n);
 f32 Math__tanf(f32 n);
 f32 Math__powf(f32 n, f32 e);
 f32 Math__fabsf(f32 n);

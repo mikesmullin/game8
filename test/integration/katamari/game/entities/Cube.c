@@ -4,6 +4,9 @@ void Cube__init(Entity* entity) {
   Cube* cube = (Cube*)entity;
   Entity__init((Entity*)cube);
 
+  cube->base.rb->mass = 10.0f;
+  cube->friction = 0.5f;
+
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 
   // preload
