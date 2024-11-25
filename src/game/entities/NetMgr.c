@@ -10,43 +10,46 @@ static void onConnect(Socket* client);
 static void ServerPump(Socket* client);
 static void ClientPump(Socket* client);
 
+static void _init() {
+  Net__init();  // TODO: fix stack issue here
+}
+
 void NetMgr__init() {
-  g_engine->Net__init();
+  _init();
 
   NetMgr* self = g_engine->game->net;
-  // #define self ((NetMgr*)g_engine->game->net)
 
   if (g_engine->isMaster) {
     // Server
-    self->listener = g_engine->Net__Socket__alloc();
-    g_engine->Net__Socket__init(
-        self->listener,
-        g_engine->listenHost,
-        g_engine->listenPort,
-        SERVER_SOCKET);
+    Socket* s = Net__Socket__alloc();
+    self->listener = s;
+    Net__Socket__init(self->listener, g_engine->listenHost, g_engine->listenPort, SERVER_SOCKET);
     LOG_DEBUGF("Server listen on %s:%s", self->listener->addr, self->listener->port);
-    g_engine->Net__listen(self->listener);
+    Net__listen(self->listener);
   } else {
     // Client
-    self->client = g_engine->Net__Socket__alloc();
-    g_engine->Net__Socket__init(
-        self->client,
-        g_engine->connectHost,
-        g_engine->connectPort,
-        CLIENT_SOCKET);
+    self->client = Net__Socket__alloc();
+    Net__Socket__init(self->client, g_engine->connectHost, g_engine->connectPort, CLIENT_SOCKET);
     LOG_DEBUGF("Client connecting to %s:%s", self->client->addr, self->client->port);
-    g_engine->Net__connect(self->client, onConnect);
+    Net__connect(self->client, onConnect);
   }
+}
 
-#undef self
+static void _check() {
+  NetMgr* self = g_engine->game->net;
+  if (0 == self->listener) {
+    LOG_DEBUGF("listener went missing!");
+  }
 }
 
 void NetMgr__tick() {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {
-    g_engine->Net__accept(self->listener, onAccept);
+    _check();
+    // TODO: self->listener is a ptr to an obj that becomes inaccessible after DLL hot-reload
+    //       so Winsock is allocating static memory from DLL space
+    Net__accept(self->listener, onAccept);
 
     for (u32 i = 0; i < self->client_count; i++) {
       ServerPump(self->clients[i]);
@@ -54,12 +57,10 @@ void NetMgr__tick() {
   } else {
     ClientPump(self->client);
   }
-#undef self
 }
 
 static void onAccept(Socket* server, Socket* client) {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   client->state = SOCKET_CONNECTED;
   client->sessionState = SESSION_SERVER_HANDSHAKE_AWAIT;
@@ -67,28 +68,22 @@ static void onAccept(Socket* server, Socket* client) {
 
   // remember all incoming connections
   self->clients[self->client_count++] = client;
-
-#undef self
 }
 
 static void onConnect(Socket* client) {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   client->state = SOCKET_CONNECTED;
   LOG_DEBUGF("Client connected to %s:%s", client->addr, client->port);
-
-#undef self
 }
 
 static void ServerPump(Socket* client) {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   if (SOCKET_CONNECTED != client->state) return;
 
   // Read data from client
-  g_engine->Net__read(client);
+  Net__read(client);
   if (client->buf.len > 0) {
     char* debug = Arena__Push(g_engine->frameArena, DEBUG_STR_LEN);
     hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
@@ -102,7 +97,7 @@ static void ServerPump(Socket* client) {
 
       // Send response to client
       u32 len = strlen(response);
-      g_engine->Net__write(client, len, (const u8*)response);
+      Net__write(client, len, (const u8*)response);
       hexdump(response, len, debug, DEBUG_STR_LEN);
       LOG_DEBUGF("Server send. len: %u, data:\n%s", len, debug);
       client->sessionState = SESSION_SERVER_HANDSHAKE_SENT;
@@ -125,13 +120,10 @@ static void ServerPump(Socket* client) {
       }
     }
   }
-
-#undef self
 }
 
 static void ClientPump(Socket* client) {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   if (SOCKET_CONNECTED != client->state) return;
 
@@ -141,45 +133,41 @@ static void ClientPump(Socket* client) {
     // Send request to server
     MoveRequest msg = {.base.id = MSG_MOVE_REQ, .x = 1.0f, .y = 2.0f, .z = 3.0f};
     u32 len = sizeof(MoveRequest);
-    g_engine->Net__write(client, len, (const u8*)&msg);
+    Net__write(client, len, (const u8*)&msg);
     hexdump(&msg, len, debug, DEBUG_STR_LEN);
     LOG_DEBUGF("Client send. len: %u, data:\n%s", len, debug);
     client->sessionState = SESSION_CLIENT_HELLO_SENT;
   }
 
   // Read data from server
-  g_engine->Net__read(client);
+  Net__read(client);
   if (client->buf.len > 0) {
     hexdump(client->buf.data, client->buf.len, debug, DEBUG_STR_LEN);
     LOG_DEBUGF("Client recv. len: %u, data:\n%s", client->buf.len, debug);
   }
-#undef self
 }
 
 void NetMgr__shutdown() {
-// NetMgr* self = g_engine->game->net;
-#define self ((NetMgr*)g_engine->game->net)
+  NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {
     for (u32 i = 0; i < self->client_count; i++) {
       LOG_DEBUGF("close accepted client %u", i);
-      g_engine->Net__shutdown(self->clients[i]);
-      g_engine->Net__close(self->clients[i]);
-      // g_engine->Net__free(clients[i]);
+      Net__shutdown(self->clients[i]);
+      Net__close(self->clients[i]);
+      // Net__free(clients[i]);
     }
 
     LOG_DEBUGF("close server");
-    g_engine->Net__close(self->listener);
-    g_engine->Net__free(self->listener);
+    Net__close(self->listener);
+    Net__free(self->listener);
   } else {
     LOG_DEBUGF("close client");
-    g_engine->Net__shutdown(self->client);
-    g_engine->Net__close(self->client);
-    g_engine->Net__free(self->client);
+    Net__shutdown(self->client);
+    Net__close(self->client);
+    Net__free(self->client);
   }
 
   LOG_DEBUGF("network shutdown");
-  g_engine->Net__destroy();
-
-#undef self
+  Net__destroy();
 }

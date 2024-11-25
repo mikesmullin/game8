@@ -40,7 +40,7 @@ static void ApplyRollingPhysics(Player* player) {
   v3 scaled;
 
   // Normalize joystick input to a direction
-  v3 forceDirection = {player->input.joy.xAxis, 0.0f, -player->input.joy.zAxis};
+  v3 forceDirection = {player->input.joy.xAxis, 0.0f, player->input.joy.zAxis};
 
   if (glms_v3_len(forceDirection) > 0.01f) {
     glms_v3_normalize(&forceDirection);
@@ -68,8 +68,8 @@ static void ApplyRollingPhysics(Player* player) {
       1.0f - cube->friction * g_engine->deltaTime,
       &rb->angularVelocity);
 
-  // Integrate velocity into position
-  glms_v3_scale(rb->velocity, 0.2f * g_engine->deltaTime, &scaled);
+  // apply velocity to position
+  glms_v3_scale(rb->velocity, (1.0f / 4) * g_engine->deltaTime, &scaled);
   glms_v3_add(cube->base.tform->pos, scaled, &cube->base.tform->pos);
 
   // camera follows cube

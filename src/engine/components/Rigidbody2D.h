@@ -3,8 +3,8 @@
 #include "../Engine.h"  // IWYU pragma: keep
 
 typedef struct Rigidbody2DComponent {
-  f32 mass;  // kg
-  v3 velocity;  // Linear velocity
+  f32 mass;  // kg (mass x velocity = momentum)
+  v3 velocity;  // Linear velocity (Force x deltaTime = impulse; also = delta mometum; represents the transfer/conservation of momentum)
   v3 angularVelocity;  // Rotational velocity (radians/sec)
 } Rigidbody2DComponent;
 

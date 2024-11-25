@@ -66,7 +66,15 @@ void glms_q_mul(v4 q1, v4 q2, v4* dst) {
 
 // ---
 
+v3 glms_v3_cp(v3 a) {
+  return (v3){a.x, a.y, a.z};
+}
+
 f32 glms_v3_len(v3 a) {
+  return Math__sqrtf(glms_v3_len2(a));
+}
+
+f32 glms_v3_len2(v3 a) {
   return glms_v3_dot(a, a);
 }
 

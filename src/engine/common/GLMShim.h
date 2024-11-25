@@ -30,7 +30,9 @@ void glms_q_fromAxis(v3 axis, f32 angle, v4* dst);
 void glms_q_mul(v4 q1, v4 q2, v4* dst);
 // void glms_v4_add(v4 q1, v4 q2, v4* dst);
 
+v3 glms_v3_cp(v3 a);
 f32 glms_v3_len(v3 a);
+f32 glms_v3_len2(v3 a);
 f32 glms_v3_dot(v3 a, v3 b);
 void glms_v3_add(v3 a, v3 b, v3* dest);
 void glms_v3_sub(v3 a, v3 b, v3* dest);

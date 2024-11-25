@@ -410,9 +410,9 @@ const compile_reload = async (unit, outname) => {
     let out_target = path.join(workspaceFolder, BUILD_PATH, target);
     let out_target2 = path.join(workspaceFolder, BUILD_PATH, target2);
     try {
-      await fs.cp(out_target, out_target2);
+      await fs.rename(out_target, out_target2);
     } catch (e) {
-      console.log(chalk.red('copy failed.'), e);
+      console.log(chalk.red('file move failed.'), e);
     }
   }
 
