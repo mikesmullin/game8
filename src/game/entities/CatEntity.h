@@ -10,7 +10,7 @@ typedef struct CatEntity {
 } CatEntity;
 
 void CatEntity__init(Entity* entity);
-void CatEntity__tick(Entity* entity);
-void CatEntity__collide(Entity* entity, void* params);
+void CatEntity__tick(void* _params);
+void CatEntity__collide(void* _params);
 SGState* CatEntity__getSGState(u32 id);
-void CatEntity__action(Entity* entity, void* action);
+void CatEntity__action(void* _params);

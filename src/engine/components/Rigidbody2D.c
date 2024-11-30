@@ -5,6 +5,20 @@
 
 void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) {
   if (0 == entity->rb) return;
+
+  // apply velocity to position
+  v3 scaled;
+  glms_v3_scale(entity->rb->velocity, g_engine->deltaTime, &scaled);
+  glms_v3_add(entity->tform->pos, scaled, &entity->tform->pos);
+
+  // integrate angular velocity into rotation
+  v4 rotationDelta;
+  q_fromAxis(
+      &rotationDelta,
+      &entity->rb->angularVelocity,
+      glms_v3_len(entity->rb->angularVelocity) * g_engine->deltaTime);
+  q_mul(&entity->tform->rot4, &rotationDelta, &entity->tform->rot4);
+
   // if (Math__fabsf(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
   // if (Math__fabsf(entity->rb->za) < FLT_MIN) entity->rb->za = 0;
 

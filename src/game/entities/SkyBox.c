@@ -36,8 +36,10 @@ void SkyBox__init(Entity* entity) {
       "../assets/textures/sky.bmp");
 }
 
-void SkyBox__tick(Entity* entity) {
+void SkyBox__tick(void* _params) {
   PROFILE__BEGIN(SKY_BOX__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   Player* player1 = (Player*)g_engine->players->head->data;
 
   entity->tform->pos.x = player1->base.base.tform->pos.x;

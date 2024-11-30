@@ -9,4 +9,4 @@ typedef struct RubbleSprite {
 } RubbleSprite;
 
 void RubbleSprite__init(Entity* entity);
-void RubbleSprite__tick(Entity* entity);
+void RubbleSprite__tick(void* _params);

@@ -367,8 +367,18 @@ void v3_slerp(v3* a, v3* b, f32 t, v3* dst) {
 // left-handed orthographic projection matrix
 // with Z ranging from -1 to 1 (GL convention)
 void m4_ortho(m4* dst, f32 l, f32 r, f32 b, f32 t, f32 znear, f32 zfar) {
-  // TODO:
-  m4_set(dst, &M4_IDENTITY);
+  f32 fn = znear - zfar;
+
+  // clang-format off
+  m4_set4x4(dst,
+    2.0f / (r - l), 0.0f, 0.0f, 0.0f,
+    0.0f, 2.0f / (t - b), 0.0f, 0.0f,
+    0.0f, 0.0f,  -(2.0f / fn), (znear + zfar) / fn,
+    (l + r) / (l - r), (b + t) / (b - t), 0.0f, 1.0f
+  );
+  HMM_Mat4 m = HMM_Orthographic_LH_NO(l,r,b,t,znear,zfar);
+  f32 a = 0.0f;
+  // clang-format on
 }
 
 // left-handed perspective projection matrix

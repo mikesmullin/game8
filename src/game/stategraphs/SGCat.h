@@ -13,7 +13,7 @@
 // 7 body
 // 8 belly
 
-static void subbedActions(StateGraph* sg, Action* action) {
+static void subbedActions(StateGraph* sg, OnActionParams* action) {
   if (ACTION_USE == action->type) StateGraph__gotoState(sg, 3, CatEntity__getSGState);  // meow
 }
 

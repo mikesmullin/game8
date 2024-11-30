@@ -1,18 +1,17 @@
 #include "Dispatcher.h"
 
-void CatEntity__tick(Entity* entity);
-void CatEntity__tick(Entity* entity);
-void CatSpawnBlock__tick(Entity* entity);
-void DebugText__tick(Entity* entity);
-void Player__tick(Entity* entity);
-void RubbleSprite__tick(Entity* entity);
-void SkyBox__tick(Entity* entity);
-void SpawnBlock__tick(Entity* entity);
+void CatEntity__tick(void* params);
+void CatSpawnBlock__tick(void* params);
+void DebugText__tick(void* params);
+void Player__tick(void* params);
+void RubbleSprite__tick(void* params);
+void SkyBox__tick(void* params);
+void SpawnBlock__tick(void* params);
 
-void BreakBlock__action(Entity* entity, void* action);
-void CatEntity__action(Entity* entity, void* action);
-void CatEntity__collide(Entity* entity, void* action);
-void RedWallBlock__action(Entity* entity, void* action);
+void BreakBlock__action(void* params);
+void CatEntity__action(void* params);
+void CatEntity__collide(void* params);
+void RedWallBlock__action(void* params);
 
 void Atlas__onrender_load(void* params);
 void Atlas__onrender_alloc(void* params);
@@ -23,16 +22,13 @@ void PBR__onrender_alloc(void* params);
 void PBR__onrender_entity(void* params);
 void PBR__onrender_material(void* params);
 
-static void Dispatch__None1(Entity* inst) {
-}
-static void Dispatch__None2(Entity* inst, void* params) {
-}
-static void Dispatch__None3(void* params) {
+static void Dispatch__None(void* params) {
 }
 
-static void (*VTABLE_ENGINE1[])(Entity*) = {
-    Dispatch__None1,
+static void (*VTABLE_ENGINE[])(void*) = {
+    Dispatch__None,
 
+    // Entity*
     CatEntity__tick,
     CatSpawnBlock__tick,
     DebugText__tick,
@@ -51,26 +47,20 @@ static void (*VTABLE_ENGINE1[])(Entity*) = {
     // TitleMenu__render,
     // TitleMenu__tick,
 
-    Dispatch__None1,  // LEVEL__TICK
-    Dispatch__None1,  // LEVEL__TICK__ARENA_RESET,
-    Dispatch__None1,  // LEVEL__TICK__QUADTREE_CREATE,
-    Dispatch__None1,  // LEVEL__RENDER
-    Dispatch__None1,  // LEVEL__GUI
-    Dispatch__None1,  // GAME__GUI
-};
+    Dispatch__None,  // LEVEL__TICK
+    Dispatch__None,  // LEVEL__TICK__ARENA_RESET,
+    Dispatch__None,  // LEVEL__TICK__QUADTREE_CREATE,
+    Dispatch__None,  // LEVEL__RENDER
+    Dispatch__None,  // LEVEL__GUI
+    Dispatch__None,  // GAME__GUI
 
-static void (*VTABLE_ENGINE2[])(Entity*, void*) = {
-    Dispatch__None2,
-
+    // Entity*, void*
     BreakBlock__action,
     CatEntity__action,
     CatEntity__collide,
     RedWallBlock__action,
-};
 
-static void (*VTABLE_ENGINE3[])(void*) = {
-    Dispatch__None3,
-
+    // void*
     Atlas__onrender_load,
     Atlas__onrender_alloc,
     Atlas__onrender_entity,
@@ -84,12 +74,6 @@ static void (*VTABLE_ENGINE3[])(void*) = {
 // static / switch / tag / conditional dispatch
 // a hot-reload safe, simple alternative to polymorphism
 // works because all fns are known at compile-time
-void Dispatcher__call1(DispatchFnId1 id, Entity* inst) {
-  VTABLE_ENGINE1[id](inst);
-}
-void Dispatcher__call2(u32 id, Entity* inst, void* params) {
-  VTABLE_ENGINE2[id](inst, params);
-}
-void Dispatcher__call3(u32 id, void* params) {
-  VTABLE_ENGINE3[id](params);
+void Dispatcher__call(u32 id, void* params) {
+  VTABLE_ENGINE[id](params);
 }

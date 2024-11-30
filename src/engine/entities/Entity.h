@@ -39,4 +39,8 @@ typedef struct Entity {
   // EventEmitter* events;
 } Entity;
 
+typedef struct OnEntityParams {
+  Entity* entity;
+} OnEntityParams;
+
 void Entity__init(Entity* entity);

@@ -17,8 +17,10 @@ void RubbleSprite__init(Entity* entity) {
   entity->render->color = g_engine->game->level->wallCol;
 }
 
-void RubbleSprite__tick(Entity* entity) {
+void RubbleSprite__tick(void* _params) {
   PROFILE__BEGIN(RUBBLE_SPRITE__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   if (entity->removed) return;
 
   RubbleSprite* self = (RubbleSprite*)entity;

@@ -51,7 +51,7 @@ static void ApplyRollingPhysics(Player* player) {
         forceDirection,
         PLAYER_MOVE_FORCE * rb->mass,
         &appliedForce);  // Scale by mass for realistic acceleration
-    glms_v3_scale(appliedForce, g_engine->deltaTime, &scaled);
+    glms_v3_scale(appliedForce, (1.0f / 4) * g_engine->deltaTime, &scaled);
     glms_v3_add(rb->velocity, scaled, &rb->velocity);
 
     // Simulate angular velocity (rolling torque)
@@ -67,41 +67,13 @@ static void ApplyRollingPhysics(Player* player) {
       rb->angularVelocity,
       1.0f - cube->friction * g_engine->deltaTime,
       &rb->angularVelocity);
-
-  // apply velocity to position
-  glms_v3_scale(rb->velocity, (1.0f / 4) * g_engine->deltaTime, &scaled);
-  glms_v3_add(cube->base.tform->pos, scaled, &cube->base.tform->pos);
-
-  // camera follows cube
-  player->base.base.tform->pos.x = cube->base.tform->pos.x;
-  player->base.base.tform->pos.y = cube->base.tform->pos.y + 3.0f;
-  player->base.base.tform->pos.z = cube->base.tform->pos.z + 10.0f;
-
-  // Integrate angular velocity into rotation
-  v4 rotationDelta;
-  q_fromAxis(
-      &rotationDelta,
-      &rb->angularVelocity,
-      glms_v3_len(rb->angularVelocity) * g_engine->deltaTime);
-
-  q_mul(&cube->base.tform->rot4, &rotationDelta, &cube->base.tform->rot4);
-
-  // LOG_DEBUGF(
-  //     "Player Cube move %f %f %f rot %f %f %f %f",
-  //     cube->base.tform->pos.x,
-  //     cube->base.tform->pos.y,
-  //     cube->base.tform->pos.z,
-
-  //     cube->base.tform->rot4.x,
-  //     cube->base.tform->rot4.y,
-  //     cube->base.tform->rot4.z,
-  //     cube->base.tform->rot4.w);
 }
 
 void Player__tick(void* _entity) {
   PROFILE__BEGIN(PLAYER__TICK);
   Entity* entity = (Entity*)_entity;
   Player* self = (Player*)entity;
+  Cube* cube = (Cube*)self->model;
 
   if (self->input.key.use && !self->input.mouseCaptured) {
     self->input.key.use = false;
@@ -180,7 +152,12 @@ void Player__tick(void* _entity) {
 
   ApplyRollingPhysics(self);
 
-  Rigidbody2D__move(g_engine->game->qt, entity, Dispatcher__call);
+  Rigidbody2D__move(g_engine->game->qt, (Entity*)cube, Dispatcher__call);
+
+  // camera follows cube
+  self->base.base.tform->pos.x = cube->base.tform->pos.x;
+  self->base.base.tform->pos.y = cube->base.tform->pos.y + 3.0f;
+  self->base.base.tform->pos.z = cube->base.tform->pos.z + 10.0f;
 
   // LOG_DEBUGF(
   //     "Player move %f %f %f dT %f",

@@ -2,8 +2,9 @@
 
 #include "Game.h"  // IWYU pragma: keep
 
-typedef enum DispatchFnId1 /* : u32 */ {
-  DISPATCH1_NONE,
+typedef enum DispatchFnId /* : u32 */ {
+  DISPATCH_NONE,
+
   CAT_ENTITY__TICK,
   CAT_SPAWN_BLOCK__TICK,
   DEBUG_TEXT__TICK,
@@ -29,22 +30,10 @@ typedef enum DispatchFnId1 /* : u32 */ {
   LEVEL__GUI,
   GAME__GUI,
 
-  DISPATCH1__COUNT,
-} DispatchFnId1;
-
-typedef enum DispatchFnId2 /* : u32 */ {
-  DISPATCH2_NONE,
-
   BREAK_BLOCK__ACTION,
   CAT_ENTITY__ACTION,
   CAT_ENTITY__COLLIDE,
   RED_WALL_BLOCK__ACTION,
-
-  DISPATCH2__COUNT,
-} DispatchFnId2;
-
-typedef enum DispatchFnId3 /* : u32 */ {
-  DISPATCH3_NONE,
 
   ATLAS__ONRENDER_LOAD,
   ATLAS__ONRENDER_ALLOC,
@@ -55,9 +44,7 @@ typedef enum DispatchFnId3 /* : u32 */ {
   PBR__ONRENDER_ENTITY,
   PBR__ONRENDER_MATERIAL,
 
-  DISPATCH3__COUNT,
-} DispatchFnId3;
+  DISPATCH__COUNT,
+} DispatchFnId;
 
-void Dispatcher__call1(DispatchFnId1 id, Entity* inst);
-void Dispatcher__call2(u32 id, Entity* inst, void* params);
-void Dispatcher__call3(u32 id, void* params);
+void Dispatcher__call(u32 id, void* params);

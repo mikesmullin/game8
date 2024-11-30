@@ -3,5 +3,4 @@
 #include "../../Game.h"  // IWYU pragma: keep
 
 void RedWallBlock__init(Entity* entity, f32 x, f32 z);
-void RedWallBlock__render(Entity* entity);
-void RedWallBlock__action(Entity* entity, void* _action);
+void RedWallBlock__action(void* _params);

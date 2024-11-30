@@ -109,7 +109,7 @@ void Level__tick(Level* level) {
       (0 == level->zentities ? 0 : level->zentities->len) +  //
       g_engine->game->ui_entities->len;
 
-  Dispatcher__call1(level->cubemap->dispatch->tick, level->cubemap);
+  Dispatcher__call(level->cubemap->dispatch->tick, &(OnEntityParams){level->cubemap});
 
   // build a QuadTree of all entities
   Arena__Reset(g_engine->frameArena);
@@ -140,7 +140,7 @@ void Level__tick(Level* level) {
       // }
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
-      Dispatcher__call1(entity->dispatch->tick, entity);
+      Dispatcher__call(entity->dispatch->tick, &(OnEntityParams){entity});
 
       if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
         List__insort(g_engine->frameArena, level->zentities, entity, Level__zsort);
@@ -163,7 +163,7 @@ void Level__render(Level* level) {
 
   List* sky = List__alloc(g_engine->frameArena);
   List__append(g_engine->frameArena, sky, level->cubemap);
-  MeshRenderer__renderBatches(sky, Dispatcher__call3);
+  MeshRenderer__renderBatches(sky, Dispatcher__call);
 
   if (0 != level->nzentities) {
     List__Node* node = level->nzentities->head;
@@ -172,9 +172,9 @@ void Level__render(Level* level) {
       node = node->next;
 
       if (0 == entity->render) continue;
-      Dispatcher__call1(entity->dispatch->render, entity);
+      Dispatcher__call(entity->dispatch->render, &(OnEntityParams){entity});
     }
-    MeshRenderer__renderBatches(level->nzentities, Dispatcher__call3);
+    MeshRenderer__renderBatches(level->nzentities, Dispatcher__call);
   }
 
   if (0 != level->zentities) {
@@ -183,9 +183,9 @@ void Level__render(Level* level) {
       Entity* entity = node->data;
       node = node->next;
 
-      Dispatcher__call1(entity->dispatch->render, entity);
+      Dispatcher__call(entity->dispatch->render, &(OnEntityParams){entity});
     }
-    MeshRenderer__renderBatches(level->zentities, Dispatcher__call3);
+    MeshRenderer__renderBatches(level->zentities, Dispatcher__call);
   }
 
   PROFILE__END(LEVEL__RENDER);
@@ -197,13 +197,14 @@ void Level__gui(Level* level) {
   List__Node* node = level->entities->head;
   for (u32 i = 0; i < level->entities->len; i++) {
     Entity* entity = node->data;
-    Dispatcher__call1(entity->dispatch->gui, entity);
+    Dispatcher__call(entity->dispatch->gui, &(OnEntityParams){entity});
+
     node = node->next;
   }
   node = level->zentities->head;
   for (u32 i = 0; i < level->zentities->len; i++) {
     Entity* entity = node->data;
-    Dispatcher__call1(entity->dispatch->gui, entity);
+    Dispatcher__call(entity->dispatch->gui, &(OnEntityParams){entity});
     node = node->next;
   }
 

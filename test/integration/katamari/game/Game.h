@@ -39,10 +39,10 @@ typedef struct NetMgr NetMgr;
 typedef struct Game {
   bool playedSfxOnce, testComplete;
   List* entities;
-  sg_pass* pass1;
   NetMgr* net;
   QuadTreeNode* qt;
   f32 w, d, h;
+  sg_pass* pass1;
 } Game;
 
 void Game__init();

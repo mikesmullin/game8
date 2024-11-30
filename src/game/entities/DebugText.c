@@ -49,9 +49,10 @@ void DebugText__init(Entity* entity, f32 x, f32 y, u32 len, char* txt, u32 color
   }
 }
 
-void DebugText__tick(Entity* entity) {
+void DebugText__tick(void* _params) {
   PROFILE__BEGIN(DEBUG_TEXT__TICK);
-
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   DebugText* self = (DebugText*)entity;
 
   u32 slen = strlen(self->txt);

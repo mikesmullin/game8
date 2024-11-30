@@ -7,11 +7,10 @@ typedef enum ActionType {
   ACTION_USE,
 } ActionType;
 
-typedef struct Action {
+typedef struct OnActionParams {
   ActionType type;
-  Entity* actor;
-  Entity* target;
-} Action;
+  Entity *entity, *actor, *target;
+} OnActionParams;
 
 typedef enum SGStateTags1 /* : u64 */ {
   SGST_NONE = 0,  //
@@ -21,7 +20,7 @@ typedef enum SGStateTags1 /* : u64 */ {
 typedef struct StateGraph StateGraph;
 typedef struct SGState SGState;
 typedef void (*SGStateFn)(StateGraph* sg);
-typedef void (*SGActionFn)(StateGraph* sg, Action* action);
+typedef void (*SGActionFn)(StateGraph* sg, OnActionParams* action);
 typedef SGState* (*SGGetStateFn)(u32 id);
 
 typedef struct SGStateKeyframe {

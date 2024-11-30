@@ -33,12 +33,13 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
       "../assets/audio/sfx/bash.wav");
 }
 
-void BreakBlock__action(Entity* entity, void* _action) {
+void BreakBlock__action(void* _params) {
+  OnActionParams* params = _params;
+  Entity* entity = (Entity*)params->entity;
   BreakBlock* self = (BreakBlock*)entity;
-  Action* action = (Action*)_action;
   Player* player1 = (Player*)g_engine->players->head->data;
 
-  if (ACTION_USE == action->type) {
+  if (ACTION_USE == params->type) {
     if (!(TAG_BROKEN & entity->tags1)) {
       entity->tags1 |= TAG_BROKEN;
       entity->removed = true;

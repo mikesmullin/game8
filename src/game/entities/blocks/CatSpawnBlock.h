@@ -11,4 +11,4 @@ typedef struct CatSpawnBlock {
   u32 maxSpawnCount;
 } CatSpawnBlock;
 void CatSpawnBlock__init(Entity* block, f32 x, f32 y);
-void CatSpawnBlock__tick(Entity* block);
+void CatSpawnBlock__tick(void* _params);

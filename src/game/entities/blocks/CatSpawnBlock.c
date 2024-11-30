@@ -17,8 +17,10 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   self->maxSpawnCount = 5;  // 1000000;
 }
 
-void CatSpawnBlock__tick(Entity* entity) {
+void CatSpawnBlock__tick(void* _params) {
   PROFILE__BEGIN(CAT_SPAWN_BLOCK__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
 

@@ -1,6 +1,6 @@
 #include "Player.h"
 
-static const f32 PLAYER_WALK_SPEED = 5.0f;  // per-second
+static const f32 PLAYER_WALK_SPEED = 4.0f;  // per-second
 static const f32 PLAYER_STRAFE_MOD = 0.5f;  // percent of walk
 static const f32 PLAYER_FLY_SPEED = 3.0f;  // per-second
 static const f32 PLAYER_LOOK_SPEED = 0.3f;  // deg/sec
@@ -35,8 +35,10 @@ void Player__init(Entity* entity) {
   entity->hear = Arena__Push(g_engine->arena, sizeof(AudioListenerComponent));
 }
 
-void Player__tick(Entity* entity) {
+void Player__tick(void* _params) {
   PROFILE__BEGIN(PLAYER_ENTITY__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   Player* self = (Player*)entity;
 
   if (self->input.key.use && !self->input.mouseCaptured) {
@@ -61,14 +63,18 @@ void Player__tick(Entity* entity) {
     self->input.ptr.y = 0;
   } else {
     if (0 != self->input.ptr.x) {  // yaw (rotate around Y-axis)
-      self->base.base.tform->rot.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot.y = Math__rclampf(0, self->base.base.tform->rot.y, 360.0f);
+      self->base.base.tform->rot3.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot3.y =
+          Math__wrapaf(0, self->base.base.tform->rot3.y, 360.0f, 360.0f);
+      q_fromEuler(&self->base.base.tform->rot4, &self->base.base.tform->rot3);
       self->input.ptr.x = 0;
     }
 
     if (0 != self->input.ptr.y) {  // pitch (rotate around X-axis)
-      self->base.base.tform->rot.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot.x = Math__clamp(-55.0f, self->base.base.tform->rot.x, 55.0f);
+      self->base.base.tform->rot3.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
+      self->base.base.tform->rot3.x =
+          Math__wrapaf(-55.0f, self->base.base.tform->rot3.x, 55.0f, 55.0f);
+      q_fromEuler(&self->base.base.tform->rot4, &self->base.base.tform->rot3);
       self->input.ptr.y = 0;
     }
 
@@ -121,7 +127,8 @@ void Player__tick(Entity* entity) {
     HMM_Vec3 forward, right, front;
 
     // Convert yaw to radians for direction calculation
-    f32 yaw_radians = HMM_AngleDeg(entity->tform->rot.y);
+    f32 yaw_radians = HMM_AngleDeg(entity->tform->rot3.y);
+    q_fromEuler(&entity->tform->rot4, &entity->tform->rot3);
 
     // Calculate the front vector based on yaw only (for movement along the XZ plane)
     //   front.X = HMM_SinF(yaw_radians);
@@ -140,23 +147,21 @@ void Player__tick(Entity* entity) {
     HMM_Vec3 p1 = HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z);
     HMM_Vec3 pos;
     // TODO: can manipulate this to simulate slipping/ice
-    entity->rb->xa = 0;
-    entity->rb->za = 0;
+    entity->rb->velocity.x = 0;
+    entity->rb->velocity.z = 0;
     if (0 != self->input.joy.zAxis) {
-      forward = HMM_MulV3F(front, self->input.joy.zAxis * PLAYER_WALK_SPEED * g_engine->deltaTime);
+      forward = HMM_MulV3F(front, self->input.joy.zAxis * PLAYER_WALK_SPEED);
       pos = HMM_AddV3(p1, forward);
-      entity->rb->xa += pos.X - entity->tform->pos.x;
-      entity->rb->za += pos.Z - entity->tform->pos.z;
+      entity->rb->velocity.x += forward.X;  // pos.X - entity->tform->pos.x;
+      entity->rb->velocity.z += forward.Z;  // pos.Z - entity->tform->pos.z;
     }
 
     // apply left/right motion
     if (0 != self->input.joy.xAxis) {
-      forward = HMM_MulV3F(
-          right,
-          self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD * g_engine->deltaTime);
+      forward = HMM_MulV3F(right, self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD);
       pos = HMM_AddV3(p1, forward);
-      entity->rb->xa += pos.X - entity->tform->pos.x;
-      entity->rb->za += pos.Z - entity->tform->pos.z;
+      entity->rb->velocity.x += forward.X;  // pos.X - entity->tform->pos.x;
+      entity->rb->velocity.z += forward.Z;  // pos.Z - entity->tform->pos.z;
     }
 
     // apply up/down motion
@@ -173,8 +178,8 @@ void Player__tick(Entity* entity) {
     f32 d = Math__sqrtf(xm * xm + zm * zm);
     if (0 != self->input.joy.zAxis && 0 != self->input.joy.xAxis) {
       // normalize diagonal movement, so it is not faster
-      entity->rb->xa /= SQRT_TWO;
-      entity->rb->za /= SQRT_TWO;
+      // entity->rb->velocity.x /= SQRT_TWO;
+      // entity->rb->velocity.z /= SQRT_TWO;
     }
 
     // headbob
@@ -195,7 +200,7 @@ void Player__tick(Entity* entity) {
     //     entity->tform->pos.y,
     //     entity->tform->pos.z,
     //     g_engine->deltaTime);
-    Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call2);
+    Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call);
 
     if (self->input.key.use) {
       self->input.key.use = false;
@@ -227,10 +232,9 @@ void Player__tick(Entity* entity) {
 
         if (0 != other->dispatch && 0 != other->dispatch->action &&
             HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
-          Dispatcher__call2(
+          Dispatcher__call(
               other->dispatch->action,
-              other,
-              &(Action){.type = ACTION_USE, .actor = entity, .target = other});
+              &(OnActionParams){ACTION_USE, other, entity, other});
           break;
         }
       }

@@ -18,8 +18,10 @@ void SpawnBlock__init(Entity* entity, f32 x, f32 z) {
       "../assets/audio/sfx/powerUp.wav");
 }
 
-void SpawnBlock__tick(Entity* entity) {
+void SpawnBlock__tick(void* _params) {
   PROFILE__BEGIN(SPAWN_BLOCK__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   Block* block = (Block*)entity;
   SpawnBlock* self = (SpawnBlock*)block;
   Player* player1 = (Player*)g_engine->players->head->data;
@@ -30,10 +32,11 @@ void SpawnBlock__tick(Entity* entity) {
     Audio__replay(g_engine->audio->powerUp);
 
     player1->base.base.tform->pos.x = block->base.tform->pos.x;
-    player1->base.base.tform->pos.y = 0;
+    player1->base.base.tform->pos.y = 0.0f;
     player1->base.base.tform->pos.z = block->base.tform->pos.z;
-    player1->base.base.tform->rot.x = 0;
-    player1->base.base.tform->rot.y = 0;
+    player1->base.base.tform->rot3.x = 0.0f;
+    player1->base.base.tform->rot3.y = 0.0f;
+    q_fromEuler(&player1->base.base.tform->rot4, &player1->base.base.tform->rot3);
   }
   PROFILE__END(SPAWN_BLOCK__TICK);
 }

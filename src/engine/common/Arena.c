@@ -35,7 +35,8 @@ void* Arena__Push(Arena* a, u64 sz) {
       a->buf - a->pos - sz);
   // memset(a->pos, 0, sz);  // zero-fill
   a->pos += sz;
-  return a->pos - sz;
+  void* p = a->pos - sz;
+  return p;
 }
 
 void Arena__Free(Arena* a) {

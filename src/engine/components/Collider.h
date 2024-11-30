@@ -8,7 +8,7 @@ typedef enum ColliderType {
 } ColliderType;
 
 typedef struct OnCollideParams {
-  Entity *source, *target;
+  Entity *entity, *source, *target;
   f32 x, y;
   bool before, after;
   bool noclip;

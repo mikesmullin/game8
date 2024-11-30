@@ -86,9 +86,11 @@ bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher_
 
       if (collisionBefore || collisionAfter) {
         // notify each participant (onenter, onstay, onexit)
-        OnCollideParams params = {entity, other, x, y, collisionBefore, collisionAfter, false};
+        OnCollideParams params =
+            {other, entity, other, x, y, collisionBefore, collisionAfter, false};
         cb(other->collider->collide, &params);  // notify target
         if (params.noclip) return false;
+        params.entity = entity;
         cb(entity->collider->collide, &params);  // notify source
         if (params.noclip) return false;
       }

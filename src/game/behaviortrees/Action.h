@@ -2,4 +2,4 @@
 
 #include "../Game.h"  // IWYU pragma: keep
 
-void Action__PerformBuffered(Entity* entity, Action* action);
+void Action__PerformBuffered(Entity* entity, OnActionParams* action);

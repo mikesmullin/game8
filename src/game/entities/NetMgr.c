@@ -10,14 +10,10 @@ static void onConnect(Socket* client);
 static void ServerPump(Socket* client);
 static void ClientPump(Socket* client);
 
-static void _init() {
-  Net__init();  // TODO: fix stack issue here
-}
-
 void NetMgr__init() {
-  _init();
-
   NetMgr* self = g_engine->game->net;
+
+  Net__init();
 
   if (g_engine->isMaster) {
     // Server

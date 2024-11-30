@@ -8,4 +8,4 @@ typedef struct SpawnBlock {
 } SpawnBlock;
 
 void SpawnBlock__init(Entity* entity, f32 x, f32 z);
-void SpawnBlock__tick(Entity* entity);
+void SpawnBlock__tick(void* _params);

@@ -78,7 +78,7 @@ void Game__tick() {
 
   // in-game
   NetMgr__tick();
-  Dispatcher__call1(player1->base.base.dispatch->tick, (Entity*)player1);
+  Dispatcher__call(player1->base.base.dispatch->tick, &(OnEntityParams){(Entity*)player1});
   Level__tick(g_engine->game->level);
 }
 
@@ -104,7 +104,7 @@ void Game__gui() {
       player1->base.base.tform->pos.x,
       player1->base.base.tform->pos.y,
       player1->base.base.tform->pos.z,
-      player1->base.base.tform->rot.y);
+      player1->base.base.tform->rot3.y);
   memcpy(c, c2, g_engine->game->dt->glyphs->len);
   // TODO: fix this fn (somehow only works on mousedown titlebar)
   // mprintf(
@@ -125,14 +125,14 @@ void Game__gui() {
     Entity* entity = node->data;
     node = node->next;
 
-    Dispatcher__call1(entity->dispatch->tick, entity);
+    Dispatcher__call(entity->dispatch->tick, &(OnEntityParams){entity});
 
     if (0 == entity->render) continue;
-    Dispatcher__call1(entity->dispatch->gui, entity);
-    Dispatcher__call1(entity->dispatch->render, entity);
+    Dispatcher__call(entity->dispatch->gui, &(OnEntityParams){entity});
+    Dispatcher__call(entity->dispatch->render, &(OnEntityParams){entity});
   }
 
-  MeshRenderer__renderBatches(g_engine->game->ui_entities, Dispatcher__call3);
+  MeshRenderer__renderBatches(g_engine->game->ui_entities, Dispatcher__call);
 
   // switch current camera to perspective cam at player pos
   player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
@@ -157,10 +157,11 @@ void Game__postprocessing() {
   // f32 sw = w / SCREEN_SIZE, sh = h / SCREEN_SIZE;
   // f32 u = Math__min(sw, sh);
   screen->base.tform->scale.x = screen->base.tform->scale.y = SCREEN_SIZE * 0.95f;
-  screen->base.tform->rot.x = 0;
-  screen->base.tform->rot.y = 0;
-  screen->base.tform->rot.z = 180;
-  MeshRenderer__renderBatches(g_engine->game->screen, Dispatcher__call3);
+  screen->base.tform->rot3.x = 0;
+  screen->base.tform->rot3.y = 0;
+  screen->base.tform->rot3.z = 180;
+  q_fromEuler(&screen->base.tform->rot4, &screen->base.tform->rot3);
+  MeshRenderer__renderBatches(g_engine->game->screen, Dispatcher__call);
   player1->base.camera.proj.type = PERSPECTIVE_PROJECTION;
 }
 

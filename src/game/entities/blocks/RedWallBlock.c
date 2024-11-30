@@ -18,12 +18,12 @@ bool findCatBlock(Entity* entity) {
   return entity->tags1 & TAG_CATSPAWN;
 }
 
-void RedWallBlock__action(Entity* entity, void* _action) {
-  CatEntity* self = (CatEntity*)entity;
-  Action* action = (Action*)_action;
+void RedWallBlock__action(void* _params) {
+  OnActionParams* params = _params;
+  Entity* entity = (Entity*)params->entity;
   Player* player1 = (Player*)g_engine->players->head->data;
 
-  if (ACTION_USE == action->type) {
+  if (ACTION_USE == params->type) {
     CatSpawnBlock* csb = (CatSpawnBlock*)Level__findEntity(g_engine->game->level, findCatBlock);
     csb->maxSpawnCount += 100;
 

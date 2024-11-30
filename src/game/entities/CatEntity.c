@@ -3,7 +3,7 @@
 // #include "../behaviortrees/BTCat.h"
 #include "../stategraphs/SGCat.h"
 
-static const f32 CAT_MOVE_SPEED = 0.01f;  // per-second
+static const f32 CAT_MOVE_SPEED = 1.00f;  // per-second
 static f32 lastTurnWait = 2.0f;
 static f32 sinceLastTurn = 0;
 
@@ -56,18 +56,21 @@ SGState* CatEntity__getSGState(u32 id) {
   return &SGidle;
 }
 
-void CatEntity__action(Entity* entity, void* action) {
-  CatEntity* self = (CatEntity*)entity;
+void CatEntity__action(void* _params) {
+  OnActionParams* params = _params;
+  CatEntity* self = (CatEntity*)params->entity;
 
-  subbedActions(self->sg, action);
+  subbedActions(self->sg, params);
 }
 
-void CatEntity__tick(Entity* entity) {
+void CatEntity__tick(void* _params) {
   PROFILE__BEGIN(CAT_ENTITY__TICK);
+  OnEntityParams* params = _params;
+  Entity* entity = params->entity;
   CatEntity* self = (CatEntity*)entity;
 
-  entity->rb->xa = self->xa * CAT_MOVE_SPEED;
-  entity->rb->za = self->za * CAT_MOVE_SPEED;
+  entity->rb->velocity.x = self->xa * CAT_MOVE_SPEED;
+  entity->rb->velocity.z = self->za * CAT_MOVE_SPEED;
 
   // self->brain->tick(self->brain);
   StateGraph__tick(self->sg, CatEntity__getSGState);
@@ -77,13 +80,13 @@ void CatEntity__tick(Entity* entity) {
   // }
   // last_ti = entity->render->ti;
 
-  Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call2);
+  Rigidbody2D__move(g_engine->game->level->qt, entity, Dispatcher__call);
   PROFILE__END(CAT_ENTITY__TICK);
 }
 
-void CatEntity__collide(Entity* entity, void* _params) {
+void CatEntity__collide(void* _params) {
   OnCollideParams* params = _params;
-  CatEntity* self = (CatEntity*)entity;
+  CatEntity* self = (CatEntity*)params->entity;
 
   if (params->after) {  // onenter, onstay
     if (TAG_CAT & params->target->tags1) {
