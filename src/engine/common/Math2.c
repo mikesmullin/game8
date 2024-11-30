@@ -336,7 +336,7 @@ void v4_norm(v4* dst, const v4* a) {
 }
 
 // spherical linear interpolation
-void v3_slerp(v3* a, v3* b, f32 t, v3* dst) {
+void v3_slerp(v3* dst, v3* a, v3* b, f32 t) {
   // normalize the input vectors
   v3_norm(a, a);
   v3_norm(b, b);
@@ -376,8 +376,6 @@ void m4_ortho(m4* dst, f32 l, f32 r, f32 b, f32 t, f32 znear, f32 zfar) {
     0.0f, 0.0f,  -(2.0f / fn), (znear + zfar) / fn,
     (l + r) / (l - r), (b + t) / (b - t), 0.0f, 1.0f
   );
-  HMM_Mat4 m = HMM_Orthographic_LH_NO(l,r,b,t,znear,zfar);
-  f32 a = 0.0f;
   // clang-format on
 }
 

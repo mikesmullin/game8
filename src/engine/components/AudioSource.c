@@ -5,37 +5,33 @@ void AudioSource__play(WavReader* sound, Entity* emitter, Entity* listener) {
   // only play if listener is near
   if (0 != listener->hear) {
     // calc pan value
-    HMM_Vec3 p1_minus_p0, forward, right, up = HMM_V3(0, 1, 0);
+    v3 p1_minus_p0, forward, right, up = v3_new(0.0f, 1.0f, 0.0f);
     f32 pan_value;
 
     // Get the direction vector from player1 to source
-    p1_minus_p0 = HMM_SubV3(
-        HMM_V3(listener->tform->pos.x, listener->tform->pos.y, listener->tform->pos.z),
-        HMM_V3(emitter->tform->pos.x, emitter->tform->pos.y, emitter->tform->pos.z));
+    v3_sub(&p1_minus_p0, &listener->tform->pos, &emitter->tform->pos);
 
     // Calculate forward vector (assuming rot0_y is the yaw in radians)
-    f32 rY = listener->tform->rot3.y;
-    forward.X = HMM_CosF(rY);
-    forward.Y = 0;
-    forward.Z = -HMM_SinF(rY);
-    forward = HMM_NormV3(forward);
+    forward.x = Math__cosf(Math__DEG2RAD32 * listener->tform->rot3.y);
+    forward.y = 0.0f;
+    forward.z = -Math__sinf(Math__DEG2RAD32 * listener->tform->rot3.y);
+    v3_norm(&forward, &forward);
 
     // Calculate the right vector (player1's right side)
-    right = HMM_NormV3(HMM_Cross(forward, up));
+    v3_cross(&right, &forward, &up);
+    v3_norm(&right, &right);
 
     // Project vector onto the right direction
-    pan_value = HMM_DotV3(
-        HMM_V3(right.X, right.Y, right.Z),
-        HMM_V3(p1_minus_p0.X, p1_minus_p0.Y, p1_minus_p0.Z));
+    pan_value = v3_dot(&right, &p1_minus_p0);
 
     // Normalize pan value within [-1, 1]
     pan_value = Math__clamp(pan_value / MAX_HEAR_DIST, -1.0f, 1.0f);
 
     // calc distance/dropoff between source and listener, set volume/pan
 
-    f32 d1 = HMM_LenV3(HMM_SubV3(
-        HMM_V3(listener->tform->pos.x, listener->tform->pos.y, listener->tform->pos.z),
-        HMM_V3(emitter->tform->pos.x, emitter->tform->pos.y, emitter->tform->pos.z)));
+    v3 dist;
+    v3_sub(&dist, &listener->tform->pos, &emitter->tform->pos);
+    f32 d1 = v3_mag2(&dist);
     f32 d2 = Math__map(
         Math__clamp(2, Math__fabsf(d1), MAX_HEAR_DIST),  //
         2,

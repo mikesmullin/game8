@@ -234,7 +234,7 @@ void Player__tick(void* _params) {
             HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call(
               other->dispatch->action,
-              &(OnActionParams){ACTION_USE, other, entity, other});
+              &(OnActionParams){.type = ACTION_USE, .actor = entity, .target = other});
           break;
         }
       }

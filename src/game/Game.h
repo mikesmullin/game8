@@ -66,6 +66,8 @@ typedef struct Sprite Sprite;
 
 // Entities ----------------------------------------------
 
+typedef struct Player Player;
+
 #include "entities/CatEntity.h"  // IWYU pragma: keep
 #include "entities/DebugText.h"  // IWYU pragma: keep
 #include "entities/NetMgr.h"  // IWYU pragma: keep

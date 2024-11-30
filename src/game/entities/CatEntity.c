@@ -57,10 +57,10 @@ SGState* CatEntity__getSGState(u32 id) {
 }
 
 void CatEntity__action(void* _params) {
-  OnActionParams* params = _params;
-  CatEntity* self = (CatEntity*)params->entity;
+  OnActionParams* action = _params;
+  CatEntity* self = (CatEntity*)action->target;
 
-  subbedActions(self->sg, params);
+  subbedActions(self->sg, action);
 }
 
 void CatEntity__tick(void* _params) {

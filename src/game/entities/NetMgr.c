@@ -74,6 +74,7 @@ static void onConnect(Socket* client) {
 }
 
 static void ServerPump(Socket* client) {
+  if (NULL == client) return;  // loop ran before initialization completed
   NetMgr* self = g_engine->game->net;
 
   if (SOCKET_CONNECTED != client->state) return;
@@ -119,6 +120,7 @@ static void ServerPump(Socket* client) {
 }
 
 static void ClientPump(Socket* client) {
+  if (NULL == client) return;  // loop ran before initialization completed
   NetMgr* self = g_engine->game->net;
 
   if (SOCKET_CONNECTED != client->state) return;

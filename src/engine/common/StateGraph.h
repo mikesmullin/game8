@@ -9,7 +9,7 @@ typedef enum ActionType {
 
 typedef struct OnActionParams {
   ActionType type;
-  Entity *entity, *actor, *target;
+  Entity *actor, *target;
 } OnActionParams;
 
 typedef enum SGStateTags1 /* : u64 */ {

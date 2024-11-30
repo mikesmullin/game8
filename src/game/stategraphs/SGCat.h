@@ -14,7 +14,11 @@
 // 8 belly
 
 static void subbedActions(StateGraph* sg, OnActionParams* action) {
-  if (ACTION_USE == action->type) StateGraph__gotoState(sg, 3, CatEntity__getSGState);  // meow
+  if (ACTION_USE == action->type) {
+    CatEntity* self = (CatEntity*)sg->entity;
+    self->interactingPlayer = (Entity*)action->actor;
+    StateGraph__gotoState(sg, 3, CatEntity__getSGState);  // meow
+  }
 }
 
 static void idleOnEnter(StateGraph* sg) {
@@ -76,8 +80,8 @@ static void blinkKF4(StateGraph* sg) {  // b eyes closed
 static void blinkKF5(StateGraph* sg) {
   StateGraph__gotoState(
       sg,
-      Math__urandom2(0, 10) < 1 ? 3 : 0,
-      CatEntity__getSGState);  // meow or idle
+      0,  //Math__urandom2(0, 10) < 1 ? 3 : 0, // meow or idle
+      CatEntity__getSGState);
 }
 
 static SGState SGblink = {
@@ -100,8 +104,9 @@ static void meowKF2(StateGraph* sg) {  // eyes open, mouth open
   sg->entity->render->ti = 4 * 8 + 0;
 }
 static void meowKF3(StateGraph* sg) {  // eyes closed, mouth open
+  CatEntity* self = (CatEntity*)sg->entity;
   sg->entity->render->ti = 4 * 8 + 3;
-  // AudioSource__play(g_engine->audio->meow, sg->entity, (Entity*)player1);
+  AudioSource__play(g_engine->audio->meow, sg->entity, (Entity*)self->interactingPlayer);
 }
 static void meowKF4(StateGraph* sg) {
   StateGraph__gotoState(sg, 0, CatEntity__getSGState);  // idle

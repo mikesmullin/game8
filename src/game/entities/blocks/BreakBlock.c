@@ -34,16 +34,16 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
 }
 
 void BreakBlock__action(void* _params) {
-  OnActionParams* params = _params;
-  Entity* entity = (Entity*)params->entity;
+  OnActionParams* action = _params;
+  Entity* entity = (Entity*)action->target;
   BreakBlock* self = (BreakBlock*)entity;
   Player* player1 = (Player*)g_engine->players->head->data;
 
-  if (ACTION_USE == params->type) {
+  if (ACTION_USE == action->type) {
     if (!(TAG_BROKEN & entity->tags1)) {
       entity->tags1 |= TAG_BROKEN;
       entity->removed = true;
-      AudioSource__play(g_engine->audio->bash, entity, (Entity*)player1);
+      AudioSource__play(g_engine->audio->bash, action->target, (Entity*)action->actor);
 
       for (u32 i = 0; i < 32; i++) {
         RubbleSprite* rs = Arena__Push(g_engine->arena, sizeof(RubbleSprite));

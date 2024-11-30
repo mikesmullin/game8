@@ -7,6 +7,7 @@ typedef struct CatEntity {
   f32 xa, ya, za;
   StateGraph* sg;
   BTNode* brain;
+  Player* interactingPlayer;
 } CatEntity;
 
 void CatEntity__init(Entity* entity);

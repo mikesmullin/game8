@@ -108,10 +108,8 @@ static const m4 M4_IDENTITY = (m4){
 
 // constructors
 
-extern inline void v3_new(v3* dst, const f32 x, const f32 y, const f32 z) {
-  dst->x = x;
-  dst->y = y;
-  dst->z = z;
+extern inline v3 v3_new(const f32 x, const f32 y, const f32 z) {
+  return (v3){x, y, z};
 }
 
 // clone
@@ -252,43 +250,43 @@ void v4_norm(v4* dst, const v4* a);
 // #macro MACRO1(T1)
 //   {{~#for T1}}
 //   // {{this.op}}
-//   extern inline void v1_{{this.op}}(v1* a, v1* b, v1* dst) {
+//   extern inline void v1_{{this.op}}(v1* dst, v1* a, v1* b) {
 //     dst->x = a->x {{this.oper}} b->x;
 //   }
 //
-//   extern inline void v2_{{this.op}}(v2* a, v2* b, v2* dst) {
-//     v1_{{this.op}}((v1*)a, (v1*)b, (v1*)dst);
+//   extern inline void v2_{{this.op}}(v2* dst, v2* a, v2* b) {
+//     v1_{{this.op}}((v1*)dst, (v1*)a, (v1*)b);
 //     dst->y = a->y {{this.oper}} b->y;
 //   }
 //
-//   extern inline void v3_{{this.op}}(v3* a, v3* b, v3* dst) {
-//     v2_{{this.op}}((v2*)a, (v2*)b, (v2*)dst);
+//   extern inline void v3_{{this.op}}(v3* dst, v3* a, v3* b) {
+//     v2_{{this.op}}((v2*)dst, (v2*)a, (v2*)b);
 //     dst->z = a->z {{this.oper}} b->z;
 //   }
 //
-//   extern inline void v4_{{this.op}}(v4* a, v4* b, v4* dst) {
-//     v3_{{this.op}}((v3*)a, (v3*)b, (v3*)dst);
+//   extern inline void v4_{{this.op}}(v4* dst, v4* a, v4* b) {
+//     v3_{{this.op}}((v3*)dst, (v3*)a, (v3*)b);
 //     dst->w = a->w {{this.oper}} b->w;
 //   }
 //
 //   // {{this.op}} scalar
 //
-//   extern inline void v1_{{this.op}}S(v1* a, f32 s, v1* dst) {
+//   extern inline void v1_{{this.op}}S(v1* dst, v1* a, f32 s) {
 //     dst->x = a->x {{this.oper}} s;
 //   }
 //
-//   extern inline void v2_{{this.op}}S(v2* a, f32 s, v2* dst) {
-//     v1_{{this.op}}S((v1*)a, s, (v1*)dst);
+//   extern inline void v2_{{this.op}}S(v2* dst, v2* a, f32 s) {
+//     v1_{{this.op}}S((v1*)dst, (v1*)a, s);
 //     dst->y = a->y {{this.oper}} s;
 //   }
 //
-//   extern inline void v3_{{this.op}}S(v3* a, f32 s, v3* dst) {
-//     v2_{{this.op}}S((v2*)a, s, (v2*)dst);
+//   extern inline void v3_{{this.op}}S(v3* dst, v3* a, f32 s) {
+//     v2_{{this.op}}S((v2*)dst, (v2*)a, s);
 //     dst->z = a->z {{this.oper}} s;
 //   }
 //
-//   extern inline void v4_{{this.op}}S(v4* a, f32 s, v4* dst) {
-//     v3_{{this.op}}S((v3*)a, s, (v3*)dst);
+//   extern inline void v4_{{this.op}}S(v4* dst, v4* a, f32 s) {
+//     v3_{{this.op}}S((v3*)dst, (v3*)a, s);
 //     dst->w = a->w {{this.oper}} s;
 //   }
 //   {{~/for~}}
@@ -304,166 +302,166 @@ void v4_norm(v4* dst, const v4* a);
 // #metagen
 
 // mul
-extern inline void v1_mul(v1* a, v1* b, v1* dst) {
+extern inline void v1_mul(v1* dst, v1* a, v1* b) {
   dst->x = a->x * b->x;
 }
 
-extern inline void v2_mul(v2* a, v2* b, v2* dst) {
-  v1_mul((v1*)a, (v1*)b, (v1*)dst);
+extern inline void v2_mul(v2* dst, v2* a, v2* b) {
+  v1_mul((v1*)dst, (v1*)a, (v1*)b);
   dst->y = a->y * b->y;
 }
 
-extern inline void v3_mul(v3* a, v3* b, v3* dst) {
-  v2_mul((v2*)a, (v2*)b, (v2*)dst);
+extern inline void v3_mul(v3* dst, v3* a, v3* b) {
+  v2_mul((v2*)dst, (v2*)a, (v2*)b);
   dst->z = a->z * b->z;
 }
 
-extern inline void v4_mul(v4* a, v4* b, v4* dst) {
-  v3_mul((v3*)a, (v3*)b, (v3*)dst);
+extern inline void v4_mul(v4* dst, v4* a, v4* b) {
+  v3_mul((v3*)dst, (v3*)a, (v3*)b);
   dst->w = a->w * b->w;
 }
 
 // mul scalar
 
-extern inline void v1_mulS(v1* a, f32 s, v1* dst) {
+extern inline void v1_mulS(v1* dst, v1* a, f32 s) {
   dst->x = a->x * s;
 }
 
-extern inline void v2_mulS(v2* a, f32 s, v2* dst) {
-  v1_mulS((v1*)a, s, (v1*)dst);
+extern inline void v2_mulS(v2* dst, v2* a, f32 s) {
+  v1_mulS((v1*)dst, (v1*)a, s);
   dst->y = a->y * s;
 }
 
-extern inline void v3_mulS(v3* a, f32 s, v3* dst) {
-  v2_mulS((v2*)a, s, (v2*)dst);
+extern inline void v3_mulS(v3* dst, v3* a, f32 s) {
+  v2_mulS((v2*)dst, (v2*)a, s);
   dst->z = a->z * s;
 }
 
-extern inline void v4_mulS(v4* a, f32 s, v4* dst) {
-  v3_mulS((v3*)a, s, (v3*)dst);
+extern inline void v4_mulS(v4* dst, v4* a, f32 s) {
+  v3_mulS((v3*)dst, (v3*)a, s);
   dst->w = a->w * s;
 }
 
 // div
-extern inline void v1_div(v1* a, v1* b, v1* dst) {
+extern inline void v1_div(v1* dst, v1* a, v1* b) {
   dst->x = a->x / b->x;
 }
 
-extern inline void v2_div(v2* a, v2* b, v2* dst) {
-  v1_div((v1*)a, (v1*)b, (v1*)dst);
+extern inline void v2_div(v2* dst, v2* a, v2* b) {
+  v1_div((v1*)dst, (v1*)a, (v1*)b);
   dst->y = a->y / b->y;
 }
 
-extern inline void v3_div(v3* a, v3* b, v3* dst) {
-  v2_div((v2*)a, (v2*)b, (v2*)dst);
+extern inline void v3_div(v3* dst, v3* a, v3* b) {
+  v2_div((v2*)dst, (v2*)a, (v2*)b);
   dst->z = a->z / b->z;
 }
 
-extern inline void v4_div(v4* a, v4* b, v4* dst) {
-  v3_div((v3*)a, (v3*)b, (v3*)dst);
+extern inline void v4_div(v4* dst, v4* a, v4* b) {
+  v3_div((v3*)dst, (v3*)a, (v3*)b);
   dst->w = a->w / b->w;
 }
 
 // div scalar
 
-extern inline void v1_divS(v1* a, f32 s, v1* dst) {
+extern inline void v1_divS(v1* dst, v1* a, f32 s) {
   dst->x = a->x / s;
 }
 
-extern inline void v2_divS(v2* a, f32 s, v2* dst) {
-  v1_divS((v1*)a, s, (v1*)dst);
+extern inline void v2_divS(v2* dst, v2* a, f32 s) {
+  v1_divS((v1*)dst, (v1*)a, s);
   dst->y = a->y / s;
 }
 
-extern inline void v3_divS(v3* a, f32 s, v3* dst) {
-  v2_divS((v2*)a, s, (v2*)dst);
+extern inline void v3_divS(v3* dst, v3* a, f32 s) {
+  v2_divS((v2*)dst, (v2*)a, s);
   dst->z = a->z / s;
 }
 
-extern inline void v4_divS(v4* a, f32 s, v4* dst) {
-  v3_divS((v3*)a, s, (v3*)dst);
+extern inline void v4_divS(v4* dst, v4* a, f32 s) {
+  v3_divS((v3*)dst, (v3*)a, s);
   dst->w = a->w / s;
 }
 
 // add
-extern inline void v1_add(v1* a, v1* b, v1* dst) {
+extern inline void v1_add(v1* dst, v1* a, v1* b) {
   dst->x = a->x + b->x;
 }
 
-extern inline void v2_add(v2* a, v2* b, v2* dst) {
-  v1_add((v1*)a, (v1*)b, (v1*)dst);
+extern inline void v2_add(v2* dst, v2* a, v2* b) {
+  v1_add((v1*)dst, (v1*)a, (v1*)b);
   dst->y = a->y + b->y;
 }
 
-extern inline void v3_add(v3* a, v3* b, v3* dst) {
-  v2_add((v2*)a, (v2*)b, (v2*)dst);
+extern inline void v3_add(v3* dst, v3* a, v3* b) {
+  v2_add((v2*)dst, (v2*)a, (v2*)b);
   dst->z = a->z + b->z;
 }
 
-extern inline void v4_add(v4* a, v4* b, v4* dst) {
-  v3_add((v3*)a, (v3*)b, (v3*)dst);
+extern inline void v4_add(v4* dst, v4* a, v4* b) {
+  v3_add((v3*)dst, (v3*)a, (v3*)b);
   dst->w = a->w + b->w;
 }
 
 // add scalar
 
-extern inline void v1_addS(v1* a, f32 s, v1* dst) {
+extern inline void v1_addS(v1* dst, v1* a, f32 s) {
   dst->x = a->x + s;
 }
 
-extern inline void v2_addS(v2* a, f32 s, v2* dst) {
-  v1_addS((v1*)a, s, (v1*)dst);
+extern inline void v2_addS(v2* dst, v2* a, f32 s) {
+  v1_addS((v1*)dst, (v1*)a, s);
   dst->y = a->y + s;
 }
 
-extern inline void v3_addS(v3* a, f32 s, v3* dst) {
-  v2_addS((v2*)a, s, (v2*)dst);
+extern inline void v3_addS(v3* dst, v3* a, f32 s) {
+  v2_addS((v2*)dst, (v2*)a, s);
   dst->z = a->z + s;
 }
 
-extern inline void v4_addS(v4* a, f32 s, v4* dst) {
-  v3_addS((v3*)a, s, (v3*)dst);
+extern inline void v4_addS(v4* dst, v4* a, f32 s) {
+  v3_addS((v3*)dst, (v3*)a, s);
   dst->w = a->w + s;
 }
 
 // sub
-extern inline void v1_sub(v1* a, v1* b, v1* dst) {
+extern inline void v1_sub(v1* dst, v1* a, v1* b) {
   dst->x = a->x - b->x;
 }
 
-extern inline void v2_sub(v2* a, v2* b, v2* dst) {
-  v1_sub((v1*)a, (v1*)b, (v1*)dst);
+extern inline void v2_sub(v2* dst, v2* a, v2* b) {
+  v1_sub((v1*)dst, (v1*)a, (v1*)b);
   dst->y = a->y - b->y;
 }
 
-extern inline void v3_sub(v3* a, v3* b, v3* dst) {
-  v2_sub((v2*)a, (v2*)b, (v2*)dst);
+extern inline void v3_sub(v3* dst, v3* a, v3* b) {
+  v2_sub((v2*)dst, (v2*)a, (v2*)b);
   dst->z = a->z - b->z;
 }
 
-extern inline void v4_sub(v4* a, v4* b, v4* dst) {
-  v3_sub((v3*)a, (v3*)b, (v3*)dst);
+extern inline void v4_sub(v4* dst, v4* a, v4* b) {
+  v3_sub((v3*)dst, (v3*)a, (v3*)b);
   dst->w = a->w - b->w;
 }
 
 // sub scalar
 
-extern inline void v1_subS(v1* a, f32 s, v1* dst) {
+extern inline void v1_subS(v1* dst, v1* a, f32 s) {
   dst->x = a->x - s;
 }
 
-extern inline void v2_subS(v2* a, f32 s, v2* dst) {
-  v1_subS((v1*)a, s, (v1*)dst);
+extern inline void v2_subS(v2* dst, v2* a, f32 s) {
+  v1_subS((v1*)dst, (v1*)a, s);
   dst->y = a->y - s;
 }
 
-extern inline void v3_subS(v3* a, f32 s, v3* dst) {
-  v2_subS((v2*)a, s, (v2*)dst);
+extern inline void v3_subS(v3* dst, v3* a, f32 s) {
+  v2_subS((v2*)dst, (v2*)a, s);
   dst->z = a->z - s;
 }
 
-extern inline void v4_subS(v4* a, f32 s, v4* dst) {
-  v3_subS((v3*)a, s, (v3*)dst);
+extern inline void v4_subS(v4* dst, v4* a, f32 s) {
+  v3_subS((v3*)dst, (v3*)a, s);
   dst->w = a->w - s;
 }
 
@@ -471,17 +469,17 @@ extern inline void v4_subS(v4* a, f32 s, v4* dst) {
 
 // invert [XYZ]
 
-extern inline void v2_invertX(v2* a, v2* dst) {
+extern inline void v2_invertX(v2* dst, v2* a) {
   dst->x = a->y;
 }
 
-extern inline void v2_invertY(v2* a, v2* dst) {
+extern inline void v2_invertY(v2* dst, v2* a) {
   dst->y = a->x;
 }
 
-extern inline void v2_invert(v2* a, v2* dst) {
-  v2_invertX(a, dst);
-  v2_invertY(a, dst);
+extern inline void v2_invert(v2* dst, v2* a) {
+  v2_invertX(dst, a);
+  v2_invertY(dst, a);
 }
 
 // cross product (a×b)
@@ -496,20 +494,20 @@ extern inline f32 v2_cross(v2* a, v2* b) {
 
 // 3D cross returns a new vector
 // orthogonal (perpendicular) to both a and b
-extern inline void v3_cross(v3* a, v3* b, v3* dst) {
+extern inline void v3_cross(v3* dst, v3* a, v3* b) {
   dst->x = a->y * b->z - a->z * b->y;
   dst->y = a->z * b->x - a->x * b->z;
   dst->z = a->x * b->y - a->y * b->x;
 }
 
-extern inline void v3_limit(v3* a, f32 max, v3* dst) {
+extern inline void v3_limit(v3* dst, v3* a, f32 max) {
   v3_set(dst, a);
   if (a->x > max) dst->x = max;
   if (a->y > max) dst->y = max;
   if (a->z > max) dst->z = max;
 }
 
-extern inline void v3_clamp(v3* a, f32 n, f32 m, v3* dst) {
+extern inline void v3_clamp(v3* dst, v3* a, f32 n, f32 m) {
   v3_set(dst, a);
   if (a->x > m) dst->x = m;
   if (a->x < n) dst->x = n;
@@ -519,13 +517,13 @@ extern inline void v3_clamp(v3* a, f32 n, f32 m, v3* dst) {
   if (a->z < n) dst->z = n;
 }
 
-extern inline void v3_dampenOver(v3* a, f32 max, f32 factor, v3* dst) {
+extern inline void v3_dampenOver(v3* dst, v3* a, f32 max, f32 factor) {
   if (a->x > max) dst->x = a->x * factor;
   if (a->y > max) dst->y = a->y * factor;
   if (a->z > max) dst->z = a->z * factor;
 }
 
-extern inline void v3_rand(v3* tl, v3* br, u64* prng, v3* dst) {
+extern inline void v3_rand(v3* dst, v3* tl, v3* br, u64* prng) {
   dst->x = Math__randomf(tl->x, br->x, prng);
   dst->y = Math__randomf(tl->y, br->y, prng);
   dst->z = Math__randomf(tl->z, br->z, prng);
@@ -541,7 +539,7 @@ extern inline f32 lerp(f32 a, f32 b, f32 t) {
   return (1 - t) * a + t * b;
 }
 
-void v3_slerp(v3* a, v3* b, f32 t, v3* dst);
+void v3_slerp(v3* dst, v3* a, v3* b, f32 t);
 
 // matrix 4x4
 
@@ -682,7 +680,7 @@ void m4_persp(m4* dst, f32 fov, f32 aspect, f32 znear, f32 zfar);
 void q_fromEuler(v4* dst, v3* rot);
 void q_fromAxis(v4* dst, const v3* axis, const f32 angle);
 
-extern inline void q_mul(v4* q1, v4* q2, v4* dst) {
+extern inline void q_mul(v4* dst, v4* q1, v4* q2) {
   v4 cp = v4_cp(q1);
   dst->x = cp.w * q2->x + cp.x * q2->w + cp.y * q2->z - cp.z * q2->y;
   dst->y = cp.w * q2->y - cp.x * q2->z + cp.y * q2->w + cp.z * q2->x;

@@ -19,14 +19,14 @@ bool findCatBlock(Entity* entity) {
 }
 
 void RedWallBlock__action(void* _params) {
-  OnActionParams* params = _params;
-  Entity* entity = (Entity*)params->entity;
+  OnActionParams* action = _params;
+  Entity* entity = (Entity*)action->target;
   Player* player1 = (Player*)g_engine->players->head->data;
 
-  if (ACTION_USE == params->type) {
+  if (ACTION_USE == action->type) {
     CatSpawnBlock* csb = (CatSpawnBlock*)Level__findEntity(g_engine->game->level, findCatBlock);
     csb->maxSpawnCount += 100;
 
-    AudioSource__play(g_engine->audio->click, entity, (Entity*)player1);
+    AudioSource__play(g_engine->audio->click, action->target, (Entity*)action->actor);
   }
 }
