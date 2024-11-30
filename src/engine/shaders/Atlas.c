@@ -163,9 +163,9 @@ void Atlas__onrender_material(void* _params) {
   vs_params->view = params->view;
   vs_params->projection = params->projection;
   vs_params->billboard = params->entity->render->billboard ? 1 : 0;
-  vs_params->camPos[0] = params->viewPos.X;
-  vs_params->camPos[1] = params->viewPos.Y;
-  vs_params->camPos[2] = params->viewPos.Z;
+  vs_params->camPos[0] = params->viewPos.x;
+  vs_params->camPos[1] = params->viewPos.y;
+  vs_params->camPos[2] = params->viewPos.z;
 
   fs_params->ip = params->entity->render->indexedPalette ? 1 : 0;
   fs_params->pi = params->entity->render->pi;

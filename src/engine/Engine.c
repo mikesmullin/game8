@@ -144,7 +144,9 @@ void Engine__cli(int argc, char* argv[]) {
 // --- Engine + Sokol integration ---
 
 int Engine__main(int argc, char* argv[]) {
+  Math__init();
   Log__init();
+  Engine__init();
   sapp_desc desc = Engine__sokol_main(argc, argv);
   if (g_engine->useVideo) {
     sapp_run(&desc);
@@ -161,7 +163,6 @@ int Engine__main(int argc, char* argv[]) {
 }
 
 sapp_desc Engine__sokol_main(int argc, char* argv[]) {
-  Engine__init();
   Engine__cli(argc, argv);
   g_engine->stream_cb1 = Engine__sokol_stream_cb;
 

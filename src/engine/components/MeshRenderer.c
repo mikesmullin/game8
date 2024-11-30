@@ -41,14 +41,6 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
   // f32 r = g_engine->stm_sec(g_engine->stm_now());
   // HMM_Mat4 model = HMM_Rotate_RH(HMM_AngleRad(r), HMM_V3(0.5f, 1.0f, 0.0f));
 
-  // TODO: Move to 3DCameraComponent
-  // +Y_UP
-  HMM_Vec3 U = HMM_V3(0.0f, 1.0f, 0.0f);
-  // -Z_FWD forward vector (normalized)
-  // HMM_Vec3 F = HMM_V3(0.0f, 0.0f, -1.0f);
-  // Identity
-  HMM_Mat4 I = HMM_Translate(HMM_V3(0.0f, 0.0f, 0.0f));
-
   // separate list into renderable batches
   List *batches = List__alloc(g_engine->frameArena), *batch;
   List__Node *c = entities->head, *cc;
@@ -70,95 +62,82 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
     c = c->next;
 
     cc = batch->head;
-    HMM_Vec3 modelPos;
-    HMM_Mat4 modelRot;
+    v3 modelPos;
+    m4 modelRot;
     for (u32 b = 0; b < batch->len; b++) {
       Entity* entity = cc->data;
       cc = cc->next;
 
       // Model
-      modelPos = HMM_V3(  //
-          -entity->tform->pos.x,  // move object to camera
+      v3_set3(
+          &modelPos,
+          // move object to camera
+          -entity->tform->pos.x,
           -entity->tform->pos.y,
           -entity->tform->pos.z);
-      modelRot = HMM_QToM4(HMM_Q(
-          entity->tform->rot4.x,
-          entity->tform->rot4.y,
-          entity->tform->rot4.z,
-          entity->tform->rot4.w));
+      m4_fromQ(&modelRot, &entity->tform->rot4);
       // modelRot = HMM_V3(  // Yaw, Pitch, Roll
       //     HMM_AngleDeg(entity->tform->rot3.x),
       //     HMM_AngleDeg(entity->tform->rot3.y),
       //     HMM_AngleDeg(entity->tform->rot3.z));
-      HMM_Mat4 model = I;
+      m4 model = m4_cp(&M4_IDENTITY);
       // apply translation to model
-      model = HMM_MulM4(model, HMM_Translate(modelPos));
+      m4 translate;
+      m4_trans(&translate, &modelPos);
+      m4 cp = m4_cp(&model);
+      m4_mul(&model, &cp, &translate);
       // apply rotation to model
-      model = HMM_MulM4(model, modelRot);
-      // model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
-      // model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
-      // model = HMM_MulM4(model, HMM_Rotate_LH(modelRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+      cp = m4_cp(&model);
+      m4_mul(&model, &cp, &modelRot);
       // apply scale to model
-      model = HMM_MulM4(
-          model,
-          HMM_Scale(HMM_V3(  //
-              entity->tform->scale.x,
-              entity->tform->scale.y,
-              entity->tform->scale.z)));
+      m4 scale;
+      m4_scale(&scale, &entity->tform->scale);
+      cp = m4_cp(&model);
+      m4_mul(&model, &cp, &scale);
 
       cb(material->shader->onentity,
          &(OnRenderParams3){.b = b, .entity = entity, .material = material, .model = model});
     }
 
     // View (Camera)
-    HMM_Vec3 viewPos;
+    v3 viewPos;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       // viewPos = HMM_V3(0, 0, 0);
-      viewPos = HMM_V3(  //
-          0,
-          0,
-          player1->camera.proj.nearZ);
+      v3_set3(&viewPos, 0, 0, player1->camera.proj.nearZ);
     } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
-      viewPos = HMM_V3(  //
-          player1->base.tform->pos.x,
-          player1->base.tform->pos.y,
-          player1->base.tform->pos.z);
-      if (0 == viewPos.Y) {  //  grounded
-        viewPos.Y = Math__map(player1->camera.bobPhase, -1, 1, 0, -1.0f / 8);
+      v3_set(&viewPos, &player1->base.tform->pos);
+      if (0 == viewPos.y) {  //  grounded
+        viewPos.y = Math__map(player1->camera.bobPhase, -1, 1, 0, -1.0f / 8);
       }
     }
     // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
-    HMM_Vec3 viewRot;
+    v3 viewRot;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       // viewRot = HMM_V3(0, 0, 0);
-      viewRot = HMM_V3(0, 0, HMM_AngleDeg(180));
+      v3_set3(&viewRot, 0.0f, 0.0f, 180.0f);
     } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
-      viewRot = HMM_V3(  // Yaw, Pitch, Roll
-          HMM_AngleDeg(player1->base.tform->rot3.x),
-          HMM_AngleDeg(player1->base.tform->rot3.y),
+      v3_set3(
+          &viewRot,  // Yaw, Pitch, Roll
+          player1->base.tform->rot3.x,
+          player1->base.tform->rot3.y,
           // TODO: Why do I have to rotate cam Z?
-          HMM_AngleDeg(player1->base.tform->rot3.z + 180));
+          player1->base.tform->rot3.z + 180.0f);
     }
-    HMM_Mat4 view = I;
+    m4 view = m4_cp(&M4_IDENTITY);
     // apply rotation to view
-    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.X, HMM_V3(1.0f, 0.0f, 0.0f)));
-    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Y, HMM_V3(0.0f, 1.0f, 0.0f)));
-    view = HMM_MulM4(view, HMM_Rotate_LH(viewRot.Z, HMM_V3(0.0f, 0.0f, 1.0f)));
+    v4 q;
+    q_fromEuler(&q, &viewRot);
+    m4 rot;
+    m4_fromQ(&rot, &q);
+    m4 cp = m4_cp(&view);
+    m4_mul(&view, &cp, &rot);
     // apply translation to view
-    view = HMM_MulM4(view, HMM_Translate(viewPos));
+    m4 translate;
+    m4_trans(&translate, &viewPos);
+    cp = m4_cp(&view);
+    m4_mul(&view, &cp, &translate);
 
-    // LOG_DEBUGF(
-    //     "modelPos %f %f %f rot3 %f viewPos %f %f %f rot3 %f",  //
-    //     modelPos.X,
-    //     modelPos.Y,
-    //     modelPos.Z,
-    //     entityZero->tform->rot3.y,
-    //     viewPos.X,
-    //     viewPos.Y,
-    //     viewPos.Z,
-    //     player1->base.tform->rot3.y);
-
-    HMM_Mat4 projection;
+    m4 projection;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
       f32 aspect = SCREEN_RG != entityZero->render->rg
                        ? 1.0f
@@ -177,7 +156,8 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
 
       // f32 hw = SCREEN_SIZE / 2.0f, hh = SCREEN_SIZE / 2.0f;
       // f32 hw = (f32)g_engine->window_width / 2 / 4, hh = (f32)g_engine->window_height / 2 / 4;
-      projection = HMM_Orthographic_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+      m4_ortho(
+          &projection,
           -hw,
           +hw,
           -hh,
@@ -186,7 +166,8 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
           player1->camera.proj.farZ);
     } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       f32 aspect = 1.0f;  // square
-      projection = HMM_Perspective_LH_NO(  // LH = -Z_FWD, NO = -1..1 (GL)
+      m4_persp(
+          &projection,
           player1->camera.proj.fov,
           aspect,
           player1->camera.proj.nearZ,

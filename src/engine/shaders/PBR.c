@@ -543,9 +543,9 @@ void PBR__onrender_material(void* _params) {
   ShadingUniforms->lights_radiance[2][1] = 0.0f;
   ShadingUniforms->lights_radiance[2][2] = 0.0f;
 
-  ShadingUniforms->eyePosition[0] = params->viewPos.X;
-  ShadingUniforms->eyePosition[1] = params->viewPos.Y;
-  ShadingUniforms->eyePosition[2] = params->viewPos.Z;
+  ShadingUniforms->eyePosition[0] = params->viewPos.x;
+  ShadingUniforms->eyePosition[1] = params->viewPos.y;
+  ShadingUniforms->eyePosition[2] = params->viewPos.z;
 
   g_engine->sg_apply_uniforms(
       SG_SHADERSTAGE_VS,

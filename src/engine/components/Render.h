@@ -15,15 +15,15 @@ typedef struct OnRenderParams3 {
   u32 b;
   Entity* entity;
   Material* material;
-  HMM_Mat4 model;
+  m4 model;
 } OnRenderParams3;
 
 typedef struct OnRenderParams4 {
   Entity* entity;
   Material* material;
-  HMM_Mat4 view;
-  HMM_Mat4 projection;
-  HMM_Vec3 viewPos;
+  m4 view;
+  m4 projection;
+  v3 viewPos;
 } OnRenderParams4;
 
 typedef void (*onrender_load_t)(OnRenderParams1* params);

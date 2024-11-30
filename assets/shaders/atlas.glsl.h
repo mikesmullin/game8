@@ -52,13 +52,13 @@
 #define SLOT_texture1_smp (0)
 #pragma pack(push,1)
 SOKOL_SHDC_ALIGN(16) typedef struct vs_params_t {
-    HMM_Mat4 view;
-    HMM_Mat4 projection;
+    m4 view;
+    m4 projection;
     int billboard;
     uint8_t _pad_132[12];
     float camPos[3];
     uint8_t _pad_156[4];
-    HMM_Mat4 models[128];
+    m4 models[128];
     int batch[128][4];
 } vs_params_t;
 #pragma pack(pop)

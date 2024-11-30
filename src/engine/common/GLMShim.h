@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Math2.h"
+
 // #define CGLM_FORCE_DEPTH_ZERO_TO_ONE
 // #include <cglm/cglm.h>
 
@@ -8,27 +10,6 @@ typedef f32 vec2[2];
 typedef f32 vec3[3];
 typedef f32 vec4[4];
 typedef vec4 mat4[4];
-
-typedef struct v2 {
-  f32 x, y;
-} v2;
-
-typedef struct v3 {
-  f32 x, y, z;
-} v3;
-
-typedef struct v4 {
-  f32 x, y, z, w;
-} v4;
-
-typedef struct m4 {
-  vec4 a, b, c, d;
-} m4;
-
-// void glms_q_toEuler(v4 q, v3* dst);
-void glms_q_fromAxis(v3 axis, f32 angle, v4* dst);
-void glms_q_mul(v4 q1, v4 q2, v4* dst);
-// void glms_v4_add(v4 q1, v4 q2, v4* dst);
 
 v3 glms_v3_cp(v3 a);
 f32 glms_v3_len(v3 a);

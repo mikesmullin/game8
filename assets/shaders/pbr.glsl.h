@@ -136,9 +136,9 @@
 #define SLOT_specularBRDF_LUT_smp (6)
 #pragma pack(push,1)
 SOKOL_SHDC_ALIGN(16) typedef struct TransformUniforms_t {
-    HMM_Mat4 viewMatrix;
-    HMM_Mat4 projectionMatrix;
-    HMM_Mat4 models[128];
+    m4 viewMatrix;
+    m4 projectionMatrix;
+    m4 models[128];
     int batch[128][4];
 } TransformUniforms_t;
 #pragma pack(pop)

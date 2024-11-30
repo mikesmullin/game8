@@ -79,12 +79,12 @@ static void ApplyRollingPhysics(Player* player) {
 
   // Integrate angular velocity into rotation
   v4 rotationDelta;
-  glms_q_fromAxis(
-      rb->angularVelocity,
-      glms_v3_len(rb->angularVelocity) * g_engine->deltaTime,
-      &rotationDelta);
+  q_fromAxis(
+      &rotationDelta,
+      &rb->angularVelocity,
+      glms_v3_len(rb->angularVelocity) * g_engine->deltaTime);
 
-  glms_q_mul(cube->base.tform->rot4, rotationDelta, &cube->base.tform->rot4);
+  q_mul(&cube->base.tform->rot4, &rotationDelta, &cube->base.tform->rot4);
 
   // LOG_DEBUGF(
   //     "Player Cube move %f %f %f rot %f %f %f %f",
@@ -126,7 +126,8 @@ void Player__tick(void* _entity) {
   } else {
     if (0 != self->input.ptr.x) {  // yaw (rotate around Y-axis)
       self->base.base.tform->rot3.y += self->input.ptr.x * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot3.y = Math__rclampf(0, self->base.base.tform->rot3.y, 360.0f);
+      self->base.base.tform->rot3.y =
+          Math__wrapaf(0, self->base.base.tform->rot3.y, 360.0f, 360.0f);
       self->input.ptr.x = 0;
     }
 

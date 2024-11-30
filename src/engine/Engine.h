@@ -26,6 +26,7 @@ typedef void (*Dispatcher__call_t)(u32 id, void* params);
 #include "common/Log.h"  // IWYU pragma: keep
 #include "common/Macros.h"  // IWYU pragma: keep
 #include "common/Math.h"  // IWYU pragma: keep
+#include "common/Math2.h"  // IWYU pragma: keep
 #include "common/Net.h"  // IWYU pragma: keep
 #include "common/Preloader.h"
 #include "common/Profiler.h"  // IWYU pragma: keep
