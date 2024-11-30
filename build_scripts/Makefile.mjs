@@ -40,6 +40,7 @@ const C_COMPILER_ARGS = [
   // '-Wno-deprecated-non-prototype',
   '@clang_options.rsp',
 ];
+if (!isWin) C_COMPILER_ARGS.push('-pthread');
 const C_COMPILER_INCLUDES = [
 ];
 const C_ENGINE_COMPILER_FLAGS = [
