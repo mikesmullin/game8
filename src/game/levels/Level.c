@@ -61,24 +61,26 @@ s32 Level__zsort(void* a, void* b) {
   Entity* ea = (Entity*)a;
   Entity* eb = (Entity*)b;
 
-  HMM_Vec3 cPos = HMM_V3(  //
+  v3 cPos = v3_new(  //
       player1->base.base.tform->pos.x,
       player1->base.base.tform->pos.y,
       player1->base.base.tform->pos.z);
-  HMM_Vec3 aPos = HMM_V3(  //
+  v3 aPos = v3_new(  //
       ea->tform->pos.x,
       ea->tform->pos.y,
       ea->tform->pos.z);
-  HMM_Vec3 bPos = HMM_V3(  //
+  v3 bPos = v3_new(  //
       eb->tform->pos.x,
       eb->tform->pos.y,
       eb->tform->pos.z);
 
   // get position relative to player camera
-  HMM_Vec3 adPos = HMM_SubV3(cPos, aPos);
-  f32 alen = Math__fabsf(HMM_LenV3(adPos));
-  HMM_Vec3 bdPos = HMM_SubV3(cPos, bPos);
-  f32 blen = Math__fabsf(HMM_LenV3(bdPos));
+  v3 adPos;
+  v3_sub(&adPos, &cPos, &aPos);
+  f32 alen = Math__fabsf(v3_mag2(&adPos));
+  v3 bdPos;
+  v3_sub(&bdPos, &cPos, &bPos);
+  f32 blen = Math__fabsf(v3_mag2(&bdPos));
 
   return alen < blen ? -1 : alen > blen ? +1 : 0;
 }

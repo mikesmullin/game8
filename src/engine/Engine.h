@@ -26,7 +26,6 @@ typedef void (*Dispatcher__call_t)(u32 id, void* params);
 #include "common/Log.h"  // IWYU pragma: keep
 #include "common/Macros.h"  // IWYU pragma: keep
 #include "common/Math.h"  // IWYU pragma: keep
-#include "common/Math2.h"  // IWYU pragma: keep
 #include "common/Net.h"  // IWYU pragma: keep
 #include "common/Preloader.h"
 #include "common/Profiler.h"  // IWYU pragma: keep
@@ -61,7 +60,13 @@ typedef struct PreloadedTextures PreloadedTextures;
 typedef struct PreloadedMaterials PreloadedMaterials;
 typedef struct PreloadedShaders PreloadedShaders;
 
+typedef struct SeedCollection {
+  u64 main, nosync, entityMove, entityAnim, bt, sg, uiAnim;
+} SeedCollection;
+
 typedef struct Engine__State {
+  SeedCollection seeds;  // prng
+
   char window_title[255];
   bool isMaster, useVideo, useAudio, useInput, useTime, useHotReload, useConsole, usePerfLog;
   char *listenHost, *listenPort, *connectHost, *connectPort;

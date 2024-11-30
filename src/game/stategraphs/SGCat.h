@@ -48,7 +48,8 @@ static void tailKF5(StateGraph* sg) {
   sg->entity->render->ti = 2 * 8 + 6;
 }
 static void tailKF6(StateGraph* sg) {
-  if (Math__urandom2(0, 10) < 1) StateGraph__gotoState(sg, 2, CatEntity__getSGState);  // blink
+  if (Math__randomf(0, 10, &g_engine->seeds.sg) < 1)
+    StateGraph__gotoState(sg, 2, CatEntity__getSGState);  // blink
 }
 static SGState SGtail = {
     .onEnter = tailOnEnter,
@@ -80,7 +81,7 @@ static void blinkKF4(StateGraph* sg) {  // b eyes closed
 static void blinkKF5(StateGraph* sg) {
   StateGraph__gotoState(
       sg,
-      0,  //Math__urandom2(0, 10) < 1 ? 3 : 0, // meow or idle
+      0,  //(u32)Math__randomf(0, 10, &g_engine->seeds.sg) < 1 ? 3 : 0, // meow or idle
       CatEntity__getSGState);
 }
 

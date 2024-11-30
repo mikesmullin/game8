@@ -37,10 +37,6 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
   CameraEntity* player1 = (CameraEntity*)g_engine->players->head->data;
   cb(material->shader->onload, &(OnRenderParams2){.material = material});
 
-  // TODO: move to OrbitalCameraComponent
-  // f32 r = g_engine->stm_sec(g_engine->stm_now());
-  // HMM_Mat4 model = HMM_Rotate_RH(HMM_AngleRad(r), HMM_V3(0.5f, 1.0f, 0.0f));
-
   // separate list into renderable batches
   List *batches = List__alloc(g_engine->frameArena), *batch;
   List__Node *c = entities->head, *cc;
@@ -76,10 +72,6 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
           -entity->tform->pos.y,
           -entity->tform->pos.z);
       m4_fromQ(&modelRot, &entity->tform->rot4);
-      // modelRot = HMM_V3(  // Yaw, Pitch, Roll
-      //     HMM_AngleDeg(entity->tform->rot3.x),
-      //     HMM_AngleDeg(entity->tform->rot3.y),
-      //     HMM_AngleDeg(entity->tform->rot3.z));
       m4 model = m4_cp(&M4_IDENTITY);
       // apply translation to model
       m4 translate;
@@ -102,7 +94,6 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
     // View (Camera)
     v3 viewPos;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
-      // viewPos = HMM_V3(0, 0, 0);
       v3_set3(&viewPos, 0, 0, player1->camera.proj.nearZ);
     } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       v3_set(&viewPos, &player1->base.tform->pos);
@@ -110,10 +101,8 @@ void MeshRenderer__renderBatches(List* entities, MeshRenderer__cb0 cb) {
         viewPos.y = Math__map(player1->camera.bobPhase, -1, 1, 0, -1.0f / 8);
       }
     }
-    // viewPos = HMM_V3(0.0f, 0.0f, +3.0f);  // -Z_FWD
     v3 viewRot;
     if (ORTHOGRAPHIC_PROJECTION == player1->camera.proj.type) {
-      // viewRot = HMM_V3(0, 0, 0);
       v3_set3(&viewRot, 0.0f, 0.0f, 180.0f);
     } else if (PERSPECTIVE_PROJECTION == player1->camera.proj.type) {
       v3_set3(

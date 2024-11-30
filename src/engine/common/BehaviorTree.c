@@ -217,7 +217,7 @@ BTStatus RandomTick(RandomNode* node) {
   }
 
   // Pick a random child
-  u32 randomIndex = Math__urandom2(0, node->childCount);
+  u32 randomIndex = Math__randomf(0, node->childCount, &g_engine->seeds.bt);
   BTStatus status = node->children[randomIndex]->tick(node->children[randomIndex]);
 
   // If the child succeeds or is still running, return that status

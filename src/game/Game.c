@@ -142,7 +142,7 @@ void Game__gui() {
   //     &logic->screen,
   //     logic->CANVAS_DEBUG_X,
   //     logic->CANVAS_DEBUG_Y,
-  //     Math__urandom() | 0xffff0000 + 0xff993399);
+  //     (u32)Math__randomNext() | 0xffff0000 + 0xff993399, &g_engine->seeds.nosync);
 
   PROFILE__END(GAME__GUI);
 }

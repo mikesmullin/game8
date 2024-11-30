@@ -1,8 +1,19 @@
 #include "Engine.h"
 
 #include <stdio.h>
+#include <stdlib.h>
 
 void Engine__init() {
+  // prng seeds for deterministic math
+  g_engine->seeds.main = 1234567ULL;
+  // organized by subsystem for easy desync troubleshooting
+  g_engine->seeds.nosync = Math__randomNext(&g_engine->seeds.main);
+  g_engine->seeds.entityMove = Math__randomNext(&g_engine->seeds.main);
+  g_engine->seeds.entityAnim = Math__randomNext(&g_engine->seeds.main);
+  g_engine->seeds.bt = Math__randomNext(&g_engine->seeds.main);
+  g_engine->seeds.sg = Math__randomNext(&g_engine->seeds.main);
+  g_engine->seeds.uiAnim = Math__randomNext(&g_engine->seeds.main);
+
   // defaults
   g_engine->isMaster = false;
   g_engine->useVideo = true;
@@ -81,6 +92,7 @@ void Engine__cli(int argc, char* argv[]) {
       u32 len = strlen(start);
       u32 d = msindexOf(':', start, len);
 
+      // TODO: stop using malloc in this file
       g_engine->listenHost = malloc(d + 1);
       mscp(g_engine->listenHost, start, d);
 

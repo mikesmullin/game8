@@ -14,8 +14,8 @@ void CatEntity__init(Entity* entity) {
   entity->dispatch->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
-  self->xa = Math__random(-1, 1);
-  self->za = Math__random(-1, 1);
+  self->xa = Math__randomf(-1, 1, &g_engine->seeds.sg);
+  self->za = Math__randomf(-1, 1, &g_engine->seeds.sg);
 
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
@@ -34,7 +34,7 @@ void CatEntity__init(Entity* entity) {
 
   entity->render->indexedPalette = true;
   entity->render->pi = 0;
-  entity->render->po = Math__urandom2(0, 7);
+  entity->render->po = Math__randomf(0, 7, &g_engine->seeds.sg);
   entity->render->ti = 2 * 8 + 4;
   entity->render->useMask = true;
   entity->render->mask = COLOR_BLACK;
@@ -92,8 +92,8 @@ void CatEntity__collide(void* _params) {
     if (TAG_CAT & params->target->tags1) {
       params->noclip = true;
     } else {
-      self->xa = Math__random(-1, 1);
-      self->za = Math__random(-1, 1);
+      self->xa = Math__randomf(-1, 1, &g_engine->seeds.sg);
+      self->za = Math__randomf(-1, 1, &g_engine->seeds.sg);
     }
   }
 }

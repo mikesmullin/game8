@@ -31,8 +31,8 @@ static void calculateTangents(Vertex* vertices, u32 indexCount) {
 
     // Calculate the edges of the triangle
     v3 edge1, edge2;
-    glms_v3_sub(_v1, _v0, &edge1);
-    glms_v3_sub(_v2, _v0, &edge2);
+    v3_sub(&edge1, &_v1, &_v0);
+    v3_sub(&edge2, &_v2, &_v0);
 
     // Calculate the differences in UV coordinates
     f32 deltaU1 = uv1.x - uv0.x;
@@ -48,27 +48,27 @@ static void calculateTangents(Vertex* vertices, u32 indexCount) {
     tangent.x = f * (deltaV2 * edge1.x - deltaV1 * edge2.x);
     tangent.y = f * (deltaV2 * edge1.y - deltaV1 * edge2.y);
     tangent.z = f * (deltaV2 * edge1.z - deltaV1 * edge2.z);
-    glms_v3_normalize(&tangent);
+    v3_norm(&tangent, &tangent);
 
     bitangent.x = f * (-deltaU2 * edge1.x + deltaU1 * edge2.x);
     bitangent.y = f * (-deltaU2 * edge1.y + deltaU1 * edge2.y);
     bitangent.z = f * (-deltaU2 * edge1.z + deltaU1 * edge2.z);
-    glms_v3_normalize(&bitangent);
+    v3_norm(&bitangent, &bitangent);
 
     // Add the tangent and bitangent to each vertex of the triangle
-    glms_v3_add(vertices[i0].tangent, tangent, &vertices[i0].tangent);
-    glms_v3_add(vertices[i1].tangent, tangent, &vertices[i1].tangent);
-    glms_v3_add(vertices[i2].tangent, tangent, &vertices[i2].tangent);
+    v3_add(&vertices[i0].tangent, &vertices[i0].tangent, &tangent);
+    v3_add(&vertices[i1].tangent, &vertices[i1].tangent, &tangent);
+    v3_add(&vertices[i2].tangent, &vertices[i2].tangent, &tangent);
 
-    glms_v3_add(vertices[i0].bitangent, bitangent, &vertices[i0].bitangent);
-    glms_v3_add(vertices[i1].bitangent, bitangent, &vertices[i1].bitangent);
-    glms_v3_add(vertices[i2].bitangent, bitangent, &vertices[i2].bitangent);
+    v3_add(&vertices[i0].bitangent, &vertices[i0].bitangent, &bitangent);
+    v3_add(&vertices[i1].bitangent, &vertices[i1].bitangent, &bitangent);
+    v3_add(&vertices[i2].bitangent, &vertices[i2].bitangent, &bitangent);
   }
 
   // Normalize the tangents and bitangents for each vertex
   for (u32 i = 0; i < indexCount; i++) {
-    glms_v3_normalize(&vertices[i].tangent);
-    glms_v3_normalize(&vertices[i].bitangent);
+    v3_norm(&vertices[i].tangent, &vertices[i].tangent);
+    v3_norm(&vertices[i].bitangent, &vertices[i].bitangent);
   }
 }
 

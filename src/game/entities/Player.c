@@ -124,44 +124,35 @@ void Player__tick(void* _params) {
     }
 
     // Direction vectors for movement
-    HMM_Vec3 forward, right, front;
+    v3 forward, right, front;
 
     // Convert yaw to radians for direction calculation
-    f32 yaw_radians = HMM_AngleDeg(entity->tform->rot3.y);
-    q_fromEuler(&entity->tform->rot4, &entity->tform->rot3);
-
-    // Calculate the front vector based on yaw only (for movement along the XZ plane)
-    //   front.X = HMM_SinF(yaw_radians);
-    //   front.Y = 0.0f;
-    //   front.Z = HMM_CosF(yaw_radians);
-    //   front = HMM_NormV3(front);
-    HMM_Vec3 F = HMM_V3(0.0f, 0.0f, -1.0f);  // -Z_FWD
-    HMM_Vec3 U = HMM_V3(0.0f, 1.0f, 0.0f);  // +Y_UP
-    front = HMM_RotateV3AxisAngle_LH(F, U, yaw_radians);
+    // q_fromEuler(&entity->tform->rot4, &entity->tform->rot3);
+    v3_rotAA(&front, &V3_FWD, Math__DEG2RAD32 * entity->tform->rot3.y, &V3_UP);
 
     // Calculate the right vector (perpendicular to the front vector)
-    right = HMM_Cross(front, U);
-    right = HMM_NormV3(right);
+    v3_cross(&right, &front, &V3_UP);
+    v3_norm(&right, &right);
 
     // apply forward/backward motion
-    HMM_Vec3 p1 = HMM_V3(entity->tform->pos.x, entity->tform->pos.y, entity->tform->pos.z);
-    HMM_Vec3 pos;
+    v3 p1 = v3_cp(&entity->tform->pos);
+    v3 pos;
     // TODO: can manipulate this to simulate slipping/ice
     entity->rb->velocity.x = 0;
     entity->rb->velocity.z = 0;
     if (0 != self->input.joy.zAxis) {
-      forward = HMM_MulV3F(front, self->input.joy.zAxis * PLAYER_WALK_SPEED);
-      pos = HMM_AddV3(p1, forward);
-      entity->rb->velocity.x += forward.X;  // pos.X - entity->tform->pos.x;
-      entity->rb->velocity.z += forward.Z;  // pos.Z - entity->tform->pos.z;
+      v3_mulS(&forward, &front, self->input.joy.zAxis * PLAYER_WALK_SPEED);
+      v3_add(&pos, &p1, &forward);
+      entity->rb->velocity.x += forward.x;  // pos.X - entity->tform->pos.x;
+      entity->rb->velocity.z += forward.z;  // pos.Z - entity->tform->pos.z;
     }
 
     // apply left/right motion
     if (0 != self->input.joy.xAxis) {
-      forward = HMM_MulV3F(right, self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD);
-      pos = HMM_AddV3(p1, forward);
-      entity->rb->velocity.x += forward.X;  // pos.X - entity->tform->pos.x;
-      entity->rb->velocity.z += forward.Z;  // pos.Z - entity->tform->pos.z;
+      v3_mulS(&forward, &right, self->input.joy.xAxis * PLAYER_WALK_SPEED * PLAYER_STRAFE_MOD);
+      v3_add(&pos, &p1, &forward);
+      entity->rb->velocity.x += forward.x;  // pos.X - entity->tform->pos.x;
+      entity->rb->velocity.z += forward.z;  // pos.Z - entity->tform->pos.z;
     }
 
     // apply up/down motion
@@ -190,8 +181,13 @@ void Player__tick(void* _params) {
       }
       // d *= PLAYER_WALK_SPEED * g_engine->deltaTime * 4.0f;
       // d *=
-      self->base.camera.bobPhase = HMM_SinF(
-          (g_engine->now - self->lastInput) / 1000.0f * 2.0f * 3.0f * (60 / 29.0f));  // 29bpm
+      f32 phase =
+          Math__DEG2RAD32 * Math__wrapaf(
+                                0.0f,
+                                (g_engine->now - self->lastInput) * 360.0f * (60 / 29.0f) * 0.001f,
+                                360.0f,
+                                360.0f);
+      self->base.camera.bobPhase = Math__sinf(phase);  // 29bpm
     }
 
     // LOG_DEBUGF(
@@ -210,20 +206,20 @@ void Player__tick(void* _params) {
       // find block immediately in front
       u32 matchCount = 0;
       void* matchData[100];
-      forward = HMM_MulV3F(front, 1.0f);
-      pos = HMM_AddV3(p1, forward);
+      v3_mulS(&forward, &front, 1.0f);
+      v3_add(&pos, &p1, &forward);
 
       RubbleSprite* rs = Arena__Push(g_engine->arena, sizeof(RubbleSprite));
       RubbleSprite__init((Entity*)rs);
-      rs->base.base.tform->pos.x = p1.X;
-      rs->base.base.tform->pos.y = p1.Y - 1.0f;
-      rs->base.base.tform->pos.z = p1.Z;
-      rs->xa += forward.X, rs->ya = 1, rs->za += forward.Z;
+      rs->base.base.tform->pos.x = p1.x;
+      rs->base.base.tform->pos.y = p1.y - 1.0f;
+      rs->base.base.tform->pos.z = p1.z;
+      rs->xa += forward.x, rs->ya = 1, rs->za += forward.z;
       rs->base.base.render->color = 0x660000ff;
       rs->life = rs->lifeSpan = 4.0f;
       List__append(g_engine->arena, g_engine->game->level->entities, rs);
 
-      Rect range = {pos.X, pos.Z, 0.5f, 0.5f};
+      Rect range = {pos.x, pos.z, 0.5f, 0.5f};
       QuadTreeNode_query(g_engine->game->level->qt, range, 100, matchData, &matchCount);
 
       for (u32 i = 0; i < matchCount; i++) {
@@ -231,7 +227,7 @@ void Player__tick(void* _params) {
         if (entity == other) continue;
 
         if (0 != other->dispatch && 0 != other->dispatch->action &&
-            HMM_ABS(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
+            Math__fabsf(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call(
               other->dispatch->action,
               &(OnActionParams){.type = ACTION_USE, .actor = entity, .target = other});

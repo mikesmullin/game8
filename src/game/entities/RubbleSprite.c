@@ -6,10 +6,11 @@ void RubbleSprite__init(Entity* entity) {
   Sprite__init(entity, 0, 0);
   entity->dispatch->tick = RUBBLE_SPRITE__TICK;
 
-  self->xa = Math__random(0, 1) - 0.5;
-  self->ya = Math__random(0, 1);
-  self->za = Math__random(0, 1) - 0.5;
-  self->life = self->lifeSpan = easeInQuart(Math__random(0, 1)) * 3.0f;
+  self->xa = Math__randomf(0, 1, &g_engine->seeds.entityMove) - 0.5;
+  self->ya = Math__randomf(0, 1, &g_engine->seeds.entityMove);
+  self->za = Math__randomf(0, 1, &g_engine->seeds.entityMove) - 0.5;
+  self->life = self->lifeSpan =
+      easeInQuart(Math__randomf(0, 1, &g_engine->seeds.entityAnim)) * 3.0f;
 
   entity->render->ti = 7;
   entity->render->useMask = true;
