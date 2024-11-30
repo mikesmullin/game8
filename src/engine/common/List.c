@@ -2,6 +2,8 @@
 
 #include "Arena.h"
 
+// TODO: convert from DoublyLinkedList to LinkedList, since we only ever traverse forward
+
 List* List__alloc(Arena* arena) {
   List* list = Arena__Push(arena, sizeof(List));
   List__init(list);
