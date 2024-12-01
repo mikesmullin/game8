@@ -1,0 +1,11 @@
+-std=c11
+-ffp-model=precise
+-ffp-contract=off
+
+-Wall
+-Wextra
+-fsanitize=address
+-fsanitize=undefined
+
+-Wno-microsoft-enum-forward-reference
+-Wno-deprecated-non-prototype

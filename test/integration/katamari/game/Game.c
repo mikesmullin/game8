@@ -5,6 +5,8 @@ void Game__init() {
   g_engine->window_width = WINDOW_SIZE;
   g_engine->window_height = WINDOW_SIZE;
 
+  g_engine->game->playedSfxOnce = false;
+  g_engine->game->testComplete = false;
   g_engine->game->w = g_engine->game->d = g_engine->game->h = 100.0f;
 
   g_engine->players = List__alloc(g_engine->arena);

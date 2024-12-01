@@ -12,6 +12,6 @@ typedef struct NetMgr {
   Socket* client;
 } NetMgr;
 
-void NetMgr__init();
-void NetMgr__tick();
-void NetMgr__shutdown();
+void NetMgr__init(void);
+void NetMgr__tick(void);
+void NetMgr__shutdown(void);

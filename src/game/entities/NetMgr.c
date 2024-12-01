@@ -10,8 +10,12 @@ static void onConnect(Socket* client);
 static void ServerPump(Socket* client);
 static void ClientPump(Socket* client);
 
-void NetMgr__init() {
+void NetMgr__init(void) {
   NetMgr* self = g_engine->game->net;
+  self->listener = NULL;
+  self->clients[0] = NULL;
+  self->client_count = 0;
+  self->client = NULL;
 
   Net__init();
 
@@ -38,7 +42,7 @@ static void _check() {
   }
 }
 
-void NetMgr__tick() {
+void NetMgr__tick(void) {
   NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {
@@ -87,8 +91,9 @@ static void ServerPump(Socket* client) {
     LOG_DEBUGF("Server recv. len: %u, data:\n%s", client->buf.len, debug);
 
     if (SESSION_SERVER_HANDSHAKE_AWAIT == client->sessionState) {
-      char key[256];
+      char key[25];
       Websocket__ParseHandshake(client->buf.data, key);
+      key[24] = '\0';  // null-terminate
       char response[512];
       WebSocket__RespondHandshake(g_engine->frameArena, key, response);
 
@@ -145,7 +150,7 @@ static void ClientPump(Socket* client) {
   }
 }
 
-void NetMgr__shutdown() {
+void NetMgr__shutdown(void) {
   NetMgr* self = g_engine->game->net;
 
   if (g_engine->isMaster) {

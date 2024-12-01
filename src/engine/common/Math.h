@@ -684,11 +684,10 @@ void q_fromEuler(v4* dst, const v3* rot);
 void q_fromAxis(v4* dst, const v3* axis, const f32 angle);
 
 extern inline void q_mul(v4* dst, v4* q1, v4* q2) {
-  v4 cp = v4_cp(q1);
-  dst->x = cp.w * q2->x + cp.x * q2->w + cp.y * q2->z - cp.z * q2->y;
-  dst->y = cp.w * q2->y - cp.x * q2->z + cp.y * q2->w + cp.z * q2->x;
-  dst->z = cp.w * q2->z + cp.x * q2->y - cp.y * q2->x + cp.z * q2->w;
-  dst->w = cp.w * q2->w - cp.x * q2->x - cp.y * q2->y - cp.z * q2->z;
+  dst->x = q1->w * q2->x + q1->x * q2->w + q1->y * q2->z - q1->z * q2->y;
+  dst->y = q1->w * q2->y - q1->x * q2->z + q1->y * q2->w + q1->z * q2->x;
+  dst->z = q1->w * q2->z + q1->x * q2->y - q1->y * q2->x + q1->z * q2->w;
+  dst->w = q1->w * q2->w - q1->x * q2->x - q1->y * q2->y - q1->z * q2->z;
 }
 
 void m4_fromQ(m4* dst, const v4* left);

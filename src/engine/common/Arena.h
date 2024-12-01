@@ -9,7 +9,7 @@ typedef struct Arena {
   void* end;
 } Arena;
 
-void Arena__Alloc(Arena** a, u64 sz);
+Arena* Arena__Alloc(u64 sz);
 Arena* Arena__SubAlloc(Arena* a, u64 sz);
 void* Arena__Push(Arena* a, u64 sz);
 void Arena__Free(Arena* a);

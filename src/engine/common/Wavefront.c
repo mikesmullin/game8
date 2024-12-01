@@ -52,7 +52,7 @@ static void response_callback(const sfetch_response_t* response) {
       // (mtllib) material filename reference
       if (strncmp(line, "mtllib ", 7) == 0) {
         char s[255];
-        msscanf(line, "mtllib %s", s);
+        msscanf(line, "mtllib %s", s, 255);
         u32 len = strlen(s) + 1;
         Wavefront__Material_Library* lib =
             Arena__Push(g_engine->arena, sizeof(Wavefront__Material_Library));
@@ -67,7 +67,7 @@ static void response_callback(const sfetch_response_t* response) {
       // (o) object name
       else if (strncmp(line, "o ", 2) == 0) {
         char s[255];
-        msscanf(line, "o %s", s);
+        msscanf(line, "o %s", s, 255);
         u32 len = strlen(s) + 1;
         obj->name = Arena__Push(g_engine->arena, len);
         mmemcp(obj->name, s, len);
@@ -98,7 +98,7 @@ static void response_callback(const sfetch_response_t* response) {
       }
       // (usemtl) use material name (defined within lib file)
       else if (strncmp(line, "usemtl ", 7) == 0) {
-        msscanf(line, "usemtl %s", material);
+        msscanf(line, "usemtl %s", material, 255);
       }
       // (f) faces (triangle strip)
       else if (strncmp(line, "f ", 2) == 0) {
@@ -172,7 +172,7 @@ static void mat_response_callback(const sfetch_response_t* response) {
       // (newmtl) material name
       if (strncmp(line, "newmtl ", 7) == 0) {
         char s[255];
-        msscanf(line, "newmtl %s", s);
+        msscanf(line, "newmtl %s", s, 255);
         u32 len = strlen(s) + 1;
         mat = Arena__Push(g_engine->arena, sizeof(Wavefront__Material));
         mat->name = Arena__Push(g_engine->arena, len);

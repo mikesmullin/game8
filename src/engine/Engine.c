@@ -1,7 +1,6 @@
 #include "Engine.h"
 
 #include <stdio.h>
-#include <stdlib.h>
 
 void Engine__init() {
   // prng seeds for deterministic math

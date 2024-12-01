@@ -6,8 +6,7 @@
 // @describe Base64
 // @tag common
 int main() {
-  Arena* arena;
-  Arena__Alloc(&arena, 1024);
+  Arena* arena = Arena__Alloc(1024);
 
   const char* clear = "tunafish";
   const char* expected = "dHVuYWZpc2g=";

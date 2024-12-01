@@ -113,6 +113,7 @@ const generate_clangd_compile_commands = async () => {
       directory: path.join(workspaceFolder),
       arguments: [
         C_COMPILER_PATH,
+        ...DEBUG_COMPILER_ARGS,
         ...C_COMPILER_ARGS,
         // ...C_COMPILER_INCLUDES,
         ...C_ENGINE_COMPILER_FLAGS,

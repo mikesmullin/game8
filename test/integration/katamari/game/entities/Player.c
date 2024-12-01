@@ -42,31 +42,26 @@ static void ApplyRollingPhysics(Player* player) {
   // Normalize joystick input to a direction
   v3 forceDirection = {player->input.joy.xAxis, 0.0f, player->input.joy.zAxis};
 
-  if (glms_v3_len(forceDirection) > 0.01f) {
-    glms_v3_normalize(&forceDirection);
+  if (v3_mag(&forceDirection) > 0.01f) {
+    v3_norm(&forceDirection, &forceDirection);
 
     // Apply force to the cube to start rolling
     v3 appliedForce;
-    glms_v3_scale(
-        forceDirection,
-        PLAYER_MOVE_FORCE * rb->mass,
-        &appliedForce);  // Scale by mass for realistic acceleration
-    glms_v3_scale(appliedForce, (1.0f / 4) * g_engine->deltaTime, &scaled);
-    glms_v3_add(rb->velocity, scaled, &rb->velocity);
+    // Scale by mass for realistic acceleration
+    v3_mulS(&appliedForce, &forceDirection, PLAYER_MOVE_FORCE * rb->mass);
+    v3_mulS(&scaled, &appliedForce, (1.0f / 4) * g_engine->deltaTime);
+    v3_add(&rb->velocity, &rb->velocity, &scaled);
 
     // Simulate angular velocity (rolling torque)
     v3 rollingTorque;
-    glms_v3_cross(forceDirection, (v3){0.0f, 1.0f, 0.0f}, &rollingTorque);  // Assume Y is up
-    glms_v3_scale(rollingTorque, g_engine->deltaTime, &scaled);
-    glms_v3_add(rb->angularVelocity, scaled, &rb->angularVelocity);
+    v3_cross(&rollingTorque, &forceDirection, &V3_UP);
+    v3_mulS(&scaled, &rollingTorque, g_engine->deltaTime);
+    v3_add(&rb->angularVelocity, &rb->angularVelocity, &scaled);
   }
 
   // Apply friction to gradually slow down the cube
-  glms_v3_scale(rb->velocity, 1.0f - cube->friction * g_engine->deltaTime, &rb->velocity);
-  glms_v3_scale(
-      rb->angularVelocity,
-      1.0f - cube->friction * g_engine->deltaTime,
-      &rb->angularVelocity);
+  v3_mulS(&rb->velocity, &rb->velocity, 1.0f - cube->friction * g_engine->deltaTime);
+  v3_mulS(&rb->angularVelocity, &rb->angularVelocity, 1.0f - cube->friction * g_engine->deltaTime);
 }
 
 void Player__tick(void* _entity) {

@@ -9,7 +9,7 @@
 static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
-  Arena__Alloc(&g_engine->arena, 1024 * 1024 * 1000);
+  g_engine->arena = Arena__Alloc(1024 * 1024 * 1000);
   g_engine->game = Arena__Push(g_engine->arena, sizeof(Game));
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
@@ -221,6 +221,7 @@ static void logic_onfixedupdate(void) {
 static void logic_onupdate(void) {
   // 1st pass
   g_engine->game->pass1->swapchain = g_engine->sglue_swapchain();
+
   g_engine->sg_begin_pass(g_engine->game->pass1);
   Game__render();
   g_engine->sg_end_pass();

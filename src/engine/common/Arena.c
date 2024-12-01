@@ -4,15 +4,16 @@
 
 #include "Log.h"
 
-void Arena__Alloc(Arena** a, u64 sz) {
-  *a = malloc(sizeof(Arena));
+Arena* Arena__Alloc(u64 sz) {
+  Arena* a = malloc(sizeof(Arena));
   // LOG_DEBUGF("arena malloc %llu", sz);
   void* p = malloc(sz);
   // LOG_DEBUGF("arena p %p", p);
   ASSERT_CONTEXT(NULL != p, "Arena malloc request rejected by OS.");
-  (*a)->buf = p;
-  (*a)->pos = p;
-  (*a)->end = p + sz;
+  a->buf = p;
+  a->pos = p;
+  a->end = p + sz;
+  return a;
 }
 
 Arena* Arena__SubAlloc(Arena* a, u64 sz) {
@@ -23,7 +24,18 @@ Arena* Arena__SubAlloc(Arena* a, u64 sz) {
   return sa;
 }
 
+static inline void* align_forward(void* p, size_t alignBytes) {
+  uintptr_t addr = (uintptr_t)p;
+  uintptr_t aligned = (addr + (alignBytes - 1)) & ~(alignBytes - 1);
+  return (void*)aligned;
+}
+
 void* Arena__Push(Arena* a, u64 sz) {
+  // align arena position to next byte boundary
+  // this is required because not doing so creates undefined behavior
+  // ie. during lookup, when casting void* to a struct
+  a->pos = align_forward(a->pos, 8);
+
   ASSERT_CONTEXT(
       a->pos + sz < a->end,
       "Arena exhausted. pos: %p, sz: %d, end: %p, cap: %d, ask: %d, over: %d",

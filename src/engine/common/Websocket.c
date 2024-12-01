@@ -10,6 +10,7 @@
 #include "Utils.h"
 
 static const char* WS_HANDSHAKE_MAGIC = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11";
+static const u32 SEC_WEBSOCKET_KEY_MAXLEN = 24;  // 16-bytes in Base64
 
 void Websocket__ParseHandshake(const char* handshake, char* key) {
   // GET / HTTP/1.1
@@ -31,9 +32,13 @@ void Websocket__ParseHandshake(const char* handshake, char* key) {
   char line[256];
   while (mread(line, sizeof(line), &ptr, mindexOf(ptr, '\n', end - ptr))) {
     if (strncmp(line, "Sec-WebSocket-Key: ", 19) == 0) {
-      msscanf(line, "Sec-WebSocket-Key: %s\r\n", key);
+      msscanf(line, "Sec-WebSocket-Key: %s\r\n", key, SEC_WEBSOCKET_KEY_MAXLEN);
+      key[SEC_WEBSOCKET_KEY_MAXLEN - 1] = '\0';  // null-terminate
+      return;
     }
   }
+  // not found
+  key[0] = '\0';  // null-terminate(empty string)
 }
 
 void WebSocket__RespondHandshake(Arena* arena, const char* key, char* response) {

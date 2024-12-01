@@ -17,7 +17,8 @@ void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) 
       &rotationDelta,
       &entity->rb->angularVelocity,
       v3_mag(&entity->rb->angularVelocity) * g_engine->deltaTime);
-  q_mul(&entity->tform->rot4, &rotationDelta, &entity->tform->rot4);
+  v4 cp = v4_cp(&entity->tform->rot4);
+  q_mul(&entity->tform->rot4, &rotationDelta, &cp);
 
   // if (Math__fabsf(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
   // if (Math__fabsf(entity->rb->za) < FLT_MIN) entity->rb->za = 0;

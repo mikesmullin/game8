@@ -1,8 +1,13 @@
 #pragma once
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdint.h>
+#include <stddef.h>  // NULL
+#include <stdlib.h>  // IWYU pragma: keep  // malloc(), exit()
+
+//
+#include <stdbool.h>  // true, false
+#include <stdint.h>  // fixed-width types
+
+// convenience aliases
 typedef int8_t s8;
 typedef uint8_t u8;
 typedef uint16_t u16;
