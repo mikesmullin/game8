@@ -31,6 +31,7 @@ typedef void (*Dispatcher__call_t)(u32 id, void* params);
 #include "common/Preloader.h"
 #include "common/Profiler.h"  // IWYU pragma: keep
 #include "common/QuadTree.h"
+#include "common/RBTree.h"  // IWYU pragma: keep
 #include "common/Sleep.h"  // IWYU pragma: keep
 #include "common/StateGraph.h"  // IWYU pragma: keep
 #include "common/Types.h"
@@ -154,8 +155,8 @@ typedef struct Engine__State {
 
   u64 now;
   f32 deltaTime;
-  u16 entity_count;
-  u16 draw_count;
+  u32 entity_count;
+  u32 draw_count;
 
   WavReader* aSrc;  // current audio source
   u32 lastUid;

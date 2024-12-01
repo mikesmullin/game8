@@ -9,7 +9,7 @@
 static void logic_oninit(void) {
   // NOTICE: logging won't work in here
 
-  g_engine->arena = Arena__Alloc(1024 * 1024 * 3);
+  g_engine->arena = Arena__Alloc(1024 * 1024 * 1000);
   g_engine->game = Arena__Push(g_engine->arena, sizeof(Game));
 
   Audio__init();

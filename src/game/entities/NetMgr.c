@@ -158,7 +158,7 @@ void NetMgr__shutdown(void) {
       LOG_DEBUGF("close accepted client %u", i);
       Net__shutdown(self->clients[i]);
       Net__close(self->clients[i]);
-      // Net__free(clients[i]);
+      Net__free(self->clients[i]);
     }
 
     LOG_DEBUGF("close server");

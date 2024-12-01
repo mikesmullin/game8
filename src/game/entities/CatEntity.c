@@ -14,8 +14,11 @@ void CatEntity__init(Entity* entity) {
   entity->dispatch->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
 
-  self->xa = Math__randomf(-1, 1, &g_engine->seeds.sg);
-  self->za = Math__randomf(-1, 1, &g_engine->seeds.sg);
+  // generate a random angle between 0 and 2π
+  f32 rad = Math__randomf(0.0f, 2.0f * Math__PI32, &g_engine->seeds.entityMove);
+  // set random x,y with mag=1 (2d unit circle)
+  self->xa = Math__cosf(rad);
+  self->za = Math__sinf(rad);
 
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));

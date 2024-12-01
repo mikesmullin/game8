@@ -4,7 +4,6 @@
 
 typedef struct CatSpawnBlock {
   Block base;
-  u32 spawnCount;
   f32 spawnInterval;
   f32 animTime;
   u32 spawnedCount;

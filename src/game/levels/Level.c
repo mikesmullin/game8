@@ -6,7 +6,7 @@ Level* Level__alloc() {
   level->entities = List__alloc(g_engine->arena);
 
   // NOTICE: tune the size of this to fit anticipated max entity count (ie. adjust for load tests)
-  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 1);  // MB
+  g_engine->frameArena = Arena__SubAlloc(g_engine->arena, 1024 * 1024 * 500);  // MB
 
   return level;
 }
@@ -61,31 +61,17 @@ s32 Level__zsort(void* a, void* b) {
   Entity* ea = (Entity*)a;
   Entity* eb = (Entity*)b;
 
-  v3 cPos = v3_new(  //
-      player1->base.base.tform->pos.x,
-      player1->base.base.tform->pos.y,
-      player1->base.base.tform->pos.z);
-  v3 aPos = v3_new(  //
-      ea->tform->pos.x,
-      ea->tform->pos.y,
-      ea->tform->pos.z);
-  v3 bPos = v3_new(  //
-      eb->tform->pos.x,
-      eb->tform->pos.y,
-      eb->tform->pos.z);
-
   // get position relative to player camera
   v3 adPos;
-  v3_sub(&adPos, &cPos, &aPos);
+  v3_sub(&adPos, &player1->base.base.tform->pos, &ea->tform->pos);
   f32 alen = Math__fabsf(v3_mag2(&adPos));
   v3 bdPos;
-  v3_sub(&bdPos, &cPos, &bPos);
+  v3_sub(&bdPos, &player1->base.base.tform->pos, &eb->tform->pos);
   f32 blen = Math__fabsf(v3_mag2(&bdPos));
 
-  return alen < blen ? -1 : alen > blen ? +1 : 0;
+  return -(alen < blen ? -1 : alen > blen ? +1 : 0);  // nearest to screen in front
 }
 
-// TODO: make a reusable level_walk() iterator fn
 static void Level__loaded(Level* level) {
   if (level->loaded) return;
   if (!level->bmp->loaded) return;
@@ -103,12 +89,16 @@ static void Level__loaded(Level* level) {
   }
 }
 
+static bool zsort_entities(void* data) {
+  List__append(g_engine->frameArena, g_engine->game->level->zentities, data);
+  return true;
+}
+
 void Level__tick(Level* level) {
   PROFILE__BEGIN(LEVEL__TICK);
   if (0 == level->entities || 0 == level->entities->len) return;
   g_engine->entity_count =  // for perf counters
       level->entities->len +  //
-      (0 == level->zentities ? 0 : level->zentities->len) +  //
       g_engine->game->ui_entities->len;
 
   Dispatcher__call(level->cubemap->dispatch->tick, &(OnEntityParams){level->cubemap});
@@ -120,6 +110,7 @@ void Level__tick(Level* level) {
   level->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
   level->nzentities = List__alloc(g_engine->frameArena);
   level->zentities = List__alloc(g_engine->frameArena);
+  RBTree* tzentities = RBTree__alloc(g_engine->frameArena);
   List__Node* node = level->entities->head;
   u32 len = level->entities->len;  // cache, because loop will modify length as it goes
   for (u32 i = 0; i < len; i++) {
@@ -133,24 +124,24 @@ void Level__tick(Level* level) {
       List__remove(level->entities, entityNode);
     } else {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-      // if (TAG_WALL & entity->tags1) {
       QuadTreeNode_insert(
           g_engine->frameArena,
           level->qt,
           (Point){entity->tform->pos.x, entity->tform->pos.z},
           entity);
-      // }
       PROFILE__END(LEVEL__TICK__QUADTREE_CREATE);
 
       Dispatcher__call(entity->dispatch->tick, &(OnEntityParams){entity});
 
       if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
-        List__insort(g_engine->frameArena, level->zentities, entity, Level__zsort);
+        RBTree__insort(g_engine->frameArena, tzentities, entity, Level__zsort);
       } else {
         List__append(g_engine->frameArena, level->nzentities, entity);
       }
     }
   }
+
+  RBTree__walk(tzentities, tzentities->root, zsort_entities);
 
   PROFILE__END(LEVEL__TICK);
 }

@@ -10,11 +10,9 @@ void CatSpawnBlock__init(Entity* entity, f32 x, f32 y) {
   block->base.collider = 0;
   entity->tags1 |= TAG_CATSPAWN;
 
-  self->spawnCount = 100;  // spawn this many instances...
-  self->spawnInterval = 1.0f / 10;  // every (sec)
   self->animTime = 0;  // counter
   self->spawnedCount = 0;
-  self->maxSpawnCount = 5;  // 1000000;
+  self->maxSpawnCount = 5;
 }
 
 void CatSpawnBlock__tick(void* _params) {
@@ -24,13 +22,13 @@ void CatSpawnBlock__tick(void* _params) {
   Block* block = (Block*)entity;
   CatSpawnBlock* self = (CatSpawnBlock*)block;
 
+  self->spawnInterval = 0.1f;  // 1.0f = 1 sec (how often to inject SpawnCount more)
+
   self->animTime += g_engine->deltaTime;
   if (self->animTime > self->spawnInterval) {
-    self->animTime -= self->spawnInterval;
-
+    self->animTime = 0;
     // spawn entities (like a particle emitter)
-    for (u32 i = 0; i < self->spawnCount; i++) {
-      if (self->spawnedCount >= self->maxSpawnCount) return;
+    for (u32 i = 0, len = self->maxSpawnCount - self->spawnedCount; i < len; i++) {
       CatEntity* cat = Arena__Push(g_engine->arena, sizeof(CatEntity));
       CatEntity__init((Entity*)cat);
       cat->base.base.tform->pos.x =

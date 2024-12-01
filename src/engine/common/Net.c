@@ -397,7 +397,6 @@ void Net__free(Socket* socket) {
 #ifdef _WIN32
   freeaddrinfo(socket->_win_addr);
 #endif
-  free(socket);
 
 #ifdef __EMSCRIPTEN__
   EM_ASM(
