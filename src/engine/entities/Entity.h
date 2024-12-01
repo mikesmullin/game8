@@ -2,6 +2,8 @@
 
 #include "../common/Types.h"  // IWYU pragma: keep
 
+// TODO: bit-shift on comparison, not in storage
+// ie. flags |= 1 << FLAG_ENUM
 typedef enum EntityTags1 /* : u64 */ {
   TAG_NONE = 0,
   TAG_LOADED = 1 << 1,

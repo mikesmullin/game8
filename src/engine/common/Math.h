@@ -538,11 +538,39 @@ extern inline void v3_rand(v3* dst, const v3* tl, const v3* br, u64* prng) {
 // vAng, hAng [Deg|Rad]
 
 // lerp/mix, slerp [XYZ]
-extern inline f32 lerp(f32 a, f32 b, f32 t) {
-  return (1 - t) * a + t * b;
+
+// frame-rate independent interpolation, ie.
+//   f32 lap = 0.0, t = interp(2.0f, &lap, g_engine->deltaTime); // over 2sec
+extern inline f32 interp(const f32 duration, f32* lap, const f32 delta) {
+  if (*lap >= duration) return 1.0f;  // ensure value reaches target
+  f32 t = *lap / duration;  // normalize time 0..1
+  *lap += delta;  // aggregate elapsed time
+  return t;
 }
 
-void v3_slerp(v3* dst, const v3* a, const v3* b, f32 t);
+// frame-rate independent Lerp, ie.
+//   f32 lap = 0.0, value = lerp(0.0f, 360.0f, interp(2.0f, &lap, g_engine->deltaTime)); // 0..360 over 2sec
+extern inline f32 lerp(const f32 a, const f32 b, const f32 t) {
+  return (1.0f - t) * a + t * b;
+}
+
+// spherical lerp (along the surface of a sphere)
+void v3_slerp(v3* dst, const v3* a, const v3* b, const f32 t);
+
+// see also: https://cubic-bezier.com/#.17,1.56,.53,.71
+extern inline f32 v2_bezier(const v4* b, const f32 t) {
+  f32 u = 1.0f - t;  // complement of t
+  f32 tt = t * t;  // t squared
+  f32 uu = u * u;  // u squared
+  f32 uuu = uu * u;  // u cubed
+  f32 ttt = tt * t;  // t cubed
+
+  // cubic Bézier value
+  return uuu * b->x  // P0
+         + 3.0f * uu * t * b->y  // P1
+         + 3.0f * u * tt * b->z  // P2
+         + ttt * b->w;  // P3
+}
 
 // matrix 4x4
 
