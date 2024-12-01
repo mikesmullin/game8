@@ -107,7 +107,7 @@ void Level__tick(Level* level) {
   Arena__Reset(g_engine->frameArena);
   f32 W = (f32)level->width / 2, D = (f32)level->depth / 2;
   Rect boundary = {0.0f, 0.0f, W, D};  // Center (0,0), width/height 20x20
-  level->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
+  level->qt = QuadTree_create(g_engine->frameArena, boundary);
   level->nzentities = List__alloc(g_engine->frameArena);
   level->zentities = List__alloc(g_engine->frameArena);
   RBTree* tzentities = RBTree__alloc(g_engine->frameArena);
@@ -124,7 +124,7 @@ void Level__tick(Level* level) {
       List__remove(level->entities, entityNode);
     } else {
       PROFILE__BEGIN(LEVEL__TICK__QUADTREE_CREATE);
-      QuadTreeNode_insert(
+      QuadTree_insert(
           g_engine->frameArena,
           level->qt,
           (Point){entity->tform->pos.x, entity->tform->pos.z},

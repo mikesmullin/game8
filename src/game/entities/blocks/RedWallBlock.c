@@ -5,6 +5,7 @@ void RedWallBlock__init(Entity* entity, f32 x, f32 z) {
   WallBlock* self = (WallBlock*)block;
   WallBlock__init(entity, x, z);
   entity->dispatch->action = RED_WALL_BLOCK__ACTION;
+  entity->tags1 |= TAG_USEABLE;
 
   entity->render->color = 0x660000ff;  // red
 

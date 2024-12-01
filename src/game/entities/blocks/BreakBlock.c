@@ -6,6 +6,7 @@ void BreakBlock__init(Entity* entity, f32 x, f32 y) {
   WallBlock__init(entity, x, y);
   entity->dispatch->action = BREAK_BLOCK__ACTION;
   entity->tags1 |= TAG_BRICK;
+  entity->tags1 |= TAG_USEABLE;
 
   self->sg = Arena__Push(g_engine->arena, sizeof(StateGraph));
   self->sg->currentState = 0;

@@ -8,4 +8,4 @@ typedef struct Rigidbody2DComponent {
   v3 angularVelocity;  // Rotational velocity (radians/sec)
 } Rigidbody2DComponent;
 
-void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb);
+void Rigidbody2D__move(QuadTree* qt, Entity* entity, Dispatcher__call_t cb);

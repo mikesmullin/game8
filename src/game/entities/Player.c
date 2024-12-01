@@ -25,7 +25,7 @@ void Player__init(Entity* entity) {
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
   collider->base.type = CIRCLE_COLLIDER_2D;
-  collider->r = 0.65f;
+  collider->r = 0.5f;
   entity->collider = (ColliderComponent*)collider;
 
   entity->health = Arena__Push(g_engine->arena, sizeof(HealthComponent));
@@ -33,6 +33,11 @@ void Player__init(Entity* entity) {
   entity->health->hurtTime = 0;
 
   entity->hear = Arena__Push(g_engine->arena, sizeof(AudioListenerComponent));
+}
+
+static bool isUseable(void* data) {
+  Entity* entity = data;
+  return BitFlag__some(entity->tags1, TAG_USEABLE);
 }
 
 void Player__tick(void* _params) {
@@ -204,8 +209,6 @@ void Player__tick(void* _params) {
       LOG_DEBUGF("use");
 
       // find block immediately in front
-      u32 matchCount = 0;
-      void* matchData[100];
       v3_mulS(&forward, &front, 1.0f);
       v3_add(&pos, &p1, &forward);
 
@@ -220,18 +223,17 @@ void Player__tick(void* _params) {
       List__append(g_engine->arena, g_engine->game->level->entities, rs);
 
       Rect range = {pos.x, pos.z, 0.5f, 0.5f};
-      QuadTreeNode_query(g_engine->game->level->qt, range, 100, matchData, &matchCount);
+      u32 matchCount = 0;
+      void* matchData[1];
+      QuadTree_query(g_engine->game->level->qt, range, 1, matchData, &matchCount, isUseable);
 
-      for (u32 i = 0; i < matchCount; i++) {
-        Entity* other = (Entity*)matchData[i];
-        if (entity == other) continue;
-
+      if (matchCount > 0) {
+        Entity* other = matchData[0];
         if (0 != other->dispatch && 0 != other->dispatch->action &&
             Math__fabsf(entity->tform->pos.y - other->tform->pos.y) < 2.0f) {
           Dispatcher__call(
               other->dispatch->action,
               &(OnActionParams){.type = ACTION_USE, .actor = entity, .target = other});
-          break;
         }
       }
     }

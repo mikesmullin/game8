@@ -17,6 +17,7 @@ typedef void (*Dispatcher__call_t)(u32 id, void* params);
 #include "common/Arena.h"
 #include "common/Audio.h"  // IWYU pragma: keep
 #include "common/BehaviorTree.h"  // IWYU pragma: keep
+#include "common/BitFlag.h"  // IWYU pragma: keep
 #include "common/Bmp.h"  // IWYU pragma: keep
 #include "common/Breakpoint.h"  // IWYU pragma: keep
 #include "common/Color.h"  // IWYU pragma: keep

@@ -1,12 +1,7 @@
 #include "Rigidbody2D.h"
 
-void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) {
+void Rigidbody2D__move(QuadTree* qt, Entity* entity, Dispatcher__call_t cb) {
   if (0 == entity->rb) return;
-
-  // apply velocity to position
-  v3 scaled;
-  v3_mulS(&scaled, &entity->rb->velocity, g_engine->deltaTime);
-  v3_add(&entity->tform->pos, &entity->tform->pos, &scaled);
 
   // integrate angular velocity into rotation
   v4 rotationDelta;
@@ -17,36 +12,45 @@ void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) 
   v4 cp = v4_cp(&entity->tform->rot4);
   q_mul(&entity->tform->rot4, &rotationDelta, &cp);
 
-  // if (Math__fabsf(entity->rb->xa) < FLT_MIN) entity->rb->xa = 0;
-  // if (Math__fabsf(entity->rb->za) < FLT_MIN) entity->rb->za = 0;
+  f32 ax = Math__fabsf(entity->rb->velocity.x);
+  f32 az = Math__fabsf(entity->rb->velocity.z);
 
-  // if (entity->rb->xa != 0) {
-  //   u32 xSteps = (u32)(Math__fabsf(entity->rb->xa * 100) + 1);
-  //   for (u32 i = xSteps; i > 0; i--) {
-  //     f32 xxa = entity->rb->xa;
-  //     f32 xd = xxa * i / xSteps;
-  //     if (entity->tform->pos.y > 1 ||  // flying = noclip
-  //         !Collider__check(qt, entity, entity->tform->pos.x + xd, entity->tform->pos.z, cb)) {
-  //       entity->tform->pos.x += xd;
-  //       break;
-  //     } else {
-  //       entity->rb->xa = 0;
-  //     }
-  //   }
-  // }
+  if (ax != 0) {
+    u32 xSteps = (u32)(ax * 100) + 1;
+    for (u32 i = xSteps; i > 0; i--) {
+      f32 xxa = entity->rb->velocity.x;
+      f32 xd = xxa * i / xSteps;
+      if (entity->tform->pos.y > 1 ||  // flying = noclip
+          !Collider__check(qt, entity, entity->tform->pos.x + xd, entity->tform->pos.z, cb)) {
+        // apply velocity to position
+        v3 xv = v3_new(xd, 0, 0);
+        v3 scaled;
+        v3_mulS(&scaled, &xv, g_engine->deltaTime);
+        v3_add(&entity->tform->pos, &entity->tform->pos, &scaled);
 
-  // if (entity->rb->za != 0) {
-  //   u32 zSteps = (u32)(Math__fabsf(entity->rb->za * 100) + 1);
-  //   for (u32 i = zSteps; i > 0; i--) {
-  //     f32 zza = entity->rb->za;
-  //     f32 zd = zza * i / zSteps;
-  //     if (entity->tform->pos.y > 1 ||  // flying = noclip
-  //         !Collider__check(qt, entity, entity->tform->pos.x, entity->tform->pos.z + zd, cb)) {
-  //       entity->tform->pos.z += zd;
-  //       break;
-  //     } else {
-  //       entity->rb->za = 0;
-  //     }
-  //   }
-  // }
+        break;
+      } else {
+        entity->rb->velocity.x = 0;
+      }
+    }
+  }
+
+  if (az != 0) {
+    u32 zSteps = (u32)(az * 100) + 1;
+    for (u32 i = zSteps; i > 0; i--) {
+      f32 zza = entity->rb->velocity.z;
+      f32 zd = zza * i / zSteps;
+      if (entity->tform->pos.y > 1 ||  // flying = noclip
+          !Collider__check(qt, entity, entity->tform->pos.x, entity->tform->pos.z + zd, cb)) {
+        v3 zv = v3_new(0, 0, zd);
+        v3 scaled;
+        v3_mulS(&scaled, &zv, g_engine->deltaTime);
+        v3_add(&entity->tform->pos, &entity->tform->pos, &scaled);
+
+        break;
+      } else {
+        entity->rb->velocity.z = 0;
+      }
+    }
+  }
 }

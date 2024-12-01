@@ -5,6 +5,7 @@ void WallBlock__init(Entity* entity, f32 x, f32 z) {
   WallBlock* self = (WallBlock*)block;
   Block__init(block, x, z);
   entity->tags1 |= TAG_WALL;
+  entity->tags1 |= TAG_BLOCKING;
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
 

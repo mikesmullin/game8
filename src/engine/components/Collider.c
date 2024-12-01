@@ -38,7 +38,12 @@ bool CircleCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
   return false;
 }
 
-bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher__call_t cb) {
+static bool isCollideable(void* data) {
+  Entity* entity = data;
+  return BitFlag__every(entity->tags1, TAG_BLOCKING);
+}
+
+bool Collider__check(QuadTree* qt, Entity* entity, f32 x, f32 y, Dispatcher__call_t cb) {
   if (0 == entity->collider) return false;
 
   // use quadtree query to find nearby neighbors
@@ -55,9 +60,8 @@ bool Collider__check(QuadTreeNode* qt, Entity* entity, f32 x, f32 y, Dispatcher_
   }
 
   u32 matchCount = 0;
-  void* matchData[20];  // TODO: don't limit search results?
-  // TODO: query can be the radius of the entity, to shorten this code?
-  QuadTreeNode_query(qt, range, 20, matchData, &matchCount);
+  void* matchData[10];
+  QuadTree_query(qt, range, 10, matchData, &matchCount, isCollideable);
   for (u32 i = 0; i < matchCount; i++) {
     Entity* other = (Entity*)matchData[i];
     if (entity == other) continue;

@@ -13,6 +13,7 @@ void CatEntity__init(Entity* entity) {
   entity->dispatch->tick = CAT_ENTITY__TICK;
   entity->dispatch->action = CAT_ENTITY__ACTION;
   entity->tags1 |= TAG_CAT;
+  entity->tags1 |= TAG_USEABLE;
 
   // generate a random angle between 0 and 2π
   f32 rad = Math__randomf(0.0f, 2.0f * Math__PI32, &g_engine->seeds.entityMove);

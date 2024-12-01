@@ -92,7 +92,7 @@ void Game__tick() {
   Player__tick(g_engine->players->head->data);
 
   Rect boundary = {0.0f, 0.0f, g_engine->game->w, g_engine->game->d};
-  g_engine->game->qt = QuadTreeNode_create(g_engine->frameArena, boundary);
+  g_engine->game->qt = QuadTree_create(g_engine->frameArena, boundary);
 
   if (g_engine->audio->pickupCoin->loaded && !g_engine->game->playedSfxOnce) {
     g_engine->game->playedSfxOnce = true;

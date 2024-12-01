@@ -20,7 +20,7 @@ typedef struct Level {
   u32 depth;
   u32 height;
   SpawnBlock* spawner;
-  QuadTreeNode* qt;
+  QuadTree* qt;
 } Level;
 
 Level* Level__alloc();

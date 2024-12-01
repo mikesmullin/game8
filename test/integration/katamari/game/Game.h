@@ -40,7 +40,7 @@ typedef struct Game {
   bool playedSfxOnce, testComplete;
   List* entities;
   NetMgr* net;
-  QuadTreeNode* qt;
+  QuadTree* qt;
   f32 w, d, h;
   sg_pass* pass1;
 } Game;

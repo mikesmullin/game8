@@ -11,6 +11,8 @@ typedef enum EntityTags1 /* : u64 */ {
   TAG_BRICK = 1 << 5,
   TAG_BROKEN = 1 << 6,
   TAG_SKY = 1 << 7,
+  TAG_USEABLE = 1 << 8,
+  TAG_BLOCKING = 1 << 9,
 } EntityTags1;
 
 typedef struct DispatchComponent DispatchComponent;
