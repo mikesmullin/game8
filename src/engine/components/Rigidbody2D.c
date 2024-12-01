@@ -2,6 +2,7 @@
 
 // TODO: use deterministic fixed-point math instead
 #include <float.h>
+#include <math.h>
 
 void Rigidbody2D__move(QuadTreeNode* qt, Entity* entity, Dispatcher__call_t cb) {
   if (0 == entity->rb) return;

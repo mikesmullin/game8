@@ -15,6 +15,7 @@
         "-reload"
       ],
       "stopAtEntry": false,
+      "requireExactSource": false,
       "cwd": "${workspaceFolder}/build",
       "environment": [],
       "console": "integratedTerminal",
@@ -41,6 +42,7 @@
         "-reload"
       ],
       "stopAtEntry": false,
+      "requireExactSource": false,
       "cwd": "${workspaceFolder}/build",
       "environment": [],
       "console": "integratedTerminal",

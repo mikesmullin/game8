@@ -1,5 +1,7 @@
 #include "Math.h"
 
+#include <math.h>
+
 #include "Log.h"
 
 static const f64 pi = 3.1415926535897932384626433;  // pi
@@ -58,30 +60,9 @@ f32 Math__wrapaf(f32 n, f32 x, f32 m, f32 s) {
 
 // 6-digit approx
 f32 Math__sqrtf(f32 n) {
-  if (n <= 0.0f) {
-    if (n == 0.0f) {
-      return 0.0f;  // sqrt(0) is 0
-    }
-    return -1.0f;  // Return error for negative input (sqrt is not defined for negative numbers in real numbers)
-  }
-
-  // Initial guess for Newton's method: Start with n / 2 (or any positive guess)
-  f32 x = n / 2.0f;
-
-  // Newton's method
-  // 10 iterations
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-  x = 0.5f * (x + n / x);
-
-  return x;
+  // relying on advice that this one function
+  // is already cross-platform deterministic
+  return sqrtf(n);
 }
 
 u32 Math__ceil(f32 n) {
