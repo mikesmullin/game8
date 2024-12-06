@@ -71,7 +71,7 @@ typedef struct Engine__State {
   SeedCollection seeds;  // prng
 
   char window_title[255];
-  bool isMaster, useVideo, useAudio, useInput, useTime, useHotReload, useConsole, usePerfLog;
+  bool isMaster, useVideo, useAudio, useInput, useTime, useHotReload, useLog, usePerfLog;
   char *listenHost, *listenPort, *connectHost, *connectPort;
 
   void (*onbootstrap)(Engine__State* engine);

@@ -20,7 +20,7 @@ void Engine__init() {
   g_engine->useInput = true;
   g_engine->useTime = true;
   g_engine->useHotReload = false;
-  g_engine->useConsole = false;
+  g_engine->useLog = false;
   g_engine->usePerfLog = true;
 
   // wrappers
@@ -111,10 +111,10 @@ void Engine__cli(int argc, char* argv[]) {
       g_engine->connectPort = malloc(len - d + 1);
       mscp(g_engine->connectPort, (char*)start + d + 1, len - 1 - d);
       LOG_DEBUGF("Will connect to %s:%s", g_engine->connectHost, g_engine->connectPort);
-    } else if (String__isEqual("-noconsole", argv[i])) {
-      g_engine->useConsole = false;
-    } else if (String__isEqual("-console", argv[i])) {
-      g_engine->useConsole = true;
+    } else if (String__isEqual("-nolog", argv[i])) {
+      g_engine->useLog = false;
+    } else if (String__isEqual("-log", argv[i])) {
+      g_engine->useLog = true;
     } else if (String__isEqual("-novideo", argv[i])) {
       g_engine->useVideo = false;
     } else if (String__isEqual("-video", argv[i])) {
@@ -202,7 +202,7 @@ sapp_desc Engine__sokol_main(int argc, char* argv[]) {
       .win32_console_utf8 = true,
       .win32_console_attach = true,
       // NOTICE: sokol doesn't seem to work as intended here
-      .win32_console_create = g_engine->useConsole,
+      .win32_console_create = g_engine->useLog,
   };
 }
 
