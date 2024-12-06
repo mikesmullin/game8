@@ -7,7 +7,6 @@ void SkyBox__init(Entity* entity) {
 
   entity->render = Arena__Push(g_engine->arena, sizeof(RendererComponent));
   entity->render->billboard = false;
-  entity->render->indexedPalette = false;
   entity->render->ti = 0;
   entity->render->po = 0;
   entity->render->tw = 512;

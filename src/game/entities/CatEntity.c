@@ -36,9 +36,8 @@ void CatEntity__init(Entity* entity) {
   // self->brain = (BTNode*)&BTroot;
   // self->brain->entity = entity;
 
-  entity->render->indexedPalette = true;
   entity->render->pi = 0;
-  entity->render->po = Math__randomf(0, 7, &g_engine->seeds.sg);
+  entity->render->po = Math__randomu(0, 7, &g_engine->seeds.sg);
   entity->render->ti = 2 * 8 + 4;
   entity->render->useMask = true;
   entity->render->mask = COLOR_BLACK;

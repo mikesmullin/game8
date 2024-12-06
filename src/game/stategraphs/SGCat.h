@@ -48,8 +48,9 @@ static void tailKF5(StateGraph* sg) {
   sg->entity->render->ti = 2 * 8 + 6;
 }
 static void tailKF6(StateGraph* sg) {
-  if (Math__randomf(0, 10, &g_engine->seeds.sg) < 1)
+  if (Math__randomu(0, 10, &g_engine->seeds.sg) < 1) {
     StateGraph__gotoState(sg, 2, CatEntity__getSGState);  // blink
+  }
 }
 static SGState SGtail = {
     .onEnter = tailOnEnter,
@@ -79,10 +80,10 @@ static void blinkKF4(StateGraph* sg) {  // b eyes closed
   sg->entity->render->ti = 3 * 8 + 3;
 }
 static void blinkKF5(StateGraph* sg) {
-  StateGraph__gotoState(
-      sg,
-      0,  //(u32)Math__randomf(0, 10, &g_engine->seeds.sg) < 1 ? 3 : 0, // meow or idle
-      CatEntity__getSGState);
+  // CatEntity* self = (CatEntity*)sg->entity;
+  // self->interactingPlayer = (Player*)g_engine->players->head->data;
+  u32 state = 0;  // Math__randomu(0, 10, &g_engine->seeds.sg) < 1 ? 3 : 0;  // idle or meow
+  StateGraph__gotoState(sg, state, CatEntity__getSGState);
 }
 
 static SGState SGblink = {

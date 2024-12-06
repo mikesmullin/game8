@@ -281,11 +281,22 @@ f32 Math__randomf(f32 min, f32 max, u64* state) {
   // Generate the next random integer using SplitMix64
   u64 rand_int = Math__randomNext(state);
 
-  // Normalize the integer to a floating-point value in the range [0, 1)
-  f32 normalized = (f32)(rand_int >> 11) * (1.0f / (f32)(1ULL << 53));
+  // Normalize the integer to a floating-point value in the range [0, 1]
+  f32 normalized = (f32)(rand_int >> 11) * (1.0f / (f32)((1ULL << 53) - 1));
 
   // Scale and shift the value to the desired range [min, max]
   return min + normalized * (max - min);
+}
+
+u32 Math__randomu(u32 min, u32 max, u64* state) {
+  // Generate the next random integer using SplitMix64
+  u64 rand_int = Math__randomNext(state);
+
+  // Map the 64-bit random integer to the 32-bit range
+  u32 rand_u32 = (u32)(rand_int >> 32);
+
+  // Scale and shift the value to the desired range [min, max]
+  return min + (rand_u32 % (max - min + 1));
 }
 
 // normalize

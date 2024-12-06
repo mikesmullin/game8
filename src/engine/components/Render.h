@@ -60,6 +60,6 @@ typedef struct RendererComponent {
   u32 ti, pi, po,  // texture index, palette index, palette offset
       tw, th,  // texture width x  height
       aw, ah;  // atlas width x height
-  bool useMask, billboard, indexedPalette;
+  bool useMask, billboard;
   u32 mask, color;
 } RendererComponent;

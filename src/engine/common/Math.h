@@ -53,6 +53,7 @@ f32 Math__atan2f(f32 y, f32 x);
 // prng
 u64 Math__randomNext(u64* state);
 f32 Math__randomf(f32 min, f32 max, u64* state);
+u32 Math__randomu(u32 min, u32 max, u64* state);
 
 // vector structures (1D, 2D, 3D, and 4D)
 
@@ -554,6 +555,8 @@ extern inline f32 lerp(const f32 a, const f32 b, const f32 t) {
   return (1.0f - t) * a + t * b;
 }
 
+// TODO: use Quaternion (v4) instead of Euler (v3) to avoid gimbal lock and control short vs. long path rotations.
+//       v3 is only fine when only two axis are changing (ie. mouse motion)
 // spherical lerp (along the surface of a sphere)
 void v3_slerp(v3* dst, const v3* a, const v3* b, const f32 t);
 

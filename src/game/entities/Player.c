@@ -77,8 +77,7 @@ void Player__tick(void* _params) {
 
     if (0 != self->input.ptr.y) {  // pitch (rotate around X-axis)
       self->base.base.tform->rot3.x += self->input.ptr.y * PLAYER_LOOK_SPEED;
-      self->base.base.tform->rot3.x =
-          Math__wrapaf(-55.0f, self->base.base.tform->rot3.x, 55.0f, 55.0f);
+      self->base.base.tform->rot3.x = Math__clamp(-55.0f, self->base.base.tform->rot3.x, 55.0f);
       q_fromEuler(&self->base.base.tform->rot4, &self->base.base.tform->rot3);
       self->input.ptr.y = 0;
     }

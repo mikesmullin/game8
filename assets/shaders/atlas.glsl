@@ -73,7 +73,7 @@ uniform sampler texture1_smp;
 #define texture1 sampler2D(_texture1, texture1_smp)
 
 uniform fs_params {
-    int ip, pi, tw, th, aw, ah, useMask, mask, fog;
+    int pi, tw, th, aw, ah, useMask, mask, fog;
 };
 
 uint vec4ToU32(vec4 color) {
@@ -125,11 +125,11 @@ void main() {
     uint pixel = vec4ToU32(col);
     vec4 pixel2 = u32ToVec4(color);
 
-    if (1 == useMask && pixel == mask) { // bitmask
+    if (1u == useMask && pixel == mask) { // bitmask
         col = vec4(0,0,0,0); // transparent
     }
     else {
-        if (ip == 1u) {
+        if (po > 0) {
             // translate color via indexed palette
             for (float x=0; x<8; x++) {
                 float fx = x/float(tw-1);
@@ -144,7 +144,7 @@ void main() {
         col = alphaBlend(pixel2, col); // apply alpha blending (for color tint effect)
     }
 
-    if (fog == 1u) {
+    if (1u == fog) {
         // apply fog
         float depth = (proj * FragPos).z / FragPos.w;
         depth = depth * 0.5f + 0.5f; // normalize
