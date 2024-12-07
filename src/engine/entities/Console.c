@@ -13,12 +13,18 @@ void Console__init(Entity* entity) {
 
   self->show = false;
   self->buf[0] = '\0';
-
   self->vtable = HashTable__alloc(g_engine->arena);
 }
 
 static void Console__exec(Entity* entity) {
   Console* self = (Console*)entity;
+
+  // remember last 10 cmds
+  self->history_offset = 0;
+  for (u32 i = HISTORY_COUNT - 1; i > 0; i--) {
+    mmemcp(self->history[i], self->history[i - 1], LINE_LEN);
+  }
+  mmemcp(self->history[0], self->buf, LINE_LEN);
 
   Script__Token tokens[MAX_TOKENS];
   size_t token_count = Script__tokenize(self->buf, tokens, MAX_TOKENS);
@@ -40,6 +46,22 @@ bool Console__event(Entity* entity, const sapp_event* event) {
     }
   } else if (self->show) {
     if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
+      if (SAPP_KEYCODE_UP == event->key_code || SAPP_KEYCODE_DOWN == event->key_code) {
+        if (SAPP_KEYCODE_UP == event->key_code) {
+          if (self->history_offset < HISTORY_COUNT) self->history_offset++;
+        }
+        if (SAPP_KEYCODE_DOWN == event->key_code) {
+          if (self->history_offset > 0) self->history_offset--;
+        }
+
+        if (0 == self->history_offset) {
+          memset(self->buf, 0, LINE_LEN);
+        } else {
+          mmemcp(self->buf, self->history[self->history_offset - 1], LINE_LEN);
+        }
+        self->len = strlen(self->buf);
+      }
+
       if (KEYCODE_ESC == event->key_code) {
         self->show = false;
         return true;
