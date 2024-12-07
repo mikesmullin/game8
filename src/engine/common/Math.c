@@ -285,7 +285,7 @@ f32 Math__randomf(f32 min, f32 max, u64* state) {
   f32 normalized = (f32)(rand_int >> 11) * (1.0f / (f32)((1ULL << 53) - 1));
 
   // Scale and shift the value to the desired range [min, max]
-  return min + normalized * (max - min);
+  return Math__scalef(min, normalized, max);
 }
 
 u32 Math__randomu(u32 min, u32 max, u64* state) {
@@ -296,7 +296,7 @@ u32 Math__randomu(u32 min, u32 max, u64* state) {
   u32 rand_u32 = (u32)(rand_int >> 32);
 
   // Scale and shift the value to the desired range [min, max]
-  return min + (rand_u32 % (max - min + 1));
+  return Math__scaleu(min, rand_u32, max);
 }
 
 // normalize

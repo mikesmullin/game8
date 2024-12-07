@@ -13,6 +13,8 @@ typedef struct HashTable_Node {
 
 typedef struct Arena Arena;
 
+u32 Hash__djb2(const char* str, u32 len);
+u32 Hash__fmix32(u32 h);
 HashTable* HashTable__alloc(Arena* arena);
 void HashTable__set(const Arena* arena, const HashTable* t, const HashTable_Node* node);
 HashTable_Node* HashTable__get(const HashTable* t, const char* key);

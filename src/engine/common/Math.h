@@ -39,6 +39,14 @@ extern inline f32 Math__pow4(f32 n) {
   return n * n * n * n;
 }
 
+extern inline f32 Math__scalef(f32 min, f32 n, f32 max) {
+  return min + n * (max - min);
+}
+
+extern inline u32 Math__scaleu(u32 min, u32 n, u32 max) {
+  return min + (n % (max - min + 1));
+}
+
 // sqrt
 f32 Math__sqrtf(f32 n);
 

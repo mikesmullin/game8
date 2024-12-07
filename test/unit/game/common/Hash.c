@@ -4,6 +4,7 @@
 //
 
 #include "../../../../src/engine/common/Hash.h"
+#include "../../../../src/engine/common/Math.h"
 
 typedef struct X {
   u32 a;
@@ -42,6 +43,14 @@ int main() {
   const HashTable_Node* v;
 
   // LOG_DEBUGF("HashTable__get");
+
+  ASSERT(193456906 == Hash__djb2("Fn1", 3));
+  ASSERT(2103559796 == Hash__fmix32(Hash__djb2("Fn1", 3)));
+  ASSERT(116 == Math__scaleu(0, Hash__fmix32(Hash__djb2("Fn1", 3)), 255));
+
+  ASSERT(2089422194 == Hash__djb2("PATH", 4));
+  ASSERT(2228291689 == Hash__fmix32(Hash__djb2("PATH", 4)));
+  ASSERT(105 == Math__scaleu(0, Hash__fmix32(Hash__djb2("PATH", 4)), 255));
 
   v = HashTable__get(t, "Fn1");
   ASSERT(NULL != v);
