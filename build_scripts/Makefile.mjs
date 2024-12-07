@@ -663,6 +663,7 @@ const recompile_object = async (unit, mode = 'main', extra_compiler_flags = []) 
 const test = async () => {
   const results = [], overall = {};
   overall.filters = [];
+  overall.files = [];
   overall.results = results;
   overall.passes = 0, overall.fails = 0, overall.skips = 0;
   overall.compileLap = 0, overall.execLap = 0, overall.lap = 0;
@@ -672,6 +673,10 @@ const test = async () => {
     if (arg.startsWith('--filter=')) {
       const [, filter] = arg.split('=');
       overall.filters.push(filter);
+    }
+    else if (arg.startsWith('--file=')) {
+      const [, file] = arg.split('=');
+      overall.files.push(file);
     }
     else if (arg.startsWith('-norun')) {
       overall.norun = true;
@@ -697,7 +702,11 @@ const test = async () => {
         else if ('skip' == k) result.skip = true;
         else if ('run' == k) !result.runInsts && (result.runInsts = []), result.runInsts.push(v);
       }
-      if (result.skip || (result.tags && overall.filters.length > 0 && !overall.filters.some(t => result.tags.includes(t)))) {
+      if (
+        result.skip ||
+        (result.tags && overall.filters.length > 0 && !overall.filters.some(t => result.tags.includes(t))) ||
+        (overall.files.length > 0 && !overall.files.some(f => nixPath(f) == nixPath(unit)))
+      ) {
         result.pass = false, result.fail = false, result.skip = true;
         results.push(result);
         overall.skips++;
@@ -733,16 +742,21 @@ const test = async () => {
       // compile and link in one step
       const started1 = performance.now();
       const dname = path.dirname(unit);
+
+      const isUnit = nixPath(dname).startsWith('test/unit/');
+      const isIntegration = nixPath(dname).startsWith('test/integration/');
+      const fbasename = path.basename(unit, '.c');
       const basename = path.basename(dname);
       result.basename = basename;
       const test_out_path = path.join(workspaceFolder, BUILD_PATH);
-      const executable = relWs(path.join(test_out_path, `${basename}${isWin ? '.exe' : ''}`));
+      const executable = relWs(path.join(test_out_path, `${isUnit ? fbasename : basename}${isWin ? '.exe' : ''}`));
       await fs.mkdir(test_out_path, { recursive: true });
 
-      // dll
-
-      const logic_c = (await glob(nixPath(relWs(dname, '**', 'Logic.c'))))[0];
-      const code3 = await compile_reload(logic_c, DEFAULT_LOGIC_DLL);
+      if (isIntegration) {
+        // dll
+        const logic_c = (await glob(nixPath(relWs(dname, '**', 'Logic.c'))))[0];
+        const code3 = await compile_reload(logic_c, DEFAULT_LOGIC_DLL);
+      }
 
       // main
 

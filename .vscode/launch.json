@@ -5,6 +5,20 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "(Node.js) Debug Makefile.mjs",
+      "cwd": "${workspaceFolder}",
+      "program": "build_scripts/Makefile.mjs",
+      "args": [
+        "test",
+        //"--file=${relativeFile}"
+      ],
+      "request": "launch",
+      "skipFiles": [
+        "<node_internals>/**"
+      ],
+      "type": "node",
+    },
+    {
       "name": "(Windows) Launch main.exe",
       "type": "cppvsdbg",
       "request": "launch",
@@ -51,6 +65,23 @@
         "trace": true
       },
       "preLaunchTask": "build_integration",
+    },
+    {
+      "name": "(Windows) Debug Current Unit Test",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/${fileBasenameNoExtension}.exe",
+      "args": [],
+      "stopAtEntry": false,
+      "requireExactSource": false,
+      "cwd": "${workspaceFolder}/build",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      },
+      "preLaunchTask": "build_unit",
     },
   ]
 }
