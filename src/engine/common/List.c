@@ -92,7 +92,7 @@ void* List__pop(List* list) {
 }
 
 // insert in sorted position
-void List__insort(Arena* arena, List* list, void* data, s8 (*sortCb)(void* a, void* b)) {
+void List__insort(Arena* arena, List* list, void* data, List__sorter_t sortCb) {
   List__Node* node = List__Node__alloc(arena);
   List__Node__init(node, data);
 

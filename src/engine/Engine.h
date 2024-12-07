@@ -9,6 +9,8 @@
 // Convenience --------------------------------------------
 
 #include "entities/Entity.h"  // IWYU pragma: keep
+//
+#include "entities/Console.h"  // IWYU pragma: keep
 
 //
 
@@ -167,6 +169,7 @@ typedef struct Engine__State {
   PreloadedTextures* textures;
   PreloadedMaterials* materials;
   PreloadedShaders* shaders;
+  Console* console;
 
 } Engine__State;
 

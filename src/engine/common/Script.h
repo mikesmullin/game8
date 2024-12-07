@@ -56,6 +56,6 @@ typedef struct HashTable HashTable;
 typedef void (*Script__fn_t)(Arena* arena, const HashTable* vtable, List* stack);
 
 void Script__printTokens(Script__Token tokens[], u32 len);
-size_t Script__tokenize(const char* input, Script__Token* tokens, size_t max_tokens);
+u32 Script__tokenize(const char* input, Script__Token* tokens, u32 max_tokens);
 void Script__exec(
     Arena* arena, Script__Token* tokens, u32 token_count, HashTable* vtable, List* stack);

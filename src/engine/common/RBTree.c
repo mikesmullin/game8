@@ -126,6 +126,7 @@ RBTreeNode* RBTree__insort(
 }
 
 void RBTree__each(const RBTree* tree, const RBTreeNode* node, const RBTree__iterator_t eachCb) {
+  if (node == tree->tnil) return;
   RBTree__each(tree, node->left, eachCb);
   bool r = eachCb(node->data);
   if (!r) return;

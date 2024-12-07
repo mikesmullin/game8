@@ -97,24 +97,7 @@ void Game__gui() {
   player1->base.camera.proj.type = ORTHOGRAPHIC_PROJECTION;
 
   char* c = g_engine->game->dt->txt;
-  char c2[255];
-  sprintf(
-      c2,
-      "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-      player1->base.base.tform->pos.x,
-      player1->base.base.tform->pos.y,
-      player1->base.base.tform->pos.z,
-      player1->base.base.tform->rot3.y);
-  memcpy(c, c2, g_engine->game->dt->glyphs->len);
-  // TODO: fix this fn (somehow only works on mousedown titlebar)
-  // mprintf(
-  //     &c,
-  //     "cam x %+06.1f y %+06.1f z %+06.1f r %+06.1f",
-  //     g_engine->game->dt->glyphs->len,
-  //     player1->base.base.tform->pos.x,
-  //     player1->base.base.tform->pos.y,
-  //     player1->base.base.tform->pos.z,
-  //     logic->player->base.tform->rot.y);
+  memcpy(c, g_engine->console->render, g_engine->game->dt->glyphs->len);
   g_engine->game->dt->base.tform->pos.x = -77;
   g_engine->game->dt->base.tform->pos.y = -75;
   // TODO: fix text scaling on window resize

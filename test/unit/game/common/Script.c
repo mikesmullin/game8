@@ -57,7 +57,9 @@ typedef struct MockCatSpawnBlock {
 // @tag common
 int main() {
   const char* source_code;
-  source_code = "set (Level__findEntity (getTag TAG_CATSPAWN)) maxSpawnCount 1u";
+  // source_code = "set (Level__findEntity (getTag TAG_CATSPAWN)) maxSpawnCount 1u";
+  // source_code = "set(Level__findEntity(getTag TAG_CATSPAWN maxSpawnCount 1u";
+  source_code = "set (Level__findEntity(getTag TAG_CATSPAWN)), maxSpawnCount, 1u";
 
   Script__Token tokens[MAX_TOKENS];
   size_t token_count = Script__tokenize(source_code, tokens, MAX_TOKENS);
