@@ -1,7 +1,9 @@
 #define ENGINE__NO_MAIN
-#include "../../../../src/engine/common/Thread.h"
-
 #include "../../../../src/engine/Engine.h"  // IWYU pragma: keep
+
+//
+
+#include "../../../../src/engine/common/Thread.h"
 
 #define THREAD_POOL_SIZE 10
 #define LIST_SIZE 100
