@@ -1,16 +1,26 @@
 #include "Game.h"
 
 static void thanos(Arena* arena, const HashTable* vtable, List* stack) {
-// delete all cats
-// TODO: free arena memory, as well
-beginning:
+  // delete all the odd cats
+  // TODO: free arena memory, as well
+  u32 count = 0;
+
+  List* l1 = List__alloc(g_engine->frameArena);
   List__Node* c = g_engine->game->level->entities->head;
   for (u32 i = 0; i < g_engine->game->level->entities->len; i++) {
     Entity* e = c->data;
     if (BitFlag__some(e->tags1, TAG_CAT)) {
-      List__remove(g_engine->game->level->entities, c);
-      goto beginning;
+      if (0 == count % 2) {
+        List__append(g_engine->frameArena, l1, c);
+      }
+      count++;
     }
+    c = c->next;
+  }
+
+  c = l1->head;
+  for (u32 i = 0; i < l1->len; i++) {
+    List__remove(g_engine->game->level->entities, c->data);
     c = c->next;
   }
 }
