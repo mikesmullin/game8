@@ -24,7 +24,7 @@ void CatEntity__init(Entity* entity) {
   CircleCollider2DComponent* collider =
       Arena__Push(g_engine->arena, sizeof(CircleCollider2DComponent));
   collider->base.type = CIRCLE_COLLIDER_2D;
-  collider->r = 1.0f;
+  collider->r = 0.5f;
   collider->base.collide = CAT_ENTITY__COLLIDE;
   entity->collider = (ColliderComponent*)collider;
 
