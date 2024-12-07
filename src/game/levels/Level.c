@@ -56,7 +56,7 @@ void Level__preload(Level* level) {
   // Preload__texture(&level->world, level->worldFile);
 }
 
-s32 Level__zsort(void* a, void* b) {
+s8 Level__zsort(const void* a, const void* b) {
   Player* player1 = (Player*)g_engine->players->head->data;
   Entity* ea = (Entity*)a;
   Entity* eb = (Entity*)b;
@@ -89,7 +89,7 @@ static void Level__loaded(Level* level) {
   }
 }
 
-static bool zsort_entities(void* data) {
+static bool zsort_entities(const void* data) {
   List__append(g_engine->frameArena, g_engine->game->level->zentities, data);
   return true;
 }
@@ -134,14 +134,14 @@ void Level__tick(Level* level) {
       Dispatcher__call(entity->dispatch->tick, &(OnEntityParams){entity});
 
       if (0 != entity->render && entity->render->rg == WORLD_ZSORT_RG) {
-        RBTree__insort(g_engine->frameArena, tzentities, entity, Level__zsort);
+        (void)RBTree__insort(g_engine->frameArena, tzentities, entity, Level__zsort);
       } else {
         List__append(g_engine->frameArena, level->nzentities, entity);
       }
     }
   }
 
-  RBTree__walk(tzentities, tzentities->root, zsort_entities);
+  RBTree__each(tzentities, tzentities->root, zsort_entities);
 
   PROFILE__END(LEVEL__TICK);
 }

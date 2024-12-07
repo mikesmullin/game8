@@ -72,7 +72,7 @@ void List__remove(List* list, List__Node* node) {
 }
 
 // insert in sorted position
-void List__insort(Arena* arena, List* list, void* data, s32 (*sortCb)(void* a, void* b)) {
+void List__insort(Arena* arena, List* list, void* data, s8 (*sortCb)(void* a, void* b)) {
   List__Node* node = List__Node__alloc(arena);
   List__Node__init(node, data);
 

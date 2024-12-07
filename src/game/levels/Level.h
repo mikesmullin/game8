@@ -30,5 +30,5 @@ void Level__tick(Level* level);
 void Level__render(Level* level);
 void Level__gui(Level* level);
 
-s32 Level__zsort(void* a, void* b);
+s8 Level__zsort(const void* a, const void* b);
 Entity* Level__findEntity(Level* level, bool (*findCb)(Entity* e));

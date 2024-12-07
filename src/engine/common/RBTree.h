@@ -3,16 +3,6 @@
 #include "Arena.h"
 #include "Types.h"
 
-// // Create red-black tree
-// RBTree* tree = RBTree__alloc(g_engine->frameArena);
-
-// // Insert entity into the tree
-// RBTree__insert(g_engine->frameArena, tree, &entity, Level__zsort);
-
-// walk entities in sorted order
-// bool cb(void* data) {}
-// RBTree__walk(tree, tree->root, cb);
-
 // Define red-black tree node colors
 typedef enum RBTNColor /* : u8 */ {
   RBTN_RED,
@@ -33,9 +23,11 @@ typedef struct RBTree {
   RBTreeNode* tnil;  // Sentinel node (used for leaves)
 } RBTree;
 
-typedef s32 (*RBTree__sortable_t)(void* a, void* b);
-typedef bool (*RBTree__walker_t)(void* data);
+typedef s8 (*RBTree__sorter_t)(const void* a, const void* b);
+typedef bool (*RBTree__iterator_t)(const void* data);
 
 RBTree* RBTree__alloc(const Arena* arena);
-void RBTree__insort(const Arena* arena, RBTree* tree, const void* data, RBTree__sortable_t sortCb);
-void RBTree__walk(const RBTree* tree, const RBTreeNode* node, const RBTree__walker_t eachCb);
+RBTreeNode* RBTree__insort(
+    const Arena* arena, RBTree* tree, const void* data, RBTree__sorter_t sortCb);
+void RBTree__each(const RBTree* tree, const RBTreeNode* node, const RBTree__iterator_t eachCb);
+RBTreeNode* RBTree__search(const RBTree* tree, const void* needle, const RBTree__sorter_t sortCb);

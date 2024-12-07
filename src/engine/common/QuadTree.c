@@ -67,12 +67,12 @@ bool QuadTree_insert(Arena* arena, QuadTree* node, Point point, void* data) {
 // Query the quadtree for points within a given range
 // TODO: accept various shapes to search for intersections with
 void QuadTree_query(
-    QuadTree* node,
-    Rect range,
-    u32 limit,
-    void* matchData[],
+    const QuadTree* node,
+    const Rect range,
+    const u32 limit,
+    const void* matchData[],
     u32* matchCount,
-    QuadTree__filterable_t filterCb) {
+    const QuadTree__filterable_t filterCb) {
   // If the range does not intersect this node's boundary, return
   if (!Rect__intersectsRect(node->boundary, range)) {
     return;
@@ -85,8 +85,6 @@ void QuadTree_query(
       if (filterCb(node->data[i])) {
         matchData[*matchCount] = node->data[i];
         (*matchCount)++;
-      } else {
-        return;
       }
     }
   }

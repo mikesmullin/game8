@@ -26,9 +26,9 @@ QuadTree* QuadTree_create(Arena* arena, Rect boundary);
 void QuadTree_subdivide(Arena* arena, QuadTree* node);
 bool QuadTree_insert(Arena* arena, QuadTree* node, Point point, void* data);
 void QuadTree_query(
-    QuadTree* node,
-    Rect range,
-    u32 limit,
-    void* matchData[],
+    const QuadTree* node,
+    const Rect range,
+    const u32 limit,
+    const void* matchData[],
     u32* matchCount,
-    QuadTree__filterable_t filterCb);
+    const QuadTree__filterable_t filterCb);

@@ -94,7 +94,8 @@ static void insertFixUp(RBTree* tree, RBTreeNode* z) {
   tree->root->color = RBTN_BLACK;
 }
 
-void RBTree__insort(const Arena* arena, RBTree* tree, const void* data, RBTree__sortable_t sortCb) {
+RBTreeNode* RBTree__insort(
+    const Arena* arena, RBTree* tree, const void* data, RBTree__sorter_t sortCb) {
   RBTreeNode* z = createNode(arena, tree, data);
   RBTreeNode* y = tree->tnil;
   RBTreeNode* x = tree->root;
@@ -121,13 +122,30 @@ void RBTree__insort(const Arena* arena, RBTree* tree, const void* data, RBTree__
   z->right = tree->tnil;
 
   insertFixUp(tree, z);
+  return z;
 }
 
-void RBTree__walk(const RBTree* tree, const RBTreeNode* node, const RBTree__walker_t eachCb) {
-  if (node != tree->tnil) {
-    RBTree__walk(tree, node->left, eachCb);
-    bool r = eachCb(node->data);
-    if (!r) return;
-    RBTree__walk(tree, node->right, eachCb);
+void RBTree__each(const RBTree* tree, const RBTreeNode* node, const RBTree__iterator_t eachCb) {
+  RBTree__each(tree, node->left, eachCb);
+  bool r = eachCb(node->data);
+  if (!r) return;
+  RBTree__each(tree, node->right, eachCb);
+}
+
+RBTreeNode* RBTree__search(const RBTree* tree, const void* needle, const RBTree__sorter_t sortCb) {
+  RBTreeNode* current = tree->root;
+
+  while (tree->tnil != current) {
+    s8 comparison = sortCb(needle, current->data);
+
+    if (0 == comparison) {
+      return current;  // match
+    } else if (comparison < 0) {
+      current = current->left;
+    } else {
+      current = current->right;
+    }
   }
+
+  return tree->tnil;  // not found
 }
