@@ -68,7 +68,7 @@ bool Console__event(Entity* entity, const sapp_event* event) {
 
   if (self->show) {
     if (SAPP_EVENTTYPE_KEY_DOWN == event->type || SAPP_EVENTTYPE_CHAR == event->type) {
-      // LOG_DEBUGF("> %u %s", self->len, self->buf);
+      LOG_DEBUGF("> %s█", self->buf);
     }
 
     return true;
