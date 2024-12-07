@@ -52,7 +52,10 @@ static s8 HashTable__sort(const void* a, const void* b) {
   return r;
 }
 
-void HashTable__set(const Arena* arena, const HashTable* t, const HashTable_Node* node) {
+void HashTable__set(const Arena* arena, const HashTable* t, const char* key, const void* value) {
+  HashTable_Node* node = Arena__Push(arena, sizeof(HashTable_Node));
+  node->key = key;
+  node->value = value;
   (void)RBTree__insort(arena, t->tree, node, HashTable__sort);
 }
 

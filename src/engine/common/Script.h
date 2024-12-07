@@ -49,6 +49,13 @@ typedef struct Script__Token2 {
   Script__Token3 operand1;
 } Script__Token2;
 
+typedef struct Arena Arena;
+typedef struct List List;
+typedef struct HashTable HashTable;
+
+typedef void (*Script__fn_t)(Arena* arena, const HashTable* vtable, List* stack);
+
 void Script__printTokens(Script__Token tokens[], u32 len);
 size_t Script__tokenize(const char* input, Script__Token* tokens, size_t max_tokens);
-void Script__lexer(Script__Token* tokens, size_t token_count, Script__Token* stack[], char* output);
+void Script__exec(
+    Arena* arena, Script__Token* tokens, u32 token_count, HashTable* vtable, List* stack);

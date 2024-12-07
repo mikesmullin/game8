@@ -3,97 +3,80 @@
 
 //
 
+#include "../../../../src/engine/common/Arena.h"
 #include "../../../../src/engine/common/Hash.h"
+#include "../../../../src/engine/common/List.h"
 #include "../../../../src/engine/common/Math.h"
 #include "../../../../src/engine/common/Script.h"
 
 #define MAX_TOKENS 1024
-#define MAX_OUTPUT 2048
 
-typedef struct X {
-  u32 a;
-  u32 b;
-} X;
-
-void fn() {
+static void getTagW(Arena* arena, const HashTable* vtable, List* stack) {
+  ASSERT_CONTEXT(stack->len >= 1, "getTag() expects 1 parameter.");
+  Script__Token* t = List__pop(stack);
+  // lookup string => int
+  HashTable_Node* node = HashTable__get(vtable, t->value);
+  ASSERT_CONTEXT(NULL != node, "Undefined tag: %s", t->value);
+  // return via stack
+  List__append(arena, stack, (void*)(u64)node->value);
 }
 
-static void* Fn1 = fn;
-static char* PATH = "hello";
-static u32 X_a = offsetof(X, a);
-static u32 X_b = offsetof(X, b);
+static Entity fakeEntity = {.id = 6, .tags1 = TAG_CATSPAWN};
 
-static u32 abcd(s32 a, u32 b, f32 c, void* d) {
-  return (u32)a + (u32)b + (u32)c + (u32)d;
+static void Level__findEntityW(Arena* arena, const HashTable* vtable, List* stack) {
+  ASSERT_CONTEXT(stack->len >= 1, "Level__findEntity() expects 1 parameter.");
+  u32 tag = (u64)List__pop(stack);
+  // return via stack
+  List__append(arena, stack, &fakeEntity);
 }
 
-// void call_function_with_asm(void* func, s32 a, u32 b, f32 c, void* d) {
-//   __asm__ volatile(
-//       "mov %[a], %%edi\n"  // Move first argument (a) into RDI
-//       "mov %[b], %%esi\n"  // Move second argument (b) into RSI
-//       "mov %[c], %%edx\n"  // Move third argument (c) into RDX
-//       "mov %[d], %%rcx\n"  // Move fourth argument (d) into RCX
-//       "call *%[func]\n"  // Call the function pointer
-//       :  // No output operands
-//       : [func] "r"(func),  // Input operands
-//         [a] "r"(a),
-//         [b] "r"(b),
-//         [c] "r"(c),
-//         [d] "r"(d)
-//       : "edi", "esi", "edx", "rcx", "memory");  // Clobbered registers
-// }
+static void setW(Arena* arena, const HashTable* vtable, List* stack) {
+  ASSERT_CONTEXT(stack->len >= 3, "set() expects 3 parameters.");
+  Entity* o = List__pop(stack);
+  ASSERT_CONTEXT(NULL != o, "Expected Entity type as parameter 1. got: NULL");
 
-void callsufp(void* fn, s32 a, u32 b, f32 c, void* d) {
-  (void)((void (*)(s32, u32, f32, void*))fn)(a, b, c, d);
+  Script__Token* k = List__pop(stack);
+  ASSERT_CONTEXT(TOKEN_WORD == k->type, "Expected WORD type as parameter 2. got: %u", k->type);
+  HashTable_Node* node = HashTable__get(vtable, k->value);
+  ASSERT_CONTEXT(NULL != node, "Undefined Entity property: %s", k->value);
+  u32 offset = (u64)node->value;
+
+  Script__Token* v = List__pop(stack);
+  ASSERT_CONTEXT(TOKEN_U32 == v->type, "Expected U32 type as parameter 3. got: %u", v->type);
+  u32 value;
+  msscanf(v->value, "%du", &value);
+
+  LOG_DEBUGF("would setEntityU %p offset: %u, value: %u", o, offset, value);
 }
 
-static void abcdE(void* a, void* b, void* c, void* d) {
-  (void)abcd(*(s32*)a, *(u32*)b, *(f32*)c, d);
-}
-
-void call4(void* fn, void* a, void* b, void* c, void* d) {
-  (void)((void (*)(void*, void*, void*, void*))fn)(a, b, c, d);
-}
+typedef struct MockCatSpawnBlock {
+  u32 a, maxSpawnCount;
+} MockCatSpawnBlock;
 
 // @describe Script
 // @tag common
 int main() {
   const char* source_code;
-  // source_code = "(define x -1234 1.0 3.14e10f \"Hello, World!\" 42u)";
-  source_code = "set (Level__findEntity (getTag TAG_CATSPAWN)) 1u 1.0f \"ab\\n\"";
+  source_code = "set (Level__findEntity (getTag TAG_CATSPAWN)) maxSpawnCount 1u";
 
   Script__Token tokens[MAX_TOKENS];
   size_t token_count = Script__tokenize(source_code, tokens, MAX_TOKENS);
   Script__printTokens(tokens, token_count);
 
-  char output[MAX_OUTPUT] = {0};
-  Script__Token* stack[MAX_TOKENS];
-  Script__lexer(tokens, token_count, stack, output);
-  printf("Assembly:\n");
-  printf("%s", output);
+  Arena* arena = Arena__Alloc(1024);
+  List* stack = List__alloc(arena);
+  HashTable* vtable = HashTable__alloc(arena);
+  HashTable__set(arena, vtable, "set", &setW);
+  HashTable__set(arena, vtable, "Level__findEntity", &Level__findEntityW);
+  HashTable__set(arena, vtable, "getTag", &getTagW);
+  HashTable__set(arena, vtable, "TAG_CATSPAWN", (void*)TAG_CATSPAWN);
+  HashTable__set(
+      arena,
+      vtable,
+      "maxSpawnCount",
+      (void*)(u64)offsetof(MockCatSpawnBlock, maxSpawnCount));
 
-  Script__Token2 tokens2[] = {
-      (Script__Token2){TOKEN2_PUSH, (Script__Token3){.type = TOKEN3_POINTER, .value.p = 0}},
-      (Script__Token2){TOKEN2_PUSH, (Script__Token3){.type = TOKEN3_FLOAT, .value.f = 1.0f}},
-      (Script__Token2){TOKEN2_PUSH, (Script__Token3){.type = TOKEN3_U32, .value.u = 2}},
-      (Script__Token2){TOKEN2_PUSH, (Script__Token3){.type = TOKEN3_S32, .value.s = -3}},
-      (Script__Token2){TOKEN2_CALL, (Script__Token3){.type = TOKEN3_POINTER, .value.p = &abcdE}},
-  };
-
-  // call_function_with_asm((void*)&abcd, -3, 2, 1.0f, &value);
-  // callsufp(
-  //     tokens2[4].operand1.value.p,
-  //     tokens2[3].operand1.value.s,
-  //     tokens2[2].operand1.value.u,
-  //     tokens2[1].operand1.value.f,
-  //     tokens2[0].operand1.value.p);
-
-  call4(
-      tokens2[4].operand1.value.p,
-      &tokens2[3].operand1.value.s,
-      &tokens2[2].operand1.value.u,
-      &tokens2[1].operand1.value.f,
-      tokens2[0].operand1.value.p);
+  Script__exec(arena, tokens, token_count, vtable, stack);
 
   return 0;
 }

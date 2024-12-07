@@ -27,18 +27,13 @@ int main() {
 
   Arena* arena = Arena__Alloc(1024);
   HashTable* t = HashTable__alloc(arena);
-  HashTable_Node n1 = {.key = "Fn1", .value = (void*)Fn1};
-  HashTable_Node n2 = {.key = "PATH", .value = (void*)PATH};
-  HashTable_Node n3 = {.key = "x", .value = (void*)&x};
-  HashTable_Node n4 = {.key = "X_a", .value = &X_a};
-  HashTable_Node n5 = {.key = "X_b", .value = &X_b};
 
   // LOG_DEBUGF("HashTable__set");
-  HashTable__set(arena, t, &n1);
-  HashTable__set(arena, t, &n2);
-  HashTable__set(arena, t, &n3);
-  HashTable__set(arena, t, &n4);
-  HashTable__set(arena, t, &n5);
+  HashTable__set(arena, t, "Fn1", (void*)Fn1);
+  HashTable__set(arena, t, "PATH", (void*)PATH);
+  HashTable__set(arena, t, "x", (void*)&x);
+  HashTable__set(arena, t, "X_a", &X_a);
+  HashTable__set(arena, t, "X_b", &X_b);
 
   const HashTable_Node* v;
 

@@ -1,9 +1,19 @@
 #include "Script.h"
 
+// TODO: remove the need for these by internalizing fns sused
 #include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "Arena.h"
+#include "Hash.h"
+#include "List.h"
+#include "Log.h"
+
+List* Script__Stack__alloc(Arena* a) {
+  return List__alloc(a);
+}
 
 size_t Script__tokenize(const char* input, Script__Token* tokens, size_t max_tokens) {
   size_t token_count = 0;
@@ -92,14 +102,8 @@ size_t Script__tokenize(const char* input, Script__Token* tokens, size_t max_tok
   return token_count;
 }
 
-void Script__lexer(
-    Script__Token* tokens, size_t token_count, Script__Token* stack[], char* output) {
-  size_t stack_top = 0;
-  // TODO: stack via arena + list
-  // TODO: accept Hash vtable sandbox scope
-  // TODO: invoke vtable fn w/ reference to stack
-  // TODO: vtable fns are wrappers that Script__pop() their args and cast them then forward to C ABI
-
+void Script__exec(
+    Arena* arena, Script__Token* tokens, u32 token_count, HashTable* vtable, List* stack) {
   for (size_t i = token_count; i-- > 0;) {  // Process tokens right-to-left
     Script__Token* token = &tokens[i];
 
@@ -110,18 +114,17 @@ void Script__lexer(
       case TOKEN_FLOAT:
       case TOKEN_DOUBLE:
       case TOKEN_CHAR_PTR:
-        stack[stack_top++] = token;
+        List__append(arena, stack, token);  // push
         break;
 
-      case TOKEN_CLOSE:
       case TOKEN_OPEN:
       case TOKEN_EOF:
-        for (size_t i = 0; i < stack_top; i++) {
-          strcat(output, i == stack_top - 1 && token->type != TOKEN_CLOSE ? "call " : "push ");
-          strcat(output, stack[i]->value);
-          strcat(output, "\n");
-        }
-        stack_top = 0;
+        if (0 == stack->len) break;
+        token = List__pop(stack);  // fn
+        ASSERT_CONTEXT(TOKEN_WORD == token->type, "Invalid fn call.");
+        HashTable_Node* node = HashTable__get(vtable, token->value);
+        ASSERT_CONTEXT(NULL != node, "Undefined fn: %s", token->value);
+        ((Script__fn_t)node->value)(arena, vtable, stack);
         break;
 
       default:

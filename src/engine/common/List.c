@@ -2,8 +2,6 @@
 
 #include "Arena.h"
 
-// TODO: convert from DoublyLinkedList to LinkedList, since we only ever traverse forward
-
 List* List__alloc(Arena* arena) {
   List* list = Arena__Push(arena, sizeof(List));
   List__init(list);
@@ -29,7 +27,7 @@ void List__append(Arena* arena, List* list, void* data) {
   List__Node* node = List__Node__alloc(arena);
   List__Node__init(node, data);
 
-  if (0 == list->head) {
+  if (0 == list->len) {
     list->head = node;
     list->tail = node;
   } else {
@@ -69,6 +67,28 @@ void List__remove(List* list, List__Node* node) {
     }
     c = c->next;
   }
+}
+
+void* List__pop(List* list) {
+  List__Node* c = list->head;
+  List__Node* prev;
+  if (0 == list->len) return 0;
+  if (1 == list->len) {
+    list->head = list->tail = NULL;
+    list->len = 0;
+    return c->data;
+  }
+  for (u32 i = 0; i < list->len; i++) {
+    if (i == list->len - 1) {
+      list->tail = prev;
+      list->tail->next = NULL;
+      list->len--;  // update
+      return c->data;  // return last
+    }
+    prev = c;
+    c = c->next;
+  }
+  return 0;
 }
 
 // insert in sorted position
