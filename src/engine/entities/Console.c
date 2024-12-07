@@ -7,10 +7,6 @@ static const u32 MAX_TOKENS = 255;
 static const char PROMPT = '>';
 static const char CURSOR = 0x7f;  // block cursor glyph
 
-static void hello(Arena* arena, const HashTable* vtable, List* stack) {
-  LOG_DEBUGF("Hello, world!");
-}
-
 void Console__init(Entity* entity) {
   Console* self = (Console*)entity;
   Entity__init(entity);
@@ -19,7 +15,6 @@ void Console__init(Entity* entity) {
   self->buf[0] = '\0';
 
   self->vtable = HashTable__alloc(g_engine->arena);
-  HashTable__set(g_engine->arena, self->vtable, "hello", &hello);
 }
 
 static void Console__exec(Entity* entity) {
