@@ -174,7 +174,7 @@ typedef struct Engine__State {
 #define ENGINE__COUNT (1)
 #endif
 #if defined(ENGINE__MAIN) || defined(ENGINE__NO_MAIN)
-Engine__State engines[ENGINE__COUNT];
+Engine__State engines[ENGINE__COUNT] = {{.abort = Log__abort}};
 Engine__State* g_engine = &engines[0];
 #endif
 
