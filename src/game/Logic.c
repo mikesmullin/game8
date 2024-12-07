@@ -77,9 +77,6 @@ static void logic_onpreload(void) {
   Screen__init(screen, color_img.id);
   g_engine->game->screen = List__alloc(g_engine->arena);
   List__append(g_engine->arena, g_engine->game->screen, screen);
-
-  g_engine->console = Arena__Push(g_engine->arena, sizeof(Console));
-  Console__init((Entity*)g_engine->console);
 }
 
 // window, keyboard, mouse events
@@ -244,7 +241,6 @@ static void logic_onfixedupdate(void) {
   g_engine->sfetch_dowork();
 
   Game__tick();
-  Console__tick((Entity*)g_engine->console);
 
   static f32 counter = 0, wait = 5.0f;
   counter += g_engine->deltaTime;

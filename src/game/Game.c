@@ -1,5 +1,20 @@
 #include "Game.h"
 
+static void thanos(Arena* arena, const HashTable* vtable, List* stack) {
+// delete all cats
+// TODO: free arena memory, as well
+beginning:
+  List__Node* c = g_engine->game->level->entities->head;
+  for (u32 i = 0; i < g_engine->game->level->entities->len; i++) {
+    Entity* e = c->data;
+    if (BitFlag__some(e->tags1, TAG_CAT)) {
+      List__remove(g_engine->game->level->entities, c);
+      goto beginning;
+    }
+    c = c->next;
+  }
+}
+
 void Game__init() {
   memcpy(g_engine->window_title, "Retro", 6);
   g_engine->window_width = WINDOW_SIZE;
@@ -65,6 +80,11 @@ void Game__preload() {
   // init network
   g_engine->game->net = Arena__Push(g_engine->arena, sizeof(NetMgr));
   NetMgr__init();
+
+  // init console
+  g_engine->console = Arena__Push(g_engine->arena, sizeof(Console));
+  Console__init((Entity*)g_engine->console);
+  HashTable__set(g_engine->arena, g_engine->console->vtable, "thanos", &thanos);
 }
 
 void Game__reload() {
@@ -80,6 +100,7 @@ void Game__tick() {
   NetMgr__tick();
   Dispatcher__call(player1->base.base.dispatch->tick, &(OnEntityParams){(Entity*)player1});
   Level__tick(g_engine->game->level);
+  Console__tick((Entity*)g_engine->console);
 }
 
 void Game__render() {
