@@ -24,7 +24,7 @@ void Engine__init() {
   g_engine->usePerfLog = true;
 
   // wrappers
-  g_engine->log = Log__out;
+  g_engine->log = Log__trace;
   g_engine->abort = Log__abort;
 
   g_engine->slog_func = wslog_func;

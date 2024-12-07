@@ -8,7 +8,7 @@ void Log__init(void) {
   setvbuf(stderr, NULL, _IONBF, 0);
 }
 
-void Log__out(const char* line, ...) {
+void Log__trace(const char* line, ...) {
   va_list myargs;
   va_start(myargs, line);
   vfprintf(stdout, line, myargs);

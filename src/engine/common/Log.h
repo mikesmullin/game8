@@ -3,7 +3,7 @@
 #include "../Engine.h"  // IWYU pragma: keep
 
 void Log__init(void);
-void Log__out(const char* line, ...);
+void Log__trace(const char* line, ...);
 void Log__abort(const char* line, ...);
 
 #define DEBUG_TRACE g_engine->log("*** TRACE %s:%u\n", __FILE__, __LINE__);
