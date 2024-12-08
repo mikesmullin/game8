@@ -19,7 +19,27 @@
       "type": "node",
     },
     {
-      "name": "(Windows) Launch main.exe",
+      "name": "(Windows) Run main.exe",
+      "type": "cppvsdbg",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/main.exe",
+      "args": [
+        "-server",
+        "localhost:9000",
+        "-reload"
+      ],
+      "stopAtEntry": false,
+      "requireExactSource": false,
+      "cwd": "${workspaceFolder}/build",
+      "environment": [],
+      "console": "integratedTerminal",
+      "logging": {
+        "moduleLoad": false,
+        "trace": true
+      },
+    },
+    {
+      "name": "(Windows) Compile & Run main.exe",
       "type": "cppvsdbg",
       "request": "launch",
       "program": "${workspaceFolder}/build/main.exe",
