@@ -39,7 +39,7 @@ bool Console__event(Entity* entity, const sapp_event* event) {
 
   if (!self->show) {
     if (SAPP_EVENTTYPE_CHAR == event->type) {
-      if ('~' == event->char_code) {
+      if ('`' == event->char_code) {
         self->show = true;
         // return true;
       }
