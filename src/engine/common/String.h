@@ -87,12 +87,12 @@ extern inline u8 String8__toNixPathC(u8 c) {
 
 // comparison
 
-bool String8__cmp(String8* a, String8* b);
-bool String8__ncmp(String8* a, String8* b);
-s32 String8__indexOf(String8* haystack, u32 start, String8* needle);
-bool String8__startsWith(String8* haystack, String8* needle);
+bool String8__cmp(const String8* a, const String8* b);
+bool String8__ncmp(const String8* a, const String8* b);
+s32 String8__indexOf(const String8* haystack, u32 start, const String8* needle);
+bool String8__startsWith(const String8* haystack, const String8* needle);
 
 // parsing
 
-List* String8__split(Arena* arena, String8* str, u8 separator, u32 limit);
-String8* String8__join(Arena* arena, List* list, u8 separator);
+List* String8__split(Arena* arena, const String8* str, u8 separator, u32 limit);
+String8* String8__join(Arena* arena, const List* list, u8 separator);

@@ -94,7 +94,7 @@ String8* String8__printf(Arena* arena, u32 len, const char* fmt, ...) {
 // comparison
 
 // exact-match, case-sensitive
-bool String8__cmp(String8* a, String8* b) {
+bool String8__cmp(const String8* a, const String8* b) {
   if (a->sz != b->sz) return false;
   for (u32 i = 0; i < a->sz; i++) {
     if (a->str[i] != b->str[i]) return false;
@@ -103,7 +103,7 @@ bool String8__cmp(String8* a, String8* b) {
 }
 
 // match, non-case-sensitive
-bool String8__ncmp(String8* a, String8* b) {
+bool String8__ncmp(const String8* a, const String8* b) {
   if (a->sz != b->sz) return false;
   for (u32 i = 0; i < a->sz; i++) {
     if (String8__toUpperC(a->str[i]) != String8__toUpperC(b->str[i])) return false;
@@ -111,7 +111,7 @@ bool String8__ncmp(String8* a, String8* b) {
   return true;
 }
 
-s32 String8__indexOf(String8* haystack, u32 start, String8* needle) {
+s32 String8__indexOf(const String8* haystack, u32 start, const String8* needle) {
   // ensure the needle can fit within the haystack starting from `start`
   if (needle->sz > haystack->sz - start) return -1;
 
@@ -132,7 +132,7 @@ s32 String8__indexOf(String8* haystack, u32 start, String8* needle) {
   return -1;  // not found
 }
 
-bool String8__startsWith(String8* haystack, String8* needle) {
+bool String8__startsWith(const String8* haystack, const String8* needle) {
   // ensure the needle can fit within the haystack
   if (needle->sz > haystack->sz) return false;
 
@@ -146,7 +146,7 @@ bool String8__startsWith(String8* haystack, String8* needle) {
 
 // parsing
 
-List* String8__split(Arena* arena, String8* str, u8 separator, u32 limit) {
+List* String8__split(Arena* arena, const String8* str, u8 separator, u32 limit) {
   List* list = List__alloc(arena);
   u8* ptr = str->str;
   u8* len = str->str + str->sz;
@@ -163,7 +163,7 @@ List* String8__split(Arena* arena, String8* str, u8 separator, u32 limit) {
   return list;
 }
 
-String8* String8__join(Arena* arena, List* list, u8 separator) {
+String8* String8__join(Arena* arena, const List* list, u8 separator) {
   u32 len = 0;
   List__Node* c = list->head;
   for (u32 i = 0; i < list->len; i++) {
