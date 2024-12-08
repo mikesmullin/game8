@@ -4,17 +4,17 @@
 #include "../common/Sokol.h"
 #include "Entity.h"
 
-static const u32 LINE_LEN = 255;
-static const u32 HISTORY_COUNT = 10;
+static const u32 CONSOLE_LINE_LEN = 255;
+static const u32 CONSOLE_HISTORY_COUNT = 10;
 
 typedef struct Console {
   Entity base;
   bool show;
   u32 len;
-  char buf[LINE_LEN];
-  char render[LINE_LEN];
+  char buf[CONSOLE_LINE_LEN];
+  char render[CONSOLE_LINE_LEN];
   u8 history_offset;
-  char* history[HISTORY_COUNT][LINE_LEN];
+  char* history[CONSOLE_HISTORY_COUNT][CONSOLE_LINE_LEN];
   HashTable* vtable;
 } Console;
 

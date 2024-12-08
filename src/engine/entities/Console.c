@@ -21,10 +21,10 @@ static void Console__exec(Entity* entity) {
 
   // remember last 10 cmds
   self->history_offset = 0;
-  for (u32 i = HISTORY_COUNT - 1; i > 0; i--) {
-    mmemcp(self->history[i], self->history[i - 1], LINE_LEN);
+  for (u32 i = CONSOLE_HISTORY_COUNT - 1; i > 0; i--) {
+    mmemcp(self->history[i], self->history[i - 1], CONSOLE_LINE_LEN);
   }
-  mmemcp(self->history[0], self->buf, LINE_LEN);
+  mmemcp(self->history[0], self->buf, CONSOLE_LINE_LEN);
 
   Script__Token tokens[MAX_TOKENS];
   size_t token_count = Script__tokenize(self->buf, tokens, MAX_TOKENS);
@@ -48,16 +48,16 @@ bool Console__event(Entity* entity, const sapp_event* event) {
     if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
       if (SAPP_KEYCODE_UP == event->key_code || SAPP_KEYCODE_DOWN == event->key_code) {
         if (SAPP_KEYCODE_UP == event->key_code) {
-          if (self->history_offset < HISTORY_COUNT) self->history_offset++;
+          if (self->history_offset < CONSOLE_HISTORY_COUNT) self->history_offset++;
         }
         if (SAPP_KEYCODE_DOWN == event->key_code) {
           if (self->history_offset > 0) self->history_offset--;
         }
 
         if (0 == self->history_offset) {
-          memset(self->buf, 0, LINE_LEN);
+          memset(self->buf, 0, CONSOLE_LINE_LEN);
         } else {
-          mmemcp(self->buf, self->history[self->history_offset - 1], LINE_LEN);
+          mmemcp(self->buf, self->history[self->history_offset - 1], CONSOLE_LINE_LEN);
         }
         self->len = strlen(self->buf);
       }
