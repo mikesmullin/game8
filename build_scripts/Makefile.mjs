@@ -26,6 +26,16 @@ const relWs = (...args) => path.relative(path.join(workspaceFolder), path.join(.
 const repeat = (n, s) => new Array(n).fill(s).join('');
 const indent = (n, s) => s.replace(/^/gm, repeat(n, '  '));
 const isEmpty = (v) => v == null || v == undefined || ('string' == typeof v && '' == v.trim());
+const Promise__allBatch = async (a, parallel = 48) => {
+  for (let i = 0; i < a.length;) {
+    let ps = [];
+    for (let j = 0; j < parallel && i < a.length; i++, j++) {
+      let t = a[i];
+      ps.push(t());
+    }
+    await Promise.all(ps);
+  }
+};
 const DEBUG_COMPILER_ARGS = [
   '-O0',
   // export debug symbols (x86dbg understands both; turn these on when debugging, leave off for faster compile)
@@ -224,19 +234,24 @@ const copy_dlls = async () => {
 
 const shaders = async (out_type) => {
   const shaderFiles = await glob(nixPath(path.join(workspaceFolder, 'assets', 'shaders', '*.glsl')));
+  const ps = [];
+  let code = 0;
   for (const shaderFile of shaderFiles) {
     const relPath = path.relative(path.join(workspaceFolder), shaderFile);
     const h_file = `${relPath}.h`;
     const { exists: glsl_exists, stat: { mtime: glsl_mtime } } = await fs_exists(relPath);
     const { exists: h_exists, stat: { mtime: h_mtime } } = await fs_exists(h_file);
     if (glsl_mtime > h_mtime) {
-      const r1 = await child_spawn(SDHC_PATH, ['-i',
-        relPath, '-o', h_file,
-        '-l', out_type]);
-      if (0 !== r1.code) return r1.code;
+      ps.push(() =>
+        child_spawn(SDHC_PATH, ['-i',
+          relPath, '-o', h_file,
+          '-l', out_type]).then((r) => {
+            if (0 !== r.code) code = r.code;
+          }));
     }
   }
-  return 0;
+  await Promise__allBatch(ps);
+  return code;
 };
 
 const clean = async () => {
@@ -271,17 +286,20 @@ const compile = async (basename) => {
 
   // discover included translation unit files
   // ie. we have a naming convention .h may have a matching .c
-  const object_files = [];
+  const object_files = [], ps = [];
   for await (const m of extract_include_units({ file: unit })) {
     if (m.h_file) continue;
-    const r = await recompile_object(relWs(workspaceFolder, m.c_file));
-    if (0 != r.r?.code) {
-      code = r.r?.code;
-      success = false;
-      break;
-    }
-    object_files.push(r.object);
+    ps.push(() =>
+      recompile_object(relWs(workspaceFolder, m.c_file))
+        .then((r) => {
+          if (0 != r.r?.code) {
+            code = r.r?.code;
+            success = false;
+          }
+          object_files.push(r.object);
+        }));
   }
+  await Promise__allBatch(ps);
 
   const executable = relWs(workspaceFolder, BUILD_PATH, `${basename}${isWin ? '.exe' : ''}`);
   if (success) {
@@ -334,13 +352,16 @@ const compile_reload = async (unit, outname) => {
 
   // discover included translation unit files
   // ie. we have a naming convention .h may have a matching .c
-  const object_files = [];
+  const object_files = [], ps = [];
   for await (const m of extract_include_units({ file: unit })) {
     if (m.h_file) continue;
-    const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'dll', C_DLL_COMPILER_FLAGS);
-    if (0 != r.r?.code) break;
-    object_files.push(r.object);
+    ps.push(() =>
+      recompile_object(relWs(workspaceFolder, m.c_file), 'dll', C_DLL_COMPILER_FLAGS)
+        .then((r) => {
+          object_files.push(r.object);
+        }));
   }
+  await Promise__allBatch(ps);
 
   // const src = relWs(workspaceFolder, unit);
   const target = outname;
@@ -723,21 +744,22 @@ const test = async () => {
 
       // discover included translation unit files
       // ie. we have a naming convention .h may have a matching .c
-      const object_files = [];
+      const object_files = [], ps = [];
       for await (const m of extract_include_units({ file: unit })) {
         if (m.h_file) continue;
-        let r1, r2
         const relFile = (file) => path.relative(
           relWs(workspaceFolder, path.dirname(m.c_file)),
           relWs(workspaceFolder, path.dirname(unit), file)
         );
-        const r = await recompile_object(relWs(workspaceFolder, m.c_file), 'main', [
-          '-DENGINE__TEST',
-          `-DDEPINJ__GAME_H=${JSON.stringify(relFile('game/Game.h'))}`,
-        ]);
-        if (0 != r.r?.code) break;
-        object_files.push(r.object);
+        ps.push(() =>
+          recompile_object(relWs(workspaceFolder, m.c_file), 'main', [
+            '-DENGINE__TEST',
+            `-DDEPINJ__GAME_H=${JSON.stringify(relFile('game/Game.h'))}`,
+          ]).then((r) => {
+            object_files.push(r.object);
+          }));
       }
+      await Promise__allBatch(ps);
 
       // compile and link in one step
       const started1 = performance.now();

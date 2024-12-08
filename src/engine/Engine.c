@@ -4,7 +4,7 @@
 
 void Engine__init() {
   // prng seeds for deterministic math
-  g_engine->seeds.main = 1234567ULL;
+  g_engine->seeds.main = (u64)1234567LLU;
   // organized by subsystem for easy desync troubleshooting
   g_engine->seeds.nosync = Math__randomNext(&g_engine->seeds.main);
   g_engine->seeds.entityMove = Math__randomNext(&g_engine->seeds.main);

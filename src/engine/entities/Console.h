@@ -4,8 +4,8 @@
 #include "../common/Sokol.h"
 #include "Entity.h"
 
-static const u32 CONSOLE_LINE_LEN = 255;
-static const u32 CONSOLE_HISTORY_COUNT = 10;
+#define CONSOLE_LINE_LEN (255)
+#define CONSOLE_HISTORY_COUNT (10)
 
 typedef struct Console {
   Entity base;
