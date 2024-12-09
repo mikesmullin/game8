@@ -100,14 +100,11 @@ u32 Script__tokenize(const char* input, Script__Token* tokens, u32 max_tokens) {
       }
     } else if (*current == '"') {
       // Parse string literals
-      const char* start = current++;
+      current++;  // don't include opening quote
+      const char* start = current;
       while (*current && !(*current == '"' && *(current - 1) != '\\') && *current != '\r' &&
              *current != '\n') {
         current++;
-      }
-
-      if (*current == '"') {
-        current++;  // Include the closing quote
       }
 
       u32 len = current - start;
@@ -116,6 +113,10 @@ u32 Script__tokenize(const char* input, Script__Token* tokens, u32 max_tokens) {
       literal[len] = '\0';
 
       tokens[token_count++] = (Script__Token){TOKEN_CHAR_PTR, literal};
+
+      if (*current == '"') {
+        current++;  // step over the closing quote
+      }
     } else {
       // Unknown token
       tokens[token_count++] = (Script__Token){TOKEN_UNKNOWN, NULL};

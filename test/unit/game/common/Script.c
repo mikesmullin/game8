@@ -63,7 +63,7 @@ int main() {
 
   Script__Token tokens[MAX_TOKENS];
   size_t token_count = Script__tokenize(source_code, tokens, MAX_TOKENS);
-  Script__printTokens(tokens, token_count);
+  // Script__printTokens(tokens, token_count);
 
   Arena* arena = Arena__Alloc(1024);
   List* stack = List__alloc(arena);
@@ -79,6 +79,12 @@ int main() {
       (void*)(u64)offsetof(MockCatSpawnBlock, maxSpawnCount));
 
   Script__exec(arena, tokens, token_count, vtable, stack);
+
+  source_code = "playback \"sample.demo\"";
+  token_count = Script__tokenize(source_code, tokens, MAX_TOKENS);
+  Script__printTokens(tokens, token_count);
+  ASSERT(TOKEN_CHAR_PTR == tokens[2].type)
+  ASSERT(0 == strcmp("sample.demo", tokens[2].value))
 
   return 0;
 }

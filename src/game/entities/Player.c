@@ -37,7 +37,7 @@ void Player__init(Entity* entity) {
 
 static bool isUseable(void* data) {
   Entity* entity = data;
-  return BitFlag__some(entity->tags1, TAG_USEABLE);
+  return BitFlag__hasOne64(entity->tags1, TAG_USEABLE);
 }
 
 void Player__tick(void* _params) {
@@ -45,6 +45,16 @@ void Player__tick(void* _params) {
   OnEntityParams* params = _params;
   Entity* entity = params->entity;
   Player* self = (Player*)entity;
+
+  if (GameInput__Demo__isRecording(self->demo)) {
+    InputRecord record;
+    GameInput__serialize(&self->input, &record);
+    GameInput__Demo__write(self->demo, &record);
+  } else if (GameInput__Demo__isPlaying(self->demo)) {
+    InputRecord record;
+    GameInput__Demo__read(self->demo, &record);
+    GameInput__deserialize(&record, &self->input);
+  }
 
   if (self->input.key.use && !self->input.mouseCaptured) {
     self->input.key.use = false;

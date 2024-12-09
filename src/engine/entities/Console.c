@@ -62,7 +62,7 @@ bool Console__event(Entity* entity, const sapp_event* event) {
         self->len = strlen(self->buf);
       }
 
-      if (KEYCODE_ESC == event->key_code) {
+      if (SAPP_KEYCODE_ESCAPE == event->key_code) {
         self->show = false;
         return true;
       }

@@ -40,7 +40,7 @@ bool CircleCollider2D__check(f32 x0, f32 y0, f32 r0, f32 x1, f32 y1, f32 r1) {
 
 static bool isCollideable(void* data) {
   Entity* entity = data;
-  return BitFlag__every(entity->tags1, TAG_BLOCKING);
+  return BitFlag__hasAll64(entity->tags1, TAG_BLOCKING);
 }
 
 bool Collider__check(QuadTree* qt, Entity* entity, f32 x, f32 y, Dispatcher__call_t cb) {
