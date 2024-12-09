@@ -55,7 +55,7 @@ int main() {
   ASSERT(0 == s4->str[3]);
 
   s = String8__cstr(arena, "bob");
-  s2 = String8__printf(arena, 255, "hi %s", s->str);
+  s2 = String8__format(arena, 255, "hi %s", s->str);
   ASSERT(6 == s2->sz);
   ASSERT('h' == s2->str[0]);
   ASSERT('i' == s2->str[1]);

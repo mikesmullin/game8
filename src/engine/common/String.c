@@ -79,7 +79,7 @@ String8* String8__toLower(Arena* arena, const String8* s) {
   return s2;
 }
 
-String8* String8__printf(Arena* arena, u32 len, const char* fmt, ...) {
+String8* String8__format(Arena* arena, u32 len, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
   u8 buf[len];

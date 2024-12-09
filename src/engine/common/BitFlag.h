@@ -2,14 +2,19 @@
 
 #include "Types.h"
 
-// NOTE: include multiple flags using Bitwise-OR (|)
-
-// must have at least one flag
-extern inline bool BitFlag__some(u64 value, u64 flags) {
-  return (value & flags) != 0;
+extern inline void BitFlag__set8(u8* collection, const u8 item) {
+  *collection |= item;
 }
 
-// must have all flags
-extern inline bool BitFlag__every(u64 value, u64 flags) {
-  return (value & flags) == flags;
+extern inline bool BitFlag__hasOne8(const u8 collection, const u8 item) {
+  return (collection & item) != 0;
+}
+
+extern inline bool BitFlag__hasOne64(const u64 collection, const u64 item) {
+  return (collection & item) != 0;
+}
+
+// NOTE: include multiple flags using Bitwise-OR (|)
+extern inline bool BitFlag__hasAll64(const u64 collection, const u64 item) {
+  return (collection & item) == item;
 }

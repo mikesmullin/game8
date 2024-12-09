@@ -37,7 +37,7 @@ void Player__init(Entity* entity) {
 
 static bool isUseable(void* data) {
   Entity* entity = data;
-  return BitFlag__some(entity->tags1, TAG_USEABLE);
+  return BitFlag__hasOne64(entity->tags1, TAG_USEABLE);
 }
 
 void Player__tick(void* _params) {
@@ -46,24 +46,17 @@ void Player__tick(void* _params) {
   Entity* entity = params->entity;
   Player* self = (Player*)entity;
 
-  if (self->input.key.use && !self->input.mouseCaptured) {
-    self->input.key.use = false;
-    LOG_DEBUGF("request mouse lock");
-    g_engine->sapp_lock_mouse(true);
+  if (GameInput__Demo__isRecording(self->demo)) {
+    InputRecord record;
+    GameInput__serialize(&self->input, &record);
+    GameInput__Demo__write(self->demo, &record);
+  } else if (GameInput__Demo__isPlaying(self->demo)) {
+    InputRecord record;
+    GameInput__Demo__read(self->demo, &record);
+    GameInput__deserialize(&record, &self->input);
   }
-  if (self->input.key.esc && self->input.mouseCaptured) {
-    self->input.key.esc = false;
-    LOG_DEBUGF("request mouse unlock");
-    g_engine->sapp_lock_mouse(false);
-  }
-  bool ml = g_engine->sapp_mouse_locked();
-  if (ml != self->input.mouseCaptured) {
-    if (ml) LOG_DEBUGF("response mouse locked");
-    if (!ml) LOG_DEBUGF("response mouse unlocked");
-  }
-  self->input.mouseCaptured = ml;
 
-  if (!self->input.mouseCaptured) {
+  if (!self->input.mouseCaptured && !GameInput__Demo__isPlaying(self->demo)) {
     self->input.ptr.x = 0;
     self->input.ptr.y = 0;
   } else {

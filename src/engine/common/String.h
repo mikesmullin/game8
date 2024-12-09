@@ -39,7 +39,7 @@ String8* String8__substr(Arena* arena, const String8* str, u32 start, u32 end);
 
 String8* String8__toUpper(Arena* arena, const String8* s);
 String8* String8__toLower(Arena* arena, const String8* s);
-String8* String8__printf(Arena* arena, u32 len, const char* fmt, ...);
+String8* String8__format(Arena* arena, u32 len, const char* fmt, ...);
 
 // classification
 

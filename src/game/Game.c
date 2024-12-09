@@ -1,5 +1,59 @@
 #include "Game.h"
 
+#include "../engine/common/Script.h"
+#include "../engine/common/String.h"
+
+static void record(Arena* arena, const HashTable* vtable, List* stack) {
+  Player* player1 = g_engine->players->head->data;
+  String8* file = NULL;
+  if (stack->len > 0) {
+    Script__Token* t = List__pop(stack);
+    if (TOKEN_CHAR_PTR != t->type) {
+      LOG_DEBUGF("Error: record() expects 1st parameter to be a string value.");
+      return;
+    }
+    file = String8__cstr(g_engine->arena, t->value);
+  }
+  GameInput__Demo__alloc(g_engine->arena, &player1->demo, file);
+  if (GameInput__Demo__open(player1->demo, DEMO_RECORD)) {
+    g_engine->console->show = false;  // auto-hide
+    LOG_DEBUGF("Recording to %s", player1->demo->file->str);
+  }
+}
+
+static void stop(Arena* arena, const HashTable* vtable, List* stack) {
+  Player* player1 = g_engine->players->head->data;
+  if (  //
+      GameInput__Demo__isRecording(player1->demo) ||  //
+      GameInput__Demo__isPlaying(player1->demo)  //
+  ) {
+    GameInput__Demo__close(player1->demo);
+    LOG_DEBUGF("Stopped demo. file: %s", player1->demo->file->str);
+  } else {
+    LOG_DEBUGF("Error: No demo loaded.");
+  }
+}
+
+static void playback(Arena* arena, const HashTable* vtable, List* stack) {
+  Player* player1 = g_engine->players->head->data;
+  String8* file = NULL;
+  if (stack->len < 1) {
+    LOG_DEBUGF("Error: playback() requires 1 parameter: filename.");
+    return;
+  }
+  Script__Token* t = List__pop(stack);
+  if (TOKEN_CHAR_PTR != t->type) {
+    LOG_DEBUGF("Error: playback() expects 1st parameter to be a string value.");
+    return;
+  }
+  file = String8__cstr(g_engine->arena, t->value);
+  GameInput__Demo__alloc(g_engine->arena, &player1->demo, file);
+  if (GameInput__Demo__open(player1->demo, DEMO_PLAY)) {
+    g_engine->console->show = false;  // auto-hide
+    LOG_DEBUGF("Playing demo %s", player1->demo->file->str);
+  }
+}
+
 static void thanos(Arena* arena, const HashTable* vtable, List* stack) {
   // delete all the odd cats
   // TODO: free arena memory, as well
@@ -9,7 +63,7 @@ static void thanos(Arena* arena, const HashTable* vtable, List* stack) {
   List__Node* c = g_engine->game->level->entities->head;
   for (u32 i = 0; i < g_engine->game->level->entities->len; i++) {
     Entity* e = c->data;
-    if (BitFlag__some(e->tags1, TAG_CAT)) {
+    if (BitFlag__hasOne64(e->tags1, TAG_CAT)) {
       if (0 == count % 2) {
         List__append(g_engine->frameArena, l1, c);
       }
@@ -95,6 +149,9 @@ void Game__preload() {
   g_engine->console = Arena__Push(g_engine->arena, sizeof(Console));
   Console__init((Entity*)g_engine->console);
   HashTable__set(g_engine->arena, g_engine->console->vtable, "thanos", &thanos);
+  HashTable__set(g_engine->arena, g_engine->console->vtable, "record", &record);
+  HashTable__set(g_engine->arena, g_engine->console->vtable, "stop", &stop);
+  HashTable__set(g_engine->arena, g_engine->console->vtable, "playback", &playback);
 }
 
 void Game__reload() {

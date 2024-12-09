@@ -29,6 +29,6 @@ void QuadTree_query(
     const QuadTree* node,
     const Rect range,
     const u32 limit,
-    const void* matchData[],
+    void* matchData[],
     u32* matchCount,
     const QuadTree__filterable_t filterCb);

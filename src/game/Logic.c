@@ -84,17 +84,39 @@ static void logic_onevent(const sapp_event* event) {
   Player* player1 = (Player*)g_engine->players->head->data;
   // LOG_DEBUGF("event frame_count %llu", event->frame_count);
 
-  if (!Console__event((Entity*)g_engine->console, event)) {
+  // mouse capture
+  if (SAPP_EVENTTYPE_MOUSE_DOWN == event->type && SAPP_MOUSEBUTTON_LEFT == event->mouse_button &&
+      !player1->input.mouseCaptured &&  //
+      !g_engine->console->show &&  //
+      !GameInput__Demo__isPlaying(player1->demo)) {
+    player1->input.key.use = false;
+    LOG_DEBUGF("request mouse lock");
+    g_engine->sapp_lock_mouse(true);
+  }
+  if (SAPP_EVENTTYPE_KEY_DOWN == event->type && SAPP_KEYCODE_ESCAPE == event->key_code &&
+      player1->input.mouseCaptured) {
+    player1->input.key.esc = false;
+    LOG_DEBUGF("request mouse unlock");
+    g_engine->sapp_lock_mouse(false);
+  }
+  bool ml = g_engine->sapp_mouse_locked();
+  if (ml != player1->input.mouseCaptured) {
+    if (ml) LOG_DEBUGF("response mouse locked");
+    if (!ml) LOG_DEBUGF("response mouse unlocked");
+  }
+  player1->input.mouseCaptured = ml;
+  if (Console__event((Entity*)g_engine->console, event)) {
+  } else {
     if (SAPP_EVENTTYPE_KEY_DOWN == event->type) {
-      if (KEYCODE_W == event->key_code) player1->input.key.fwd = true;
-      if (KEYCODE_A == event->key_code) player1->input.key.left = true;
-      if (KEYCODE_S == event->key_code) player1->input.key.back = true;
-      if (KEYCODE_D == event->key_code) player1->input.key.right = true;
-      if (KEYCODE_E == event->key_code) player1->input.key.use = true;
-      if (KEYCODE_SPACE == event->key_code) player1->input.key.up = true;
-      if (KEYCODE_TAB == event->key_code) player1->input.key.down = true;
-      if (KEYCODE_R == event->key_code) player1->input.key.reload = true;
-      if (KEYCODE_ESC == event->key_code) player1->input.key.esc = true;
+      if (SAPP_KEYCODE_W == event->key_code) player1->input.key.fwd = true;
+      if (SAPP_KEYCODE_A == event->key_code) player1->input.key.left = true;
+      if (SAPP_KEYCODE_S == event->key_code) player1->input.key.back = true;
+      if (SAPP_KEYCODE_D == event->key_code) player1->input.key.right = true;
+      if (SAPP_KEYCODE_E == event->key_code) player1->input.key.use = true;
+      if (SAPP_KEYCODE_SPACE == event->key_code) player1->input.key.up = true;
+      if (SAPP_KEYCODE_TAB == event->key_code) player1->input.key.down = true;
+      if (SAPP_KEYCODE_R == event->key_code) player1->input.key.reload = true;
+      if (SAPP_KEYCODE_ESCAPE == event->key_code) player1->input.key.esc = true;
 
       // LOG_DEBUGF(
       //     "event keydown"
@@ -108,15 +130,15 @@ static void logic_onevent(const sapp_event* event) {
       //     event->modifiers);
     }
     if (SAPP_EVENTTYPE_KEY_UP == event->type) {
-      if (KEYCODE_W == event->key_code) player1->input.key.fwd = false;
-      if (KEYCODE_A == event->key_code) player1->input.key.left = false;
-      if (KEYCODE_S == event->key_code) player1->input.key.back = false;
-      if (KEYCODE_D == event->key_code) player1->input.key.right = false;
-      if (KEYCODE_E == event->key_code) player1->input.key.use = false;
-      if (KEYCODE_SPACE == event->key_code) player1->input.key.up = false;
-      if (KEYCODE_TAB == event->key_code) player1->input.key.down = false;
-      if (KEYCODE_R == event->key_code) player1->input.key.reload = false;
-      if (KEYCODE_ESC == event->key_code) player1->input.key.esc = false;
+      if (SAPP_KEYCODE_W == event->key_code) player1->input.key.fwd = false;
+      if (SAPP_KEYCODE_A == event->key_code) player1->input.key.left = false;
+      if (SAPP_KEYCODE_S == event->key_code) player1->input.key.back = false;
+      if (SAPP_KEYCODE_D == event->key_code) player1->input.key.right = false;
+      if (SAPP_KEYCODE_E == event->key_code) player1->input.key.use = false;
+      if (SAPP_KEYCODE_SPACE == event->key_code) player1->input.key.up = false;
+      if (SAPP_KEYCODE_TAB == event->key_code) player1->input.key.down = false;
+      if (SAPP_KEYCODE_R == event->key_code) player1->input.key.reload = false;
+      if (SAPP_KEYCODE_ESCAPE == event->key_code) player1->input.key.esc = false;
 
       // LOG_DEBUGF(
       //     "event keyup"
@@ -171,8 +193,8 @@ static void logic_onevent(const sapp_event* event) {
       //     event->scroll_y);
     }
     if (SAPP_EVENTTYPE_MOUSE_MOVE == event->type) {
-      player1->input.ptr.x += event->mouse_dx;
-      player1->input.ptr.y += event->mouse_dy;
+      player1->input.ptr.x = Math__clamp(-128, player1->input.ptr.x + event->mouse_dx, 127);
+      player1->input.ptr.y = Math__clamp(-128, player1->input.ptr.y + event->mouse_dy, 127);
 
       // LOG_DEBUGF(
       //     "event mousemove"
